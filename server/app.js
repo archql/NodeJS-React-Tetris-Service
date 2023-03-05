@@ -26,6 +26,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/attachments', express.static(path.join(__dirname, 'uploads')));
 app.use(sessions({
   secret: crypto.randomBytes(64).toString(),
   saveUninitialized: true,

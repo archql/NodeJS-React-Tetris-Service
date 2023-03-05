@@ -1,6 +1,6 @@
 import express from 'express';
 import crypto from "crypto";
-import {Message, Status, User} from "../bin/db.js";
+import {Message, Role, Status, User} from "../bin/db.js";
 import {Op} from "sequelize";
 
 import {authenticateToken, generateAccessToken} from '../bin/jwt.js';
@@ -21,10 +21,28 @@ router.get('/messages', authenticateToken, async function (req, res, next) {
     res.send(JSON.stringify(messages, null, 2));
 });
 
-router.get('/users', authenticateToken, async function (req, res, next) {
+router.get('/others', authenticateToken, async function (req, res, next) {
+    const user = req.user;
     const users = await User.findAll({
+        where: {
+            user_id: {
+                [Op.not]: user.user_id
+            }
+        },
         include: [
             { model: Status },
+            { model: Role }
+        ]
+    });
+    res.send(JSON.stringify(users, null, 2));
+});
+
+router.get('/self', authenticateToken, async function (req, res, next) {
+    const user = req.user;
+    const users = await User.findByPk(user.user_id, {
+        include: [
+            { model: Status },
+            { model: Role },
             { model: Message }
         ]
     });
@@ -36,11 +54,11 @@ router.post('/messages',authenticateToken, async function (req, res, next) {
 
     //const { message_body, message_to_id } = req.body
     const message = JSON.parse(req.body);
-    const user_id = req.user;
+    const user = req.user;
 
     const nMessage = await Message.create({
         message_content: message.content,
-        message_from_id: user_id,
+        message_from_id: user.user_id,
         message_to_id: message.to
     });
     if (!nMessage) {
@@ -54,12 +72,12 @@ router.put('/messages', authenticateToken, async function (req, res, next) {
 
     //const { message_body, message_to_id } = req.body
     const message = JSON.parse(req.body);
-    const user_id = req.user;
+    const user = req.user;
     try {
         let count = await Message.update({message_content: message.content}, {
             where: {
                 message_id: message.id,
-                message_from_id: user_id
+                message_from_id: user.user_id
             }
         });
         if (count === 0) {
@@ -75,12 +93,12 @@ router.put('/messages', authenticateToken, async function (req, res, next) {
 router.delete('/messages/:id', authenticateToken, async function (req, res, next) {
 
     const id = req.params.id;
-    const user_id = req.user;
+    const user = req.user;
     try {
         let count = await Message.destroy({
             where: {
                 message_id: id,
-                message_from_id: user_id
+                message_from_id: user.user_id
             }
         });
         if (count === 0) {
@@ -140,7 +158,7 @@ router.post('/login', async function (req, res, next) {
         return res.status(409).send(JSON.stringify({error_message: "user do not exists" }));
     }
     try {
-        await User.update({user_status_id: 1}, {
+        await User.update({user_status_id: 2}, {
             where: {
                 user_id: user.user_id
             }

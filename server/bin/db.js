@@ -50,6 +50,10 @@ export const Role = sequelize.define("role", {
     role_name: {
         type: DataTypes.STRING(40),
         allowNull: false
+    },
+    role_color: {
+        type: DataTypes.STRING(20),
+        allowNull: false
     }
 }, {timestamps: false});
 export const Status = sequelize.define("status", {
@@ -157,7 +161,8 @@ await Status.create({
 });
 await Role.create({
     role_id: 1,
-    role_name: "member"
+    role_name: "member",
+    role_color: "lightskyblue"
 });
 
 
