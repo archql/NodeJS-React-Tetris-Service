@@ -1,5 +1,6 @@
 import React from 'react';
 import { authService } from  "../services/auth_service.js";
+import { userService } from "../services/user_service.js";
 import { Navigate } from "react-router-dom";
 import { withRouter } from '../common/with_router.js';
 
@@ -17,9 +18,16 @@ export class Account extends React.Component {
     }
     componentDidMount() {
         const currentUser = authService.getCurrentUser();
-
-        if (!currentUser) this.setState({ redirect: "/login" });
-        this.setState({ currentUser: currentUser, userReady: true })
+        userService.getMessages().then(data =>
+        {
+            console.log(data);
+            if (data.status !== 200)
+                this.setState({ redirect: "/login" });
+            else
+                this.setState({ user: currentUser, userReady: true })
+        }).catch(e => {
+            this.setState({ redirect: "/login" });
+        });
     }
 
     render() {

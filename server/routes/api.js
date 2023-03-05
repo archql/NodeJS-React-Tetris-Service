@@ -3,19 +3,17 @@ import crypto from "crypto";
 import {Message, Status, User} from "../bin/db.js";
 import {Op} from "sequelize";
 
+import {authenticateToken, generateAccessToken} from '../bin/jwt.js';
+
 export let router = express.Router();
 
-router.get('/messages', async function (req, res, next) {
-    let session = req.session;
-    if (!session.user_id) {
-        return res.sendStatus(401);
-    }
-
+router.get('/messages', authenticateToken, async function (req, res, next) {
+    const user = req.user;
     const messages = await Message.findAll({
         where: {
             [Op.or]: {
-                message_from_id: session.user_id,
-                message_to_id: session.user_id
+                message_from_id: user.user_id,
+                message_to_id: user.user_id
             }
         },
         include: User
@@ -23,12 +21,7 @@ router.get('/messages', async function (req, res, next) {
     res.send(JSON.stringify(messages, null, 2));
 });
 
-router.get('/users', async function (req, res, next) {
-    let session = req.session;
-    if (!session.user_id) {
-        return res.sendStatus(401);
-    }
-
+router.get('/users', authenticateToken, async function (req, res, next) {
     const users = await User.findAll({
         include: [
             { model: Status },
@@ -38,19 +31,16 @@ router.get('/users', async function (req, res, next) {
     res.send(JSON.stringify(users, null, 2));
 });
 
-router.post('/messages', async function (req, res, next) {
+router.post('/messages',authenticateToken, async function (req, res, next) {
     if(!req.body) return res.sendStatus(400); // TODO check if all fields defined
-    let session = req.session;
-    if (!session.user_id) {
-        return res.sendStatus(401);
-    }
 
     //const { message_body, message_to_id } = req.body
     const message = JSON.parse(req.body);
+    const user_id = req.user;
 
     const nMessage = await Message.create({
         message_content: message.content,
-        message_from_id: session.user_id,
+        message_from_id: user_id,
         message_to_id: message.to
     });
     if (!nMessage) {
@@ -59,20 +49,17 @@ router.post('/messages', async function (req, res, next) {
     return res.send(JSON.stringify(nMessage)).status(200);
 });
 
-router.put('/messages', async function (req, res, next) {
+router.put('/messages', authenticateToken, async function (req, res, next) {
     if(!req.body) return res.sendStatus(400); // TODO check if all fields defined
-    let session = req.session;
-    if (!session.user_id) {
-        return res.sendStatus(401);
-    }
 
     //const { message_body, message_to_id } = req.body
     const message = JSON.parse(req.body);
+    const user_id = req.user;
     try {
         let count = await Message.update({message_content: message.content}, {
             where: {
                 message_id: message.id,
-                message_from_id: session.user_id
+                message_from_id: user_id
             }
         });
         if (count === 0) {
@@ -85,18 +72,15 @@ router.put('/messages', async function (req, res, next) {
     return res.send(JSON.stringify({error_message: "OK" })).status(200);
 });
 
-router.delete('/messages/:id', async function (req, res, next) {
-    let session = req.session;
-    if (!session.user_id) {
-        return res.sendStatus(401);
-    }
+router.delete('/messages/:id', authenticateToken, async function (req, res, next) {
 
     const id = req.params.id;
+    const user_id = req.user;
     try {
         let count = await Message.destroy({
             where: {
                 message_id: id,
-                message_from_id: session.user_id
+                message_from_id: user_id
             }
         });
         if (count === 0) {
@@ -152,7 +136,6 @@ router.post('/login', async function (req, res, next) {
             user_password_hash: password_hash
         }
     });
-    const users = await User.findAll();
     if (!user) {
         return res.status(409).send(JSON.stringify({error_message: "user do not exists" }));
     }
@@ -166,10 +149,8 @@ router.post('/login', async function (req, res, next) {
         console.log(e);
         return res.status(500).send(JSON.stringify({error_message: "internal server error" }));
     }
-    // setup session
-    let session = req.session;
-    session.user_id = user.user_id;
-    console.log(req.session)
+    // generate access token
+    const token = generateAccessToken({ user_id: user.user_id });
     // return success
-    return res.send(JSON.stringify(user, null, 2)); // TODO danger
+    return res.send(JSON.stringify({accessToken: token, user_id: user.user_id}, null, 2));
 });
