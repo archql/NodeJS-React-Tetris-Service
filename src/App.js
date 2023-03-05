@@ -1,25 +1,46 @@
-import logo from './logo.svg';
+import React from 'react';
+import { Routes, Navigate, Route } from "react-router-dom";
+import { createBrowserHistory } from 'history';
+
 import './App.css';
+import { LoginFormRouted } from './components/login_form.js';
+import { RegisterFormRouted } from './components/register_form.js';
+import { AccountRouted } from './components/account.js';
+import { authService } from  "./services/auth_service.js"
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+export class App extends React.Component {
+    constructor(props) {
+        super(props);
+        this.logOut = this.logOut.bind(this);
+
+        this.state = {
+            currentUser: undefined
+        };
+    }
+    componentDidMount() {
+        const user = authService.getCurrentUser();
+
+        if (user) {
+            this.setState({
+                currentUser: user
+            });
+        }
+    }
+
+    logOut() {
+        authService.logout();
+        this.setState({
+            currentUser: undefined
+        });
+    }
+
+    render() {
+        return (<Routes>
+            <Route exact path="/" element={<Navigate to={"/account"} />} />
+            <Route path={"/register"} exact element={<RegisterFormRouted />} />
+            <Route path={"/login"} element={<LoginFormRouted />} />
+            <Route path={"/account"} element={<AccountRouted />} />
+        </Routes>);
+    }
+
 }
-
-export default App;

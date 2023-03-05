@@ -1,0 +1,21 @@
+{
+  "name": "untitled",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node bin/www.js"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "debug": "~4.3.4",
+    "express": "^4.18.2",
+    "express-handlebars": "^7.0.1",
+    "express-session": "^1.17.3",
+    "hbs": "^4.2.0",
+    "http-errors": "~1.6.3",
+    "morgan": "~1.9.1",
+    "sequelize": "^6.29.0",
+    "sqlite3": "^5.1.4"
+  }
+}
