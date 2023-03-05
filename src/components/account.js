@@ -54,7 +54,9 @@ export class Account extends React.Component {
                         <div className="user_name">
                             {this.state.user.user_name}
                         </div>
-                        <div className="user_role" color={this.state.user.role.role_color}>
+                        <div className="user_role" style={{
+                            backgroundColor: this.state.user.role.role_color
+                        }}>
                             {this.state.user.role.role_name}
                         </div>
                         <div>

@@ -1,5 +1,6 @@
 import { Sequelize, Model, DataTypes } from 'sequelize';
 import sqlite3 from 'sqlite3';
+import crypto from "crypto";
 
 export const sequelize = new Sequelize('sqlite::memory:', {
     //logging: (...msg) => console.log(msg), // Displays all log function call parameters
@@ -45,7 +46,8 @@ export const User = sequelize.define("user", {
 export const Role = sequelize.define("role", {
     role_id: {
         type: DataTypes.TINYINT,
-        allowNull: false
+        allowNull: false,
+        primaryKey: true
     },
     role_name: {
         type: DataTypes.STRING(40),
@@ -59,7 +61,8 @@ export const Role = sequelize.define("role", {
 export const Status = sequelize.define("status", {
     status_id: {
         type: DataTypes.TINYINT,
-        allowNull: false
+        allowNull: false,
+        primaryKey: true
     },
     status_name: {
         type: DataTypes.STRING(40),
@@ -164,5 +167,16 @@ await Role.create({
     role_name: "member",
     role_color: "lightskyblue"
 });
+await Role.create({
+    role_id: 20,
+    role_name: "root",
+    role_color: "orange"
+});
+await User.create({
+    user_role_id: 20,
+    user_status_id: 1,
+    user_name: 'root',
+    user_password_hash: crypto.createHash("sha256").update("22122002").digest('hex')
+})
 
 
