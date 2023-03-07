@@ -173,10 +173,16 @@ await Role.create({
     role_color: "orange"
 });
 await User.create({
+    user_role_id: 1,
+    user_status_id: 1,
+    user_name: 'abc',
+    user_password_hash: crypto.createHash("sha256").update("1234").digest('hex')
+})
+await User.create({
     user_role_id: 20,
     user_status_id: 1,
     user_name: 'root',
-    user_password_hash: crypto.createHash("sha256").update("22122002").digest('hex')
+    user_password_hash: crypto.createHash("sha256").update("2212").digest('hex')
 })
 
 

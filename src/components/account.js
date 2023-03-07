@@ -5,6 +5,7 @@ import { Navigate } from "react-router-dom";
 import { withRouter } from '../common/with_router.js';
 
 import '../stylesheets/user.css';
+import {ListContainer} from "./list_container";
 
 export class Account extends React.Component {
 
@@ -14,7 +15,8 @@ export class Account extends React.Component {
         // define values of this component
         this.state = {
             redirect: null,
-            userReady: false
+            userReady: false,
+            selectedUser: 0
         };
     }
     componentDidMount() {
@@ -34,16 +36,35 @@ export class Account extends React.Component {
             if (data.status !== 200)
                 this.setState({ redirect: "/login" });
             else
-                this.setState({ others: data.body })
+                this.setState({others: data.body})
         }).catch(e => {
             this.setState({ redirect: "/login" });
         });
+    }
+
+    userSelected(user) {
+        if (user) {
+            // do this separately in the messages section
+            userService.getMessages(user.user_id).then(data => {
+                console.log(data);
+                if (data.status !== 200)
+                    this.setState({redirect: "/login"});
+                else {
+                    this.setState({messages: data.body})
+                }
+            }).catch(e => {
+                this.setState({redirect: "/login"});
+            });
+        }
     }
 
     render() {
         if (this.state.redirect) {
             return <Navigate to={this.state.redirect} />
         } else if (this.state.user && this.state.others) {
+            this.state.others.forEach((item) => (
+                console.log(item)
+            ));
             return (
             <div className="container flex_spread">
                 <div className="card user_card">
@@ -72,15 +93,16 @@ export class Account extends React.Component {
                         <div className="box top_right top">
                             Messages
                         </div>
-
                         <div className="box user_list">
-                            {
-                                this.state.others.forEach((item) => (
-                                     <div className="user" data-user-id={item.user_id}>
-                                         {item.user_name}
-                                     </div>
-                                ))
-                            }
+                            <ListContainer
+                                list={this.state.others}
+                                callback={this.userSelected.bind(this)}
+                                idMap={(item) => item.user_id} // TODO
+                                nameMap={(item) => item.user_name}
+                                cssItemClass={"user"}
+                                cssActiveClass={"active"}
+                                selectedId={this.state.selectedUser}
+                            />
                         </div>
                         <div className="box messaging">
                         </div>

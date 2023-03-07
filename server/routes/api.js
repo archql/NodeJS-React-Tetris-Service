@@ -20,6 +20,26 @@ router.get('/messages', authenticateToken, async function (req, res, next) {
     });
     res.send(JSON.stringify(messages, null, 2));
 });
+router.get('/messages/:from', authenticateToken, async function (req, res, next) {
+    const fromId = req.params.from;
+    const user = req.user;
+    const messages = await Message.findAll({
+        where: {
+            [Op.or]: {
+                [Op.and]: {
+                    message_from_id: user.user_id,
+                    message_to_id: fromId
+                },
+                [Op.and]: {
+                    message_to_id: user.user_id,
+                    message_from_id: fromId
+                }
+            }
+        },
+        include: User
+    });
+    res.send(JSON.stringify(messages, null, 2));
+});
 
 router.get('/others', authenticateToken, async function (req, res, next) {
     const user = req.user;
