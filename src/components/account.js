@@ -7,6 +7,7 @@ import { withRouter } from '../common/with_router.js';
 import '../stylesheets/user.css';
 import {ListContainer} from "./list_container";
 import {ResizeableInput} from "./resizeable_input";
+import {MessageContainer} from "./message_container";
 
 export class Account extends React.Component {
 
@@ -19,7 +20,8 @@ export class Account extends React.Component {
         this.state = {
             redirect: null,
             userReady: false,
-            userSelected: null
+            userSelected: null,
+            messages: []
         };
     }
     componentDidMount() {
@@ -60,12 +62,15 @@ export class Account extends React.Component {
                 this.setState({redirect: "/login"});
             });
         } else {
-            this.setState({userSelected: null});
+            this.setState({userSelected: null, messages: [] });
         }
     }
 
     sendMessage(e) {
+        console.log("msg");
         e.preventDefault();
+
+        console.log("msg");
 
         const userSelected = this.state.userSelected;
         const iContent = document.getElementById('message_content');
@@ -75,11 +80,9 @@ export class Account extends React.Component {
             userService.sendMessage(userSelected.user_id, iContent.value, iAttachments.files).then(data => {
                 console.log(data);
                 if (data.status !== 200) {
-                    // TODO
-                    //this.setState();
+                    this.setState({redirect: "/login"}); // TODO
                 } else {
-                    //this.setState({messages: [...this.state.messages, data.body]})
-                    this.state.messages.push(data.body); // TODO
+                    this.setState({messages: [...this.state.messages, data.body]})
                 }
             }).catch(e => {
                 // TODO what if error is not connected with jwt
@@ -116,7 +119,7 @@ export class Account extends React.Component {
                     </div>
                 </div>
                 <div className="card flex_spread">
-                    <div className="messages_grid flex_spread">
+                    <div className="messages_grid" style={{flex: 1, flexBasis: 0}}>
                         <div className="box top_left top">
                             Select user to start messaging
                         </div>
@@ -133,8 +136,10 @@ export class Account extends React.Component {
                                 cssActiveClass={"active"}
                             />
                         </div>
-                        <div className="box messaging">
-                        </div>
+                        <MessageContainer
+                            curUserId={this.state.user.user_id}
+                            messages={this.state.messages}
+                        />
                         <div className="box bottom_left">
                             <div>Add new user</div>
                         </div>

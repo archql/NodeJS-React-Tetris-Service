@@ -144,7 +144,10 @@ router.post('/messages/:to',authenticateToken, async function (req, res, next) {
             resultAttachments = await Attachment.bulkCreate(attachments);
         }
         let result = nMessage.get({ plain: true });
+        // TODO bullshit??
         result["attachments"] = resultAttachments;
+        result["user_from"] = { user_id: user.user_id, user_name: user.user_name};
+        result["user_to"] = { user_id: toId};
 
         // here goes attachment creation logics
         console.log(result);

@@ -8,8 +8,8 @@ export class Message extends React.Component {
                 className={this.getClassName()}
                 onClick={() => this.itemSelected()}
             >
-                <div style="font-size: larger">
-                    from {this.props.item.user_name}
+                <div style={{fontSize: 'larger'}}>
+                    from {this.props.item.user_from.user_name}
                 </div>
                 <div className="attachments">
                 {
@@ -25,8 +25,8 @@ export class Message extends React.Component {
                 <div>
                     {this.props.item.message_content}
                 </div>
-                <div style="font-size: smaller">
-                    {this.props.item.message_datetime}
+                <div style={{fontSize: 'smaller'}}>
+                    {this.props.item.message_updated}
                 </div>
             </div>
         );
@@ -34,8 +34,8 @@ export class Message extends React.Component {
 
     getClassName() {
         const item = this.props.item;
-        return "message" //+
-            //((item.message_from_id === ) ?
-            //    ' message_out' : ' message_in');
+        return "message" +
+            ((item.message_from_id === this.props.curUserId) ?
+                ' message_out' : ' message_in');
     }
 }
