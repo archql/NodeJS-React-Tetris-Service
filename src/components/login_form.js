@@ -17,11 +17,6 @@ export class LoginForm extends React.Component {
             successful: false,
             message: ''
         };
-
-        //
-        this.onChangeName = this.onChangeName.bind(this);
-        this.onChangePassword = this.onChangePassword.bind(this);
-        this.handleLogin = this.handleLogin.bind(this);
     }
 
     handleLogin(event) {
@@ -82,14 +77,14 @@ export class LoginForm extends React.Component {
             <div className="reg_container">
                 <div className="reg_box">
                     <div className="reg_header">Login Form</div>
-                    <form method="POST" className="login_form" onSubmit={this.handleLogin}>
+                    <form method="POST" className="login_form" onSubmit={e => this.handleLogin(e)}>
                         <div>
                             <label htmlFor="name-reg" className="form-label">Name</label>
-                            <input value={this.state.name} onChange={this.onChangeName} type="text" className="input-field" id="name-reg"></input>
+                            <input value={this.state.name} onChange={e => this.onChangeName(e)} type="text" className="input-field" id="name-reg"></input>
                         </div>
                         <div>
                             <label htmlFor="password-reg" className="form-label">Password</label>
-                            <input value={this.state.password} onChange={this.onChangePassword} type="password" className="input-field" id="password-reg"></input>
+                            <input value={this.state.password} onChange={e => this.onChangePassword(e)} type="password" className="input-field" id="password-reg"></input>
                         </div>
 
                         <button className="reg_button" type="submit">Submit</button>

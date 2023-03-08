@@ -76,11 +76,11 @@ export const Message = sequelize.define("message", {
         autoIncrement: true,
         primaryKey: true
     },
-    message_from: {
+    message_from_id: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    message_to: {
+    message_to_id: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
@@ -100,10 +100,10 @@ export const Attachment = sequelize.define("attachment", {
         autoIncrement: true,
         primaryKey: true
     },
-    attachment_message_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
+    // attachment_message_id: {
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false
+    // },
     attachment_filename: {
         type: DataTypes.STRING(255),
         allowNull: false
@@ -134,23 +134,26 @@ Message.belongsTo(User, {
     foreignKey: {
         name: 'message_from_id',
         allowNull: false
-    }
+    },
+    as: "user_from"
 });
 Message.belongsTo(User, {
     //as: 'message_to_id',
     foreignKey: {
         name: 'message_to_id',
         allowNull: false
-    }
+    },
+    as: "user_to"
 })
 
-Message.hasMany(Attachment);
 Attachment.belongsTo(Message, {
     foreignKey: {
         name: 'attachment_message_id',
         allowNull: false
     }
 });
+Message.hasMany(Attachment,
+    { foreignKey: 'attachment_message_id' });
 
 await sequelize.sync();
 

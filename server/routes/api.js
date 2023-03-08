@@ -1,11 +1,40 @@
 import express from 'express';
 import crypto from "crypto";
-import {Message, Role, Status, User} from "../bin/db.js";
+import multer from 'multer';
+import {Attachment, Message, Role, Status, User} from "../bin/db.js";
 import {Op} from "sequelize";
 
 import {authenticateToken, generateAccessToken} from '../bin/jwt.js';
 
 export let router = express.Router();
+
+// setup multer
+let multerStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, './uploads')
+    },
+    filename: function (req, file, cb) {
+        let extArray = file.mimetype.split("/");
+        let extension = extArray[extArray.length - 1];
+        cb(null, file.fieldname + '-' + Date.now()+ '.' +extension)
+    }
+});
+let upload = multer({
+    storage: multerStorage,
+    limits: { fileSize: 1024 * 1024 * 100 },
+    fileFilter: function fileFilter (req, file, cb) {
+
+        const MIME_TYPE_MAP = {
+            'image/png': 'png',
+            'image/jpeg': 'jpeg',
+            'image/jpg': 'jpg'
+        };
+
+        //let extArray = file.mimetype.split("/");
+        let isValid = !!MIME_TYPE_MAP[file.mimetype];
+        cb(null, isValid); // false - reject
+    }
+}).array("attachment", 9); // use as separate function
 
 router.get('/messages', authenticateToken, async function (req, res, next) {
     const user = req.user;
@@ -25,18 +54,29 @@ router.get('/messages/:from', authenticateToken, async function (req, res, next)
     const user = req.user;
     const messages = await Message.findAll({
         where: {
-            [Op.or]: {
+            [Op.or]: [{
                 [Op.and]: {
                     message_from_id: user.user_id,
                     message_to_id: fromId
-                },
+                }},
+                {
                 [Op.and]: {
                     message_to_id: user.user_id,
                     message_from_id: fromId
                 }
-            }
+            }]
         },
-        include: User
+        include: [
+            {
+                model: User,
+                as: "user_from"
+            },
+            {
+                model: User,
+                as: "user_to"
+            },
+            { model: Attachment }
+        ]
     });
     res.send(JSON.stringify(messages, null, 2));
 });
@@ -69,22 +109,48 @@ router.get('/self', authenticateToken, async function (req, res, next) {
     res.send(JSON.stringify(users, null, 2));
 });
 
-router.post('/messages',authenticateToken, async function (req, res, next) {
-    if(!req.body) return res.sendStatus(400); // TODO check if all fields defined
+router.post('/messages/:to',authenticateToken, async function (req, res, next) {
+    upload(req, res, async function(err) {
+        if(!req.body) return res.sendStatus(400); // TODO check if all fields defined
 
-    //const { message_body, message_to_id } = req.body
-    const message = JSON.parse(req.body);
-    const user = req.user;
+        if (err) {
+            return res.send(JSON.stringify({error_message: "error with parameters" })).status(409);
+        }
 
-    const nMessage = await Message.create({
-        message_content: message.content,
-        message_from_id: user.user_id,
-        message_to_id: message.to
+        const user = req.user;
+        const toId = req.params.to;
+
+        console.log(req.body);
+        console.log(req.files);
+
+        // create message
+        const nMessage = await Message.create({
+            message_content: req.body.content,
+            message_from_id: user.user_id,
+            message_to_id: toId
+        });
+        if (!nMessage) {
+            return res.send(JSON.stringify({error_message: "error" })).status(500);
+        }
+        let resultAttachments = [];
+        if (req.files.length > 0) {
+            let attachments = [];
+            for (const file of req.files) {
+                attachments.push({
+                    attachment_filename: file.filename,
+                    attachment_message_id: nMessage.message_id
+                })
+            }
+            resultAttachments = await Attachment.bulkCreate(attachments);
+        }
+        let result = nMessage.get({ plain: true });
+        result["attachments"] = resultAttachments;
+
+        // here goes attachment creation logics
+        console.log(result);
+
+        return res.send(JSON.stringify(result)).status(200);
     });
-    if (!nMessage) {
-        return res.send(JSON.stringify({error_message: "error" })).status(500);
-    }
-    return res.send(JSON.stringify(nMessage)).status(200);
 });
 
 router.put('/messages', authenticateToken, async function (req, res, next) {

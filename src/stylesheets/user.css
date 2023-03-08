@@ -249,3 +249,15 @@ scrollbar
     border-radius: 4px;       /* roundness of the scroll thumb */
     /*border: 3px solid CadetBlue;  /* creates padding around scroll thumb */
 }
+
+.send_button {
+    background-color: cadetblue; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    transition-duration: 0.1s;
+}

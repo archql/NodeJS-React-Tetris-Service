@@ -6,17 +6,20 @@ import { withRouter } from '../common/with_router.js';
 
 import '../stylesheets/user.css';
 import {ListContainer} from "./list_container";
+import {ResizeableInput} from "./resizeable_input";
 
 export class Account extends React.Component {
 
     constructor(props) {
         super(props);
 
+        console.log("constructor")
+
         // define values of this component
         this.state = {
             redirect: null,
             userReady: false,
-            selectedUser: 0
+            userSelected: null
         };
     }
     componentDidMount() {
@@ -50,9 +53,36 @@ export class Account extends React.Component {
                 if (data.status !== 200)
                     this.setState({redirect: "/login"});
                 else {
-                    this.setState({messages: data.body})
+                    this.setState({messages: data.body,
+                                        userSelected: user})
                 }
             }).catch(e => {
+                this.setState({redirect: "/login"});
+            });
+        } else {
+            this.setState({userSelected: null});
+        }
+    }
+
+    sendMessage(e) {
+        e.preventDefault();
+
+        const userSelected = this.state.userSelected;
+        const iContent = document.getElementById('message_content');
+        const iAttachments = document.getElementById('message_attachments');
+        if (userSelected && iContent && iAttachments && iContent.value !== '') {
+            //console.log(element.value);
+            userService.sendMessage(userSelected.user_id, iContent.value, iAttachments.files).then(data => {
+                console.log(data);
+                if (data.status !== 200) {
+                    // TODO
+                    //this.setState();
+                } else {
+                    //this.setState({messages: [...this.state.messages, data.body]})
+                    this.state.messages.push(data.body); // TODO
+                }
+            }).catch(e => {
+                // TODO what if error is not connected with jwt
                 this.setState({redirect: "/login"});
             });
         }
@@ -96,12 +126,11 @@ export class Account extends React.Component {
                         <div className="box user_list">
                             <ListContainer
                                 list={this.state.others}
-                                callback={this.userSelected.bind(this)}
+                                callback={e => this.userSelected(e)}
                                 idMap={(item) => item.user_id} // TODO
                                 nameMap={(item) => item.user_name}
                                 cssItemClass={"user"}
                                 cssActiveClass={"active"}
-                                selectedId={this.state.selectedUser}
                             />
                         </div>
                         <div className="box messaging">
@@ -110,7 +139,37 @@ export class Account extends React.Component {
                             <div>Add new user</div>
                         </div>
                         <div className="box bottom_right">
-
+                            {/*TODO separate*/}
+                            <form
+                                className="message_input_form"
+                                encType="multipart/form-data"
+                            >
+                                <div>
+                                    <label
+                                        htmlFor="message_content"
+                                        className="form_label"
+                                    >
+                                        Content
+                                    </label>
+                                    <ResizeableInput
+                                        id={"message_content"}
+                                    />
+                                </div>
+                                <input
+                                    multiple
+                                    type="file"
+                                    name="attachment"
+                                    accept=".jpg, .jpeg, .png"
+                                    id={"message_attachments"}
+                                />
+                                <button
+                                    type="submit"
+                                    className="send_button"
+                                    onClick={e => this.sendMessage(e)}
+                                >
+                                    Send message
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

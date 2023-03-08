@@ -11,7 +11,7 @@ export class ListContainer extends React.Component {
 
     render() {
         const {list} = this.props;
-        console.log("List rendered with selection " + this.props.selectedId);
+        console.log("List rendered with selection " + this.state.selectedId);
         return (
             <div
                 role="list"
