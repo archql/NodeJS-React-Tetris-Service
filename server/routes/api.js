@@ -16,7 +16,7 @@ let multerStorage = multer.diskStorage({
     filename: function (req, file, cb) {
         let extArray = file.mimetype.split("/");
         let extension = extArray[extArray.length - 1];
-        cb(null, file.fieldname + '-' + Date.now()+ '.' +extension)
+        cb(null, file.fieldname + '-' + Date.now() + crypto.randomBytes(16).toString('hex')+ '.' +extension)
     }
 });
 let upload = multer({
@@ -114,7 +114,7 @@ router.post('/messages/:to',authenticateToken, async function (req, res, next) {
         if(!req.body) return res.sendStatus(400); // TODO check if all fields defined
 
         if (err) {
-            return res.send(JSON.stringify({error_message: "error with parameters" })).status(409);
+            return res.status(409).send(JSON.stringify({error_message: "error with parameters" }));
         }
 
         const user = req.user;
@@ -130,7 +130,7 @@ router.post('/messages/:to',authenticateToken, async function (req, res, next) {
             message_to_id: toId
         });
         if (!nMessage) {
-            return res.send(JSON.stringify({error_message: "error" })).status(500);
+            return res.status(500).send(JSON.stringify({error_message: "error" }));
         }
         let resultAttachments = [];
         if (req.files.length > 0) {
@@ -152,7 +152,7 @@ router.post('/messages/:to',authenticateToken, async function (req, res, next) {
         // here goes attachment creation logics
         console.log(result);
 
-        return res.send(JSON.stringify(result)).status(200);
+        return res.status(200).send(JSON.stringify(result));
     });
 });
 
@@ -160,23 +160,24 @@ router.put('/messages', authenticateToken, async function (req, res, next) {
     if(!req.body) return res.sendStatus(400); // TODO check if all fields defined
 
     //const { message_body, message_to_id } = req.body
-    const message = JSON.parse(req.body);
+    const { message_id, message_content } = req.body
     const user = req.user;
     try {
-        let count = await Message.update({message_content: message.content}, {
+        let msg = await Message.findOne({
             where: {
-                message_id: message.id,
+                message_id: message_id,
                 message_from_id: user.user_id
             }
-        });
-        if (count === 0) {
-            return res.send(JSON.stringify({error_message: "error" })).status(403);
+        })
+        if (msg === null) {
+            return res.status(403).send(JSON.stringify({error_message: "error" }));
         }
+        msg = await msg.update({message_content: message_content});
+        return res.status(200).send(JSON.stringify(msg));
     } catch (e) {
         console.log(e);
-        return res.send(JSON.stringify({error_message: "error" })).status(500);
+        return res.status(500).send(JSON.stringify({error_message: "error" }));
     }
-    return res.send(JSON.stringify({error_message: "OK" })).status(200);
 });
 
 router.delete('/messages/:id', authenticateToken, async function (req, res, next) {
@@ -191,13 +192,13 @@ router.delete('/messages/:id', authenticateToken, async function (req, res, next
             }
         });
         if (count === 0) {
-            return res.send(JSON.stringify({error_message: "error" })).status(403);
+            return res.status(403).send(JSON.stringify({error_message: "error" }));
         }
     } catch (e) {
         console.log(e);
-        return res.send(JSON.stringify({error_message: "error" })).status(500);
+        return res.status(500).send(JSON.stringify({error_message: "error" }));
     }
-    return res.send(JSON.stringify({error_message: "OK" })).status(200);
+    return res.status(200).send(JSON.stringify({error_message: "OK" }));
 });
 
 router.post('/register', async function (req, res, next) {
@@ -257,7 +258,7 @@ router.post('/login', async function (req, res, next) {
         return res.status(500).send(JSON.stringify({error_message: "internal server error" }));
     }
     // generate access token
-    const token = generateAccessToken({ user_id: user.user_id });
+    const token = generateAccessToken({ user_id: user.user_id, user_name: user.user_name, user_role: user.user_role });
     // return success
     return res.send(JSON.stringify({accessToken: token, user_id: user.user_id}, null, 2));
 });

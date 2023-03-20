@@ -40,6 +40,22 @@ class UserService {
             body: formData
         }).then(r =>  r.json().then(data => ({status: r.status, body: data})));
     }
+
+    deleteMessage(msgId) {
+        return fetch(`api/messages/${msgId}`, {
+            method: 'DELETE',
+            headers: authService.authHeader()
+        }).then(r =>  r.json().then(data => ({status: r.status, body: data})));
+    }
+
+    editMessage(message) {
+        return fetch(`api/messages`, {
+            method: 'PUT',
+            headers:{ ...authService.authHeader(),
+                'Content-Type': 'application/json' },
+            body: JSON.stringify({message_id: message.message_id, message_content: message.message_content})
+        }).then(r =>  r.json().then(data => ({status: r.status, body: data})));
+    }
 }
 
 export const userService = new UserService();

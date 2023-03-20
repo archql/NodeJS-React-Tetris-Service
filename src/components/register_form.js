@@ -3,6 +3,7 @@ import { withRouter } from '../common/with_router.js';
 import { required } from '../common/helpers.js';
 import { authService } from  "../services/auth_service.js"
 import '../stylesheets/forms.css';
+import { Link } from "react-router-dom";
 
 export class RegisterForm extends React.Component {
 
@@ -56,7 +57,7 @@ export class RegisterForm extends React.Component {
                     });
                 } else {
                     this.props.router.navigate("/login");
-                    window.location.reload();
+                    //window.location.reload();
                 }
             }).catch(error => {
                 const resMessage =
@@ -110,7 +111,7 @@ export class RegisterForm extends React.Component {
 
                         <button className="reg_button" type="submit">Submit</button>
                     </form>
-                    <a href="/login">Already have an account? Login here</a>
+                    <Link to={"/login"}> Already have an account? Login here </Link>
                 </div>
                 {this.state.message && (
                     <div className="reg_bo_info">

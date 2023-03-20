@@ -45,6 +45,9 @@ export class MessageContainer extends React.Component {
                         <Message
                             curUserId={curUserId}
                             item={item}
+                            deleteMessage={this.props.deleteMessage}
+                            editMessage={this.props.editMessage}
+                            selected={this.props.selectedMsgId === item.message_id}
                         />
                     ))
                     }

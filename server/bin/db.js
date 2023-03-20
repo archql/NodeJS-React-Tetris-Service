@@ -2,7 +2,7 @@ import { Sequelize, Model, DataTypes } from 'sequelize';
 import sqlite3 from 'sqlite3';
 import crypto from "crypto";
 
-export const sequelize = new Sequelize('sqlite::memory:', {
+export const sequelize = new Sequelize('sqlite:database/database.db', {
     //logging: (...msg) => console.log(msg), // Displays all log function call parameters
     logging: console.log,
     dialect: 'sqlite',
@@ -157,35 +157,41 @@ Message.hasMany(Attachment,
 
 await sequelize.sync();
 
-await Status.create({
-    status_id: 1,
-    status_name: "offline"
-});
-await Status.create({
-    status_id: 2,
-    status_name: "on-line"
-});
-await Role.create({
-    role_id: 1,
-    role_name: "member",
-    role_color: "lightskyblue"
-});
-await Role.create({
-    role_id: 20,
-    role_name: "root",
-    role_color: "orange"
-});
-await User.create({
-    user_role_id: 1,
-    user_status_id: 1,
-    user_name: 'abc',
-    user_password_hash: crypto.createHash("sha256").update("1234").digest('hex')
-})
-await User.create({
-    user_role_id: 20,
-    user_status_id: 1,
-    user_name: 'root',
-    user_password_hash: crypto.createHash("sha256").update("2212").digest('hex')
-})
+// await Status.create({
+//     status_id: 1,
+//     status_name: "offline"
+// });
+// await Status.create({
+//     status_id: 2,
+//     status_name: "on-line"
+// });
+// await Role.create({
+//     role_id: 1,
+//     role_name: "member",
+//     role_color: "lightskyblue"
+// });
+// await Role.create({
+//     role_id: 20,
+//     role_name: "root",
+//     role_color: "orange"
+// });
+// await User.create({
+//     user_role_id: 1,
+//     user_status_id: 1,
+//     user_name: 'abc',
+//     user_password_hash: crypto.createHash("sha256").update("1234").digest('hex')
+// })
+// await User.create({
+//     user_role_id: 20,
+//     user_status_id: 1,
+//     user_name: 'root',
+//     user_password_hash: crypto.createHash("sha256").update("2212").digest('hex')
+// })
+// await Message.create({
+//     message_from_id: 2,
+//     message_to_id: 1,
+//     message_content: "Welcome to the Tetris Chat!"
+// })
+
 
 

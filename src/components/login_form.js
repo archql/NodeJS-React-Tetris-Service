@@ -3,6 +3,7 @@ import { withRouter } from '../common/with_router.js';
 import { required } from '../common/helpers.js';
 import { authService } from  "../services/auth_service.js"
 import '../stylesheets/forms.css';
+import { Link } from "react-router-dom";
 
 export class LoginForm extends React.Component {
 
@@ -43,7 +44,7 @@ export class LoginForm extends React.Component {
                 });
             } else {
                 this.props.router.navigate("/");
-                window.location.reload();
+                //window.location.reload();
             }
         }).catch(error => {
             console.log(error);
@@ -89,7 +90,10 @@ export class LoginForm extends React.Component {
 
                         <button className="reg_button" type="submit">Submit</button>
                     </form>
-                    <a href="/register">Do not have an account? Register here</a>
+                    <Link to={"/register"}> Do not have an account? Register here </Link>
+                    {/*
+                    TODO no page reload (same on register)
+                    */}
                 </div>
                 {this.state.message && (
                     <div className="reg_bo_info">

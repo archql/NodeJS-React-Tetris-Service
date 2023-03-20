@@ -78,7 +78,16 @@ body {
     border-radius: 10px;
     margin-top: 10px;
     padding: 5px;
-    box-shadow: 5px 2px 2px cadetblue;
+    box-shadow: 2px 2px 3px #999;
+    position: relative;
+}
+.card .message .time p {
+    margin: 0;
+    color: #555
+}
+.card .message .time {
+    font-size: smaller;
+    color: #555;
 }
 .card .message_in {
     margin-right: auto;
@@ -87,7 +96,7 @@ body {
 }
 .card .message_out {
     margin-left: auto;
-    margin-right: 10px;
+    margin-right: 40px;
     background-color: lightblue;
 }
 .card .message .attachments {
@@ -111,6 +120,28 @@ body {
 }
 .card .message .attachment:nth-child(n + 4) {
     width: 50%
+}
+.card .message .float {
+    position:absolute;
+    width:15px;
+    height:15px;
+    top: 0;
+    right: -30px;
+    color:#AAA;
+    text-align:center;
+    padding: 5px;
+}
+.card .message .float.delete {
+    top: 20px;
+}
+.card .message .float.selected {
+    color:skyblue;
+}
+.card .message .float.selected:hover {
+    color:deepskyblue;
+}
+.card .message .float:hover {
+    color:#888;
 }
 
 .card .user_list {
@@ -197,6 +228,7 @@ main ul (DUPLICATION)
     align-items: baseline;
 }
 .user_card {
+    position: relative;
     flex-direction: row;
 }
 .user_image {
@@ -209,6 +241,19 @@ main ul (DUPLICATION)
 .user_role {
     border-radius: 10px;
     padding: 5px;
+}
+.user_card .logout {
+    display: flex;
+    font-size: 50px;
+    top: auto;
+    right: 0;
+    color: #000;
+    text-align: center;
+    padding: 25px;
+    position: absolute;
+}
+.user_card .logout:hover {
+    color:#444;
 }
 
 /*
