@@ -2,11 +2,35 @@ import {authService} from "./auth_service";
 
 class UserService {
     getMessages(fromId) {
-        return fetch(`/api/messages/${fromId}`, {
-            method: 'GET',
+        return fetch(`/graphql`, {
+            method: 'POST',
             headers:{ ...authService.authHeader(),
-                'Content-Type': 'application/json' }
+                'Accept': 'application/json',
+                'Content-Type': 'application/json' },
+            body: JSON.stringify({query: `query {
+                test(from: ${fromId}) {
+                    message_id
+                }
+            }
+            `})
         }).then(r =>  r.json().then(data => ({status: r.status, body: data})));
+        // return fetch(`/graphql`, {
+        //     method: 'POST',
+        //     headers:{ ...authService.authHeader(),
+        //         'Accept': 'application/json',
+        //         'Content-Type': 'application/json' },
+        //     body: JSON.stringify({query: `query {
+        //         getMessages(from: ${fromId}) {
+        //             message_id
+        //         }
+        //     }
+        //     `})
+        // }).then(r =>  r.json().then(data => ({status: r.status, body: data})));
+        // return fetch(`/api/messages/${fromId}`, {
+        //     method: 'GET',
+        //     headers:{ ...authService.authHeader(),
+        //         'Content-Type': 'application/json' }
+        // }).then(r =>  r.json().then(data => ({status: r.status, body: data})));
     }
     getSelf() {
         return fetch('/api/self', {
