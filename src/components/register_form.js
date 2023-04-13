@@ -56,7 +56,7 @@ export class RegisterForm extends React.Component {
                         message: response.body.error_message
                     });
                 } else {
-                    this.props.router.navigate("/login");
+                    this.props.router.navigate("/auth/login");
                     //window.location.reload();
                 }
             }).catch(error => {

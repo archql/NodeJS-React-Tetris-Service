@@ -2,33 +2,65 @@ import crypto from "crypto";
 import {Attachment, Message, Role, Status, User} from "../bin/db.js";
 import {Op} from "sequelize";
 import {io} from "../app.js"
-import SocketIOFileUpload from "socketio-file-upload";
+import { promises as fs } from 'fs';
+import path from "path";
+import {__dirname} from "../app.js";
 
 const userSockets = [];
+
+async function saveFile(file) {
+    const MIME_TYPE_MAP = [
+                'image/png',
+                'image/jpeg',
+                'image/jpg'
+            ];
+    const EXTENSION_MAP = [
+        'png',
+        'jpeg',
+        'jpg'
+    ];
+    const extension = file.name.split('.').pop();
+    if (!MIME_TYPE_MAP.includes(file.type) || !EXTENSION_MAP.includes(extension)) {
+        return null;
+    }
+    console.log("Includes");
+    // generate filename
+    const timestamp = Date.now();
+    const randomString = crypto.randomBytes(6).toString('hex');
+    file.name = `${randomString}-${timestamp}.${extension}`;
+    // try save
+    try {
+        await fs.writeFile(path.join(__dirname, 'uploads', file.name), file.buffer);
+        return file.name;
+    } catch (err) {
+        console.log(err);
+        return null;
+    }
+}
 
 const chatHandler = async (socket) => {
     console.log(`Socket connected: ${socket.id}`);
     // create file uploader
-    let uploader = new SocketIOFileUpload();
-    uploader.dir = "uploads";
-
-    uploader.maxFileSize = 100 * 1024 * 1024; // 100MB
-    uploader.uploadValidator = function(event, callback){
-        const MIME_TYPE_MAP = {
-            'image/png': 'png',
-            'image/jpeg': 'jpeg',
-            'image/jpg': 'jpg'
-        };
-
-        //let extArray = file.mimetype.split("/");
-        let isValid = !!MIME_TYPE_MAP[event.file.mimetype];
-        callback(isValid);
-    };
-    uploader.on('start', (event) => {
-        const timestamp = Date.now();
-        const randomString = crypto.randomBytes(6).toString('hex');
-        event.file.name = `${randomString}-${timestamp}`;
-    });
+    // let uploader = new SocketIOFileUpload();
+    // uploader.dir = "uploads";
+    //
+    // uploader.maxFileSize = 100 * 1024 * 1024; // 100MB
+    // uploader.uploadValidator = function(event, callback){
+    //     const MIME_TYPE_MAP = {
+    //         'image/png': 'png',
+    //         'image/jpeg': 'jpeg',
+    //         'image/jpg': 'jpg'
+    //     };
+    //
+    //     //let extArray = file.mimetype.split("/");
+    //     let isValid = !!MIME_TYPE_MAP[event.file.mimetype];
+    //     callback(isValid);
+    // };
+    // uploader.on('start', (event) => {
+    //     const timestamp = Date.now();
+    //     const randomString = crypto.randomBytes(6).toString('hex');
+    //     event.file.name = `${randomString}-${timestamp}`;
+    // });
     // -------------
     // Retrieve user object from the socket object
     const user = socket.request.user;
@@ -74,9 +106,6 @@ const chatHandler = async (socket) => {
     });
 
     socket.on('create message', async (user_to_id, content, attachments) => {
-        uploader.listen(socket);
-
-    // TODO attachments
         // create message
         try {
             const newMessage = await Message.create({
@@ -89,16 +118,23 @@ const chatHandler = async (socket) => {
                 return socket.emit("error", {status: 403, who: "create message", message: "Failed to create message"});
             }
             let resultAttachments = [];
-            // if (uploadedFiles.length > 0) {
-            //     const attachments = [];
-            //     uploadedFiles.forEach((file) => {
-            //         attachments.push({
-            //             attachment_filename: file.name,
-            //             attachment_message_id: newMessage.message_id
-            //         })
-            //     });
-            //     resultAttachments = await Attachment.bulkCreate(attachments);
-            // }
+            console.log(attachments);
+            if (attachments.length > 0) {
+                let attachmentsRecords = []
+                console.log(attachments.length);
+                await Promise.all(attachments.map(async (file) => {
+                    let filename = await saveFile(file);
+                    if (filename) {
+                        attachmentsRecords.push({
+                            attachment_filename: filename,
+                            attachment_message_id: newMessage.message_id
+                        })
+                    } else {
+                        socket.emit("error", {status: 409, who: "create message", message: "Failed to add attachment"});
+                    }
+                }));
+                resultAttachments = await Attachment.bulkCreate(attachmentsRecords);
+            }
             let result = newMessage.get({ plain: true });
             result["attachments"] = resultAttachments;
             result["user_from"] = { user_id: user.user_id, user_name: user.user_name};

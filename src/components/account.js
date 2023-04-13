@@ -82,8 +82,8 @@ export class Account extends React.Component {
         console.log("disconnect")
     }
 
-    onError = () => {
-        console.log("onError")
+    onError = (error) => {
+        console.log(`onError ${error.status} ${error.message}`);
     }
     onConnectError = () => {
         console.log("onConnectError")
@@ -98,6 +98,8 @@ export class Account extends React.Component {
         this.setState({others: data})
     }
     onCreateMessage = (newMessage) => {
+        console.log("newMessage");
+        console.log(newMessage);
         this.setState({
             messages: [...this.state.messages, newMessage],
             inputUpdateHack: !this.state.inputUpdateHack })
@@ -171,8 +173,14 @@ export class Account extends React.Component {
         const iAttachments = document.getElementById('message_attachments');
         const iForm = document.getElementById('message_input_form');
         if (userSelected && iContent && iForm && iAttachments && iContent.value !== '') {
-            //console.log(element.value);
-            socket.emit('create message', userSelected.user_id, iContent.value, iAttachments.value);
+            const filesArray = Array.from(iAttachments.files).map(file => {
+                return {
+                    buffer: file,
+                    name: file.name,
+                    type: file.type
+                }
+            });
+            socket.emit('create message', userSelected.user_id, iContent.value, filesArray);
         }
     }
 

@@ -14,7 +14,7 @@ import chatSockets from './routes/api.js'
 import {isAuthenticated} from "./bin/jwt.js";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export const __dirname = path.dirname(__filename);
 
 export let app = express();
 export const server = http.createServer(app); // Create HTTP server
@@ -23,7 +23,8 @@ export const io = new Server(server, {
         origin: "http://localhost:3000",
         credentials: true
     },
-    path: '/chat'
+    path: '/chat',
+    maxHttpBufferSize: 100 * 1024 * 1024
 }); // Attach Socket.io to HTTP server
 
 // view engine setup
