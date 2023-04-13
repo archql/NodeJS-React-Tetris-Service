@@ -21,6 +21,7 @@ export class ListContainer extends React.Component {
                 <div
                     className={this.getClassName(item)}
                     onClick={() => this.itemSelected(item)}
+                    key={this.props.idMap(item)}
                 >
                     {this.props.nameMap(item)}
                 </div>

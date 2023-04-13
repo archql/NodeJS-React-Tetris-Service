@@ -1,4 +1,5 @@
 import React from 'react';
+import Cookies from 'js-cookie';
 import { authService } from  "../services/auth_service.js";
 import { userService } from "../services/user_service.js";
 import { Navigate } from "react-router-dom";
@@ -11,12 +12,20 @@ import {MessageContainer} from "./message_container";
 import * as faIcons from "@fortawesome/fontawesome-free-solid";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
+import { io } from 'socket.io-client';
+const socket = io("http://localhost:5000", {
+    autoConnect: false,
+    //withCredentials: true,
+    path: '/chat',
+    auth: {
+        token: Cookies.get('jwt')
+    }
+});
+
 export class Account extends React.Component {
 
     constructor(props) {
         super(props);
-
-        console.log("constructor")
 
         // define values of this component
         this.state = {
@@ -31,48 +40,118 @@ export class Account extends React.Component {
         this.messageContentRef = null;
     }
     componentDidMount() {
-        console.log("mount");
-        // TODO dup code!
-        userService.getSelf().then(data => {
-            if (data.status === 403) {
-                this.setState({redirect: "/login"});
-            } else if (data.status !== 200) {
-                alert("Server returned an error: " + data.body.error_message);
-            } else {
-                this.setState({user: data.body})
-            }
-        }).catch(e => {
-            this.setState({ redirect: "/login" });
+        console.log("mount " + Cookies.get('jwt'));
+        socket.auth.token = Cookies.get('jwt');
+
+        socket.connect();
+
+        socket.on('connect', this.onConnect);
+        socket.on('disconnect', this.onDisconnect);
+        socket.on('error', this.onError);
+        socket.on('connect_error', this.onConnectError)
+        socket.on('self', this.onSelf);
+        socket.on('members', this.onMembers);
+        socket.on('create message', this.onCreateMessage);
+        socket.on('delete message', this.onDeleteMessage);
+        socket.on('edit message', this.onEditMessage);
+        socket.on('messages', this.onMessages);
+        socket.on('new message', this.onNewMessage);
+        socket.on('user updated', this.onUserUpdated);
+    }
+
+    componentWillUnmount() {
+        socket.off('connect', this.onConnect);
+        socket.off('disconnect', this.onDisconnect);
+        socket.off('error', this.onError);
+        socket.off('connect_error', this.onConnectError)
+        socket.off('self', this.onSelf);
+        socket.off('members', this.onMembers);
+        socket.off('create message', this.onCreateMessage);
+        socket.off('delete message', this.onDeleteMessage);
+        socket.off('edit message', this.onEditMessage);
+        socket.off('messages', this.onMessages);
+        socket.off('new message', this.onNewMessage);
+        socket.off('user updated', this.onUserUpdated);
+    }
+
+    onConnect = () => {
+        console.log("connect")
+    }
+
+    onDisconnect = () => {
+        console.log("disconnect")
+    }
+
+    onError = () => {
+        console.log("onError")
+    }
+    onConnectError = () => {
+        console.log("onConnectError")
+        this.setState({redirect: "/auth/login"});
+        socket.disconnect();
+    }
+
+    onSelf = (data) => {
+        this.setState({user: data})
+    }
+    onMembers = (data) => {
+        this.setState({others: data})
+    }
+    onCreateMessage = (newMessage) => {
+        this.setState({
+            messages: [...this.state.messages, newMessage],
+            inputUpdateHack: !this.state.inputUpdateHack })
+        // TODO clear input
+    }
+
+    onDeleteMessage = (msgId) => {
+        const messages = [...this.state.messages];
+        const newMessages = messages.filter(function( obj ) {
+            return obj.message_id !== msgId;
         });
-        userService.getOthers().then(data => {
-            if (data.status === 403) {
-                this.setState({redirect: "/login"});
-            } else if (data.status !== 200) {
-                alert("Server returned an error: " + data.body.error_message);
-            } else {
-                this.setState({others: data.body})
+        this.setState({messages: newMessages})
+    }
+    onEditMessage = (msg) => {
+        const messages = this.state.messages.map((item) => {
+            if (item.message_id === msg.message_id) {
+                item.message_content = msg.message_content;
+                item.message_updated = msg.message_updated;
             }
-        }).catch(e => {
-            this.setState({ redirect: "/login" });
+            return item;
         });
+
+        this.setState({messageEdited: null, messages: messages});
+    }
+
+    onNewMessage = (newMessage) => {
+        this.setState({
+            messages: [...this.state.messages, newMessage]
+        });
+    }
+    onMessages = (messages) => {
+        this.setState({messages: messages})
+    }
+
+    onUserUpdated = (user) => {
+        console.log(user);
+        let count = 0;
+        let others = this.state.others.map((item) => {
+            if (item.user_id === user.user_id) {
+                count++;
+                return user;
+            }
+            return item;
+        });
+        if (count === 0) {
+            others = [...others, user];
+        }
+        this.setState({others: others})
     }
 
     userSelected(user) {
         if (user) {
-            // do this separately in the messages section
-            userService.getMessages(user.user_id).then(data => {
-                console.log(data);
-                if (data.status === 403) {
-                    this.setState({redirect: "/login"});
-                } else if (data.status !== 200) {
-                    alert("Server returned an error: " + data.body.error_message);
-                } else {
-                    this.setState({messages: data.body,
-                                        userSelected: user})
-                }
-            }).catch(e => {
-                this.setState({redirect: "/login"});
-            });
+            this.setState({userSelected: user})
+            socket.emit('messages', user.user_id);
         } else {
             this.setState({userSelected: null, messages: [] });
         }
@@ -80,7 +159,8 @@ export class Account extends React.Component {
 
     logout(e) {
         authService.logout();
-        this.setState({redirect: "/login"});
+        this.setState({redirect: "/auth/login"});
+        socket.close();
     }
 
     sendMessage(e) {
@@ -92,45 +172,12 @@ export class Account extends React.Component {
         const iForm = document.getElementById('message_input_form');
         if (userSelected && iContent && iForm && iAttachments && iContent.value !== '') {
             //console.log(element.value);
-            userService.sendMessage(userSelected.user_id, iContent.value, iAttachments.files).then(data => {
-                console.log(data);
-                if (data.status === 403) {
-                    this.setState({redirect: "/login"});
-                } else if (data.status !== 200) {
-                    alert("Server returned an error: " + data.body.error_message);
-                } else {
-                    this.setState({
-                        messages: [...this.state.messages, data.body],
-                        inputUpdateHack: !this.state.inputUpdateHack })
-                    // TODO clear input
-                    console.log("iForm.reset();");
-                    iForm.reset();
-
-                }
-            }).catch(e => {
-                // TODO what if error is not connected with jwt
-                this.setState({redirect: "/login"});
-            });
+            socket.emit('create message', userSelected.user_id, iContent.value, iAttachments.value);
         }
     }
 
     deleteMessage(msgId) {
-        userService.deleteMessage(msgId).then(data => {
-            if (data.status === 403) {
-                this.setState({redirect: "/login"});
-            } else if (data.status !== 200) {
-                alert("Server returned an error: " + data.body.error_message);
-            } else {
-                const messages = this.state.messages;
-                const newMessages = messages.filter(function( obj ) {
-                    return obj.message_id !== msgId;
-                });
-                this.setState({messages: newMessages})
-            }
-        }).catch(e => {
-            // TODO what if error is not connected with jwt
-            this.setState({redirect: "/login"});
-        });
+        socket.emit('delete message', msgId );
     }
 
     editMessage(msg) {
@@ -149,29 +196,7 @@ export class Account extends React.Component {
         const iForm = document.getElementById('message_input_form');
         const messageEdited = this.state.messageEdited;
         if (userSelected && messageEdited && iContent && iForm && iAttachments && iContent.value !== '') {
-            userService.editMessage({
-                message_id: messageEdited.message_id,
-                message_content: iContent.value
-            }).then(data => {
-                if (data.status === 403) {
-                    this.setState({redirect: "/login"});
-                } else if (data.status !== 200) {
-                    alert("Server returned an error: " + data.body.error_message);
-                } else {
-                    const messages = this.state.messages.map((item) => {
-                        if (item.message_id === data.body.message_id) {
-                            item.message_content = data.body.message_content;
-                            item.message_updated = data.body.message_updated;
-                        }
-                        return item;
-                    });
-
-                    this.setState({messageEdited: null, messages: messages});
-                }
-            }).catch(e => {
-                // TODO what if error is not connected with jwt
-                this.setState({redirect: "/login"});
-            });
+            socket.emit('edit message', messageEdited.message_id, iContent.value );
         }
     }
 
@@ -219,7 +244,7 @@ export class Account extends React.Component {
                                 list={this.state.others}
                                 callback={e => this.userSelected(e)}
                                 idMap={(item) => item.user_id} // TODO
-                                nameMap={(item) => item.user_name}
+                                nameMap={(item) => <div><div>{item.user_name}</div> <div style={{fontSize: 'smaller', fontStyle: 'italic'}}>{item.user_status_id === 1 ? "offline" : "on-line" }</div></div>}
                                 cssItemClass={"user"}
                                 cssActiveClass={"active"}
                             />

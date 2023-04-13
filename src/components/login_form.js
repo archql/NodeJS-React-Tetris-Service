@@ -44,7 +44,6 @@ export class LoginForm extends React.Component {
                 });
             } else {
                 this.props.router.navigate("/");
-                //window.location.reload();
             }
         }).catch(error => {
             console.log(error);
@@ -90,7 +89,7 @@ export class LoginForm extends React.Component {
 
                         <button className="reg_button" type="submit">Submit</button>
                     </form>
-                    <Link to={"/register"}> Do not have an account? Register here </Link>
+                    <Link to={"/auth/register"}> Do not have an account? Register here </Link>
                     {/*
                     TODO no page reload (same on register)
                     */}

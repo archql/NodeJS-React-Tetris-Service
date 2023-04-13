@@ -39,10 +39,10 @@ export class App extends React.Component {
         return (
         <Routes>
             <Route path='*' element={<NotFound />} />
-            <Route exact path="/" element={<Navigate to={"/account"} />} />
-            <Route path={"/register"} exact element={<RegisterFormRouted />} />
-            <Route path={"/login"} element={<LoginFormRouted />} />
-            <Route path={"/account"} element={<AccountRouted />} />
+            <Route exact path="/" element={<Navigate to={"/chat"} />} />
+            <Route path={"/auth/register"} exact element={<RegisterFormRouted />} />
+            <Route path={"/auth/login"} element={<LoginFormRouted />} />
+            <Route path={"/chat"} element={<AccountRouted />} />
         </Routes>);
     }
 

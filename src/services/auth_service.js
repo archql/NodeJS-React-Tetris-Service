@@ -1,3 +1,5 @@
+import { SHA256 } from 'crypto-js';
+
 class AuthService {
 
     authHeader() {
@@ -10,12 +12,13 @@ class AuthService {
         }
     }
     login(username, password) {
-        return fetch('/api/login', {
+        const password_hash = SHA256(password).toString();
+        return fetch('/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name: username,
-                password: password
+                password_hash: password_hash
             })
         })
         .then(r =>  r.json().then(data => ({status: r.status, body: data})))
@@ -34,12 +37,13 @@ class AuthService {
     }
 
     register(username, password) {
-        return fetch('/api/register', {
+        const password_hash = SHA256(password).toString();
+        return fetch('/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name: username,
-                password: password
+                password_hash: password_hash
             })
         }).then(r =>  r.json().then(data => ({status: r.status, body: data})));
     }

@@ -12,6 +12,7 @@ export class Message extends React.Component {
         return (
             <div
                 className={this.getClassName()}
+                key={item.message_id}
             >
                 <div style={{fontSize: 'larger'}}>
                     from {item.user_from.user_name}
