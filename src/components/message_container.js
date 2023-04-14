@@ -43,6 +43,7 @@ export class MessageContainer extends React.Component {
                          ref={(el) => { this.messagesStart = el; }}/>
                     {messages.map((item) => (
                         <Message
+                            key={item.message_id}
                             curUserId={curUserId}
                             item={item}
                             deleteMessage={this.props.deleteMessage}

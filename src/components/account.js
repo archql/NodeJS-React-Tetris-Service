@@ -33,24 +33,16 @@ export class Account extends React.Component {
     componentDidMount() {
         console.log("mount");
         // TODO dup code!
-        userService.getSelf().then(data => {
+        userService.getInit().then(data => {
             if (data.status === 403) {
                 this.setState({redirect: "/login"});
             } else if (data.status !== 200) {
                 alert("Server returned an error: " + data.body.error_message);
             } else {
-                this.setState({user: data.body})
-            }
-        }).catch(e => {
-            this.setState({ redirect: "/login" });
-        });
-        userService.getOthers().then(data => {
-            if (data.status === 403) {
-                this.setState({redirect: "/login"});
-            } else if (data.status !== 200) {
-                alert("Server returned an error: " + data.body.error_message);
-            } else {
-                this.setState({others: data.body})
+                this.setState({
+                    user: data.body.data.getSelf,
+                    others: data.body.data.getOthers
+                })
             }
         }).catch(e => {
             this.setState({ redirect: "/login" });
@@ -67,7 +59,7 @@ export class Account extends React.Component {
                 } else if (data.status !== 200) {
                     alert("Server returned an error: " + data.body.error_message);
                 } else {
-                    this.setState({messages: data.body,
+                    this.setState({messages: data.body.data.getMessages,
                                         userSelected: user})
                 }
             }).catch(e => {
@@ -100,7 +92,7 @@ export class Account extends React.Component {
                     alert("Server returned an error: " + data.body.error_message);
                 } else {
                     this.setState({
-                        messages: [...this.state.messages, data.body],
+                        messages: [...this.state.messages, data.body.data.sendMessage],
                         inputUpdateHack: !this.state.inputUpdateHack })
                     // TODO clear input
                     console.log("iForm.reset();");
@@ -118,8 +110,8 @@ export class Account extends React.Component {
         userService.deleteMessage(msgId).then(data => {
             if (data.status === 403) {
                 this.setState({redirect: "/login"});
-            } else if (data.status !== 200) {
-                alert("Server returned an error: " + data.body.error_message);
+            } else if (data.status !== 200 || !data.body.data.deleteMessage) {
+                alert("Server returned an error");
             } else {
                 const messages = this.state.messages;
                 const newMessages = messages.filter(function( obj ) {
@@ -155,13 +147,13 @@ export class Account extends React.Component {
             }).then(data => {
                 if (data.status === 403) {
                     this.setState({redirect: "/login"});
-                } else if (data.status !== 200) {
-                    alert("Server returned an error: " + data.body.error_message);
+                } else if (data.status !== 200 || !data.body.data.editMessage) {
+                    alert("Server returned an error");
                 } else {
                     const messages = this.state.messages.map((item) => {
-                        if (item.message_id === data.body.message_id) {
-                            item.message_content = data.body.message_content;
-                            item.message_updated = data.body.message_updated;
+                        if (item.message_id === data.body.data.editMessage.message_id) {
+                            item.message_content = data.body.data.editMessage.message_content;
+                            item.message_updated = data.body.data.editMessage.message_updated;
                         }
                         return item;
                     });
@@ -179,6 +171,8 @@ export class Account extends React.Component {
         if (this.state.redirect) {
             return <Navigate to={this.state.redirect} />
         } else if (this.state.user && this.state.others) {
+            console.log(this.state.user);
+            console.log(this.state.others);
             this.state.others.forEach((item) => (
                 console.log(item)
             ));

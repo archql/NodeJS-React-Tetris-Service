@@ -12,6 +12,7 @@ export class Message extends React.Component {
         return (
             <div
                 className={this.getClassName()}
+                key={item.message_id}
             >
                 <div style={{fontSize: 'larger'}}>
                     from {item.user_from.user_name}
@@ -20,6 +21,7 @@ export class Message extends React.Component {
                 {
                     this.props.item.attachments.map((item) => (
                         <img
+                            key={item.attachment_id}
                             className="attachment"
                             src={"./attachments/" + item.attachment_filename}
                             alt={item.attachment_filename}
@@ -37,7 +39,7 @@ export class Message extends React.Component {
                             modified
                         </p>)
                     }
-                    {item.message_updated}
+                    {(new Date(Number(item.message_updated)).toISOString())}
                 </div>
                 {
                     item.message_from_id === this.props.curUserId && (

@@ -2,43 +2,51 @@ import {buildSchema} from 'graphql';
 
 export const schema = buildSchema(`
     type User {
-        user_id: ID
-        user_role: Role
-        user_status: Status
+        user_id: Int
+        role: Role
+        status: Status
         user_name: String
         user_passwordHash: String
         user_lastOnline: String
     }
     
     type Role {
-        id: ID
-        name: String
-        color: String
+        role_id: Int
+        role_name: String
+        role_color: String
     }
 
     type Status {
-        id: ID
-        name: String
+        status_id: Int
+        status_name: String
     }
 
     type Message {
-        message_id: ID
-        message_from: User
-        message_to: User
+        message_id: Int
+        message_from_id: Int
+        message_to_id: Int
+        user_from: User
+        user_to: User
         message_content: String
-        message_attachments: [Attachment]
+        attachments: [Attachment]
         message_created: String
         message_updated: String
     }
 
     type Attachment {
-        id: ID
-        message: Message
-        filename: String
+        attachment_id: Int
+        attachment_message: Message
+        attachment_filename: String
     }
     
     type Query {
         getMessages(from: Int!): [Message!]!
-        test(from: Int!): Int
+        getSelf:User
+        getOthers:[User!]
+    }
+    type Mutation {
+        editMessage(message_id: Int!, message_content: String): Message
+        deleteMessage(msgId: Int!): Int
+        sendMessage(toId: Int!, content: String!): Message
     }
 `)
