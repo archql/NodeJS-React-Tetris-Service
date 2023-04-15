@@ -82,7 +82,7 @@ export class Account extends React.Component {
 
         const userSelected = this.state.userSelected;
         const iContent = document.getElementById('message_content');
-        const iAttachments = document.getElementById('message_attachments');
+        const iAttachments = this.fileInputRef;//document.getElementById('message_attachments');
         const iForm = document.getElementById('message_input_form');
         if (userSelected && iContent && iForm && iAttachments && iContent.value !== '') {
             //console.log(element.value);
@@ -139,8 +139,8 @@ export class Account extends React.Component {
 
         const userSelected = this.state.userSelected;
         const iContent = document.getElementById('message_content');
-        const iAttachments = document.getElementById('message_attachments');
-        const iForm = this.inputRef.current;//document.getElementById('message_input_form');
+        const iAttachments = this.fileInputRef;//document.getElementById('message_attachments');
+        const iForm = document.getElementById('message_input_form');
         const messageEdited = this.state.messageEdited;
         if (userSelected && messageEdited && iContent && iForm && iAttachments && iContent.value !== '') {
             userService.editMessage({
