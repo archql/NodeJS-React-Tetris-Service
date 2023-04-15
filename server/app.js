@@ -46,7 +46,8 @@ app.use("/graphql",
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  next(createError(404));
+  //next(createError(404));
+    res.status(404).send("<h1>Oops! Looks like resource you requested is nonexistent!</h1> <h1>404</h1>");
 });
 
 let port = process.env.PORT || '5000';
