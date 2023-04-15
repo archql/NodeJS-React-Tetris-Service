@@ -3,8 +3,8 @@ import express from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
-import {graphqlHTTP} from "express-graphql";
-//import cors from 'cors';
+import { createHandler } from 'graphql-http/lib/use/express';
+import graphqlUploadExpress from "graphql-upload/graphqlUploadExpress.mjs";
 
 import {router as indexRouter} from './routes/index.js';
 import {router as apiRouter} from './routes/api.js';
@@ -24,20 +24,25 @@ export let app = express();
 
 app.use(logger('dev'));
 //app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({limit: '25mb'}));
+app.use(express.urlencoded({ extended: false, limit: '25mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/attachments', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/', indexRouter);
 app.use('/api', apiRouter);
-app.use('/graphql', authenticateToken, graphqlHTTP(req => ({
-  graphiql: true,
-  schema: schema,
-  rootValue: rootql,
-  context: { user: req.user }
-})))
+app.use("/graphql", graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }));
+app.use("/graphql",
+      createHandler({
+            graphiql: true,
+            schema: schema,
+            context: async (req, args) => {
+                const user = authenticateToken(req);
+                return { user };
+            }
+      })
+);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

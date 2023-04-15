@@ -1,52 +1,151 @@
-import {buildSchema} from 'graphql';
+import { GraphQLObjectType, GraphQLString, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLSchema } from 'graphql';
+import {rootql} from "./rootql.js";
+import GraphQLUpload from "graphql-upload/GraphQLUpload.mjs";
 
-export const schema = buildSchema(`
-    type User {
-        user_id: Int
-        role: Role
-        status: Status
-        user_name: String
-        user_passwordHash: String
-        user_lastOnline: String
-    }
-    
-    type Role {
-        role_id: Int
-        role_name: String
-        role_color: String
-    }
+const RoleType = new GraphQLObjectType({
+    name: 'Role',
+    fields: () => ({
+        role_id: { type: GraphQLInt },
+        role_name: { type: GraphQLString },
+        role_color: { type: GraphQLString }
+    })
+});
 
-    type Status {
-        status_id: Int
-        status_name: String
-    }
+const FileInfo = new GraphQLObjectType({
+    name: 'FileInfo',
+    fields: () => ({
+        type: { type: GraphQLString },
+        name: { type: GraphQLString },
+        base64String: { type: GraphQLString }
+    })
+});
 
-    type Message {
-        message_id: Int
-        message_from_id: Int
-        message_to_id: Int
-        user_from: User
-        user_to: User
-        message_content: String
-        attachments: [Attachment]
-        message_created: String
-        message_updated: String
-    }
+const StatusType = new GraphQLObjectType({
+    name: 'Status',
+    fields: () => ({
+        status_id: { type: GraphQLInt },
+        status_name: { type: GraphQLString }
+    })
+});
 
-    type Attachment {
-        attachment_id: Int
-        attachment_message: Message
-        attachment_filename: String
+const UserType = new GraphQLObjectType({
+    name: 'User',
+    fields: () => ({
+        user_id: { type: GraphQLInt },
+        role: { type: RoleType },
+        status: { type: StatusType },
+        user_name: { type: GraphQLString },
+        user_passwordHash: { type: GraphQLString },
+        user_lastOnline: { type: GraphQLString }
+    })
+});
+
+const AttachmentType = new GraphQLObjectType({
+    name: 'Attachment',
+    fields: () => ({
+        attachment_id: { type: GraphQLInt },
+        attachment_message: { type: MessageType },
+        attachment_filename: { type: GraphQLString }
+    })
+});
+
+const MessageType = new GraphQLObjectType({
+    name: 'Message',
+    fields: () => ({
+        message_id: { type: GraphQLInt },
+        message_from_id: { type: GraphQLInt },
+        message_to_id: { type: GraphQLInt },
+        user_from: { type: UserType },
+        user_to: { type: UserType },
+        message_content: { type: GraphQLString },
+        attachments: { type: new GraphQLList(AttachmentType) },
+        message_created: { type: GraphQLString },
+        message_updated: { type: GraphQLString }
+    })
+});
+
+const RootQueryType = new GraphQLObjectType({
+    name: 'Query',
+    fields: {
+        getMessages: {
+            type: new GraphQLList(MessageType),
+            args: {
+                from: { type: new GraphQLNonNull(GraphQLInt) }
+            },
+            resolve(parent, args, context) {
+                return rootql.getMessages(args, context);
+            }
+        },
+        getSelf: {
+            type: UserType,
+            resolve(parent, args, context) {
+                return rootql.getSelf(args, context);
+            }
+        },
+        getOthers: {
+            type: new GraphQLList(UserType),
+            resolve(parent, args, context) {
+                return rootql.getOthers(args, context);
+            }
+        }
     }
-    
-    type Query {
-        getMessages(from: Int!): [Message!]!
-        getSelf:User
-        getOthers:[User!]
+});
+
+const RootMutationType = new GraphQLObjectType({
+    name: 'Mutation',
+    fields: {
+        editMessage: {
+            type: MessageType,
+            args: {
+                message_id: { type: new GraphQLNonNull(GraphQLInt) },
+                message_content: { type: GraphQLString }
+            },
+            resolve(parent, args, context) {
+                return rootql.editMessage(args, context);
+            }
+        },
+        deleteMessage: {
+            type: GraphQLInt,
+            args: {
+                msgId: { type: new GraphQLNonNull(GraphQLInt) }
+            },
+            resolve(parent, args, context) {
+                return rootql.deleteMessage(args, context);
+            }
+        },
+        sendMessage: {
+            type: MessageType,
+            args: {
+                toId: { type: new GraphQLNonNull(GraphQLInt) },
+                content: { type: new GraphQLNonNull(GraphQLString) },
+                attachments: {type: new GraphQLList(GraphQLString)}
+            },
+            resolve(parent, args, context) {
+                return rootql.sendMessage(args, context);
+            }
+        },
+        uploadFile: {
+            type: GraphQLString,
+            args: {
+                file: {
+                    type: GraphQLUpload,
+                },
+            },
+            async resolve(parent, { file }) {
+                // `file` will be an object with `filename`, `mimetype`, `encoding` and `createReadStream`
+                // Use this object to save the file to your desired location, e.g. using `fs.createWriteStream`
+                const { createReadStream, filename } = await file;
+                const stream = createReadStream();
+                // Add logic to save the file
+                console.log(`Received file: ${filename}`);
+                return 'File uploaded successfully';
+            },
+        },
     }
-    type Mutation {
-        editMessage(message_id: Int!, message_content: String): Message
-        deleteMessage(msgId: Int!): Int
-        sendMessage(toId: Int!, content: String!): Message
-    }
-`)
+});
+
+export const schema = new GraphQLSchema({
+    query: RootQueryType,
+    mutation: RootMutationType,
+
+});

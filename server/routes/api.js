@@ -109,50 +109,28 @@ router.get('/self', authenticateToken, async function (req, res, next) {
     res.send(JSON.stringify(users, null, 2));
 });
 
-router.post('/messages/:to',authenticateToken, async function (req, res, next) {
+router.post('/attachments/:to',authenticateToken, async function (req, res, next) {
     upload(req, res, async function(err) {
-        if(!req.body) return res.sendStatus(400); // TODO check if all fields defined
+        const user = req.user; // TODO CHECK IT
+        const msgId = req.params.to;
+        console.log("dssadsadsad");
 
-        if (err) {
-            return res.status(409).send(JSON.stringify({error_message: "error with parameters" }));
-        }
-
-        const user = req.user;
-        const toId = req.params.to;
-
-        console.log(req.body);
-        console.log(req.files);
-
-        // create message
-        const nMessage = await Message.create({
-            message_content: req.body.content,
-            message_from_id: user.user_id,
-            message_to_id: toId
-        });
-        if (!nMessage) {
-            return res.status(500).send(JSON.stringify({error_message: "error" }));
-        }
         let resultAttachments = [];
         if (req.files.length > 0) {
             let attachments = [];
             for (const file of req.files) {
                 attachments.push({
                     attachment_filename: file.filename,
-                    attachment_message_id: nMessage.message_id
+                    attachment_message_id: msgId
                 })
             }
             resultAttachments = await Attachment.bulkCreate(attachments);
         }
-        let result = nMessage.get({ plain: true });
-        // TODO bullshit??
-        result["attachments"] = resultAttachments;
-        result["user_from"] = { user_id: user.user_id, user_name: user.user_name};
-        result["user_to"] = { user_id: toId};
 
         // here goes attachment creation logics
-        console.log(result);
+        console.log(resultAttachments);
 
-        return res.status(200).send(JSON.stringify(result));
+        return res.status(200).json(resultAttachments);
     });
 });
 

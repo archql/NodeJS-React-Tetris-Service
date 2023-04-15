@@ -7,20 +7,17 @@ export function generateAccessToken(user) {
     return jwt.sign(user, secret, { expiresIn: '1800s' }); // process.env.TOKEN_SECRET
 }
 
-export function authenticateToken(req, res, next) {
+export function authenticateToken(req) {
     // const authHeader = req.headers['authorization']
     // const token = authHeader && authHeader.split(' ')[1]
     //
-    // if (token == null) return res.sendStatus(401);
+    // if (token == null) return null;
     //
     // jwt.verify(token, secret, (err, user) => {
     //     console.log(err)
-    //     if (err) return res.sendStatus(403);
+    //     if (err) return null;
     //
-    //     req.user = user;
-    //
-    //     next();
+    //     return user;
     // })
-    req.user = {user_id: 1};
-    next()
+    return {user_id: 1}; // TEMP
 }

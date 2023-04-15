@@ -145,6 +145,8 @@ export class Account extends React.Component {
                 message_id: messageEdited.message_id,
                 message_content: iContent.value
             }).then(data => {
+                console.log("saddddddddddddddddddd");
+                console.log(data);
                 if (data.status === 403) {
                     this.setState({redirect: "/login"});
                 } else if (data.status !== 200 || !data.body.data.editMessage) {
