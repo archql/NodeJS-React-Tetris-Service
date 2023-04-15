@@ -38,6 +38,7 @@ export class Account extends React.Component {
         };
 
         this.messageContentRef = null;
+        this.fileInputRef = null;
     }
     componentDidMount() {
         console.log("mount " + Cookies.get('jwt'));
@@ -100,6 +101,7 @@ export class Account extends React.Component {
     onCreateMessage = (newMessage) => {
         console.log("newMessage");
         console.log(newMessage);
+        this.fileInputRef.value = '';
         this.setState({
             messages: [...this.state.messages, newMessage],
             inputUpdateHack: !this.state.inputUpdateHack })
@@ -171,7 +173,8 @@ export class Account extends React.Component {
         const userSelected = this.state.userSelected;
         const iContent = document.getElementById('message_content');
         const iAttachments = document.getElementById('message_attachments');
-        const iForm = document.getElementById('message_input_form');
+        const iForm = this.fileInputRef; //document.getElementById('message_input_form');
+        console.log(this.fileInputRef);
         if (userSelected && iContent && iForm && iAttachments && iContent.value !== '') {
             const filesArray = Array.from(iAttachments.files).map(file => {
                 return {
@@ -291,6 +294,7 @@ export class Account extends React.Component {
                                 <input
                                     multiple
                                     type="file"
+                                    ref={ref => (this.fileInputRef = ref)}
                                     name="attachment"
                                     accept=".jpg, .jpeg, .png"
                                     id={"message_attachments"}

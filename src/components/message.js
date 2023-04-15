@@ -21,6 +21,7 @@ export class Message extends React.Component {
                 {
                     this.props.item.attachments.map((item) => (
                         <img
+                            key={item.attachment_id}
                             className="attachment"
                             src={"./attachments/" + item.attachment_filename}
                             alt={item.attachment_filename}
