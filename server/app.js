@@ -1,4 +1,3 @@
-import createError from 'http-errors';
 import express from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser';
@@ -10,12 +9,9 @@ import {router as indexRouter} from './routes/index.js';
 import {router as apiRouter} from './routes/api.js';
 import {fileURLToPath} from "url";
 
-import crypto from "crypto";
 import http from "http";
-import debug from "debug";
 import {authenticateToken} from "./bin/jwt.js";
 import {schema} from "./bin/shema.js";
-import {rootql} from "./bin/rootql.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
