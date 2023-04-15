@@ -8,16 +8,13 @@ export function generateAccessToken(user) {
 }
 
 export function authenticateToken(req) {
-    // const authHeader = req.headers['authorization']
-    // const token = authHeader && authHeader.split(' ')[1]
-    //
-    // if (token == null) return null;
-    //
-    // jwt.verify(token, secret, (err, user) => {
-    //     console.log(err)
-    //     if (err) return null;
-    //
-    //     return user;
-    // })
-    return {user_id: 1}; // TEMP
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
+
+    if (token == null) return null;
+
+    try {
+        return jwt.verify(token, secret);
+    } catch (ex) { console.log(ex.message); return null; }
+    //return {user_id: 1}; // TEMP
 }

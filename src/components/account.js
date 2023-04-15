@@ -34,7 +34,8 @@ export class Account extends React.Component {
         console.log("mount");
         // TODO dup code!
         userService.getInit().then(data => {
-            if (data.status === 403) {
+            console.log(data.body.data)
+            if (data.status === 403 || data.body.data.getSelf === null) {
                 this.setState({redirect: "/login"});
             } else if (data.status !== 200) {
                 alert("Server returned an error: " + data.body.error_message);
@@ -54,7 +55,7 @@ export class Account extends React.Component {
             // do this separately in the messages section
             userService.getMessages(user.user_id).then(data => {
                 console.log(data);
-                if (data.status === 403) {
+                if (data.status === 403 || data.body.data.getMessages === null) {
                     this.setState({redirect: "/login"});
                 } else if (data.status !== 200) {
                     alert("Server returned an error: " + data.body.error_message);
@@ -86,7 +87,7 @@ export class Account extends React.Component {
             //console.log(element.value);
             userService.sendMessage(userSelected.user_id, iContent.value, iAttachments.files).then(data => {
                 console.log(data);
-                if (data.status === 403) {
+                if (data.status === 403 || data.body.data.sendMessage === null) {
                     this.setState({redirect: "/login"});
                 } else if (data.status !== 200) {
                     alert("Server returned an error: " + data.body.error_message);
@@ -108,9 +109,9 @@ export class Account extends React.Component {
 
     deleteMessage(msgId) {
         userService.deleteMessage(msgId).then(data => {
-            if (data.status === 403) {
+            if (data.status === 403|| !data.body.data.deleteMessage) {
                 this.setState({redirect: "/login"});
-            } else if (data.status !== 200 || !data.body.data.deleteMessage) {
+            } else if (data.status !== 200) {
                 alert("Server returned an error");
             } else {
                 const messages = this.state.messages;
@@ -147,9 +148,9 @@ export class Account extends React.Component {
             }).then(data => {
                 console.log("saddddddddddddddddddd");
                 console.log(data);
-                if (data.status === 403) {
+                if (data.status === 403 || !data.body.data.editMessage) {
                     this.setState({redirect: "/login"});
-                } else if (data.status !== 200 || !data.body.data.editMessage) {
+                } else if (data.status !== 200) {
                     alert("Server returned an error");
                 } else {
                     const messages = this.state.messages.map((item) => {
