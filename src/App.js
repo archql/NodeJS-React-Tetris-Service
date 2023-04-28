@@ -8,6 +8,7 @@ import { RegisterFormRouted } from './components/register_form.js';
 import { AccountRouted } from './components/account.js';
 import { authService } from  "./services/auth_service.js"
 import {NotFound} from "./components/not_found";
+import {GameRouted} from "./components/game/game";
 
 export class App extends React.Component {
     constructor(props) {
@@ -43,6 +44,7 @@ export class App extends React.Component {
             <Route path={"/auth/register"} exact element={<RegisterFormRouted />} />
             <Route path={"/auth/login"} element={<LoginFormRouted />} />
             <Route path={"/chat"} element={<AccountRouted />} />
+            <Route path={"/game"} element={<GameRouted />} />
         </Routes>);
     }
 
