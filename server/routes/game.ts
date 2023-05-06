@@ -32,6 +32,10 @@ export default gameHandler;
 let time = performance.now();
 let currentTick = 0;
 
+// const gameLoop = () => {
+//
+// }
+
 export const launchGameLoop = () => {
     setTimeout(launchGameLoop, 1000 / TPS);
     if (userGameSessions) {

@@ -10,7 +10,9 @@ export class ServerGameSessionControl {
     inputQueue: GameInput[] = [];
     stateBuffer: GameState[] = new Array(BUFFER_SIZE);
 
+    // TODO sync these
     currentTick: number;
+    currentEvent: number;
     time;
 
     constructor(socket) { // happens on connection
@@ -21,23 +23,27 @@ export class ServerGameSessionControl {
         // init
         this.time = performance.now();
         this.currentTick = 0; // TODO
-        // create brand new game
+        this.currentEvent = 0;
+        // create brand-new game
         this.game = new Tetris(null);
         // set game status to be registered
         this.game.status = "registered";
         // set game state buffer
-        const bufferIndex = this.currentTick % BUFFER_SIZE;
-        this.stateBuffer[bufferIndex] = new GameState(this.currentTick, this.game);
+        const bufferIndex = this.currentEvent % BUFFER_SIZE;
+        this.stateBuffer[bufferIndex] = new GameState(this.currentTick, this.currentEvent, this.game.deepCopy());
         // send game state
         this.socket.emit('sync', this.stateBuffer[bufferIndex]);
     }
 
     onInput(input: GameInput) {
         this.inputQueue.push(input);
-        if (this.inputQueue.length > 2048) {
-            // TOO MANY PACKETS
+        // TOO MANY PACKETS
+        if (this.inputQueue.length > BUFFER_SIZE) {
             this.socket.disconnect("TOO MANY PACKETS");
         }
+        // if avg dt between packets is too small -- kick
+        // if > 30 packets / tick -- kick
+        //
     }
 
     onDisconnect() {
@@ -57,18 +63,15 @@ export class ServerGameSessionControl {
         let bufferIndex;
         while (this.inputQueue.length > 0) {
             const input = this.inputQueue.shift();
-            bufferIndex = input.tick % BUFFER_SIZE; // TODO check if input tick is too far away
-            // check if state buffer is free (DUPLICATED FROM CLIENT!)
-            while (this.stateBuffer[bufferIndex] && this.stateBuffer[bufferIndex].tick >= input.tick) {
-                bufferIndex = (bufferIndex + 1) % BUFFER_SIZE;
-            }
+            bufferIndex = input.event % BUFFER_SIZE; // TODO check if input tick is too far away
             // process event DUPLICATED FROM CLIENT!
             this.game.processEventSilent(input.input.id);
-            // add game state to state buffer
-            this.stateBuffer[bufferIndex] = new GameState(input.tick, this.game);
+            this.stateBuffer[bufferIndex] = new GameState(input.tick, input.event, this.game.deepCopy());
         }
         // update client
         // send the last processed state
+        // console.log("send update");
+        // console.log(this.stateBuffer[bufferIndex]);
         this.socket.emit('update', this.stateBuffer[bufferIndex]);
     }
 

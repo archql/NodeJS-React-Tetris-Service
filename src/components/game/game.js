@@ -121,6 +121,8 @@ export class Game extends React.Component {
         this.socket.off('connect_error', this.onConnectError);
         this.socket.off('sync', this.onSync);
         this.socket.off('update', this.onUpdate);
+        //
+        this.session.destroy();
     }
 
     resizeCanvas = () => {
@@ -224,7 +226,6 @@ export class Game extends React.Component {
     }
     onUpdate = (serverState: GameState) => {
         console.log("onUpdate");
-        console.log(serverState);
         this.session.onServerUpdate(serverState);
     }
 

@@ -193,6 +193,10 @@ export class Tetris {
 
     random: Random = null;
 
+    deepCopy() {
+        return {...this, callback: null};
+    }
+
     constructor(renderCallback: (buffer: RenderBuffer) => void, prototype = undefined){
         if (prototype) {
             this.constructFromPrototype(prototype);
@@ -237,10 +241,6 @@ export class Tetris {
     //   - Game update               - 7
     //   - Ignore downward collision - 0 (only for actual figure, not preview)
     processEventSilent(key: number) {
-        if (key === 80) { // 'P'
-            this.paused = !this.paused;
-            return;
-        }
         if (key === 82) { // 'R'
             this.#endGame();
             this.#initialize();
@@ -248,7 +248,13 @@ export class Tetris {
             this.paused = true;
             return;
         }
-        if ((this.playing === false) || (this.paused === true))
+        if (this.playing === false)
+            return;
+        if (key === 80) { // 'P'
+            this.paused = !this.paused;
+            return;
+        }
+        if (this.paused === true)
             return;
         if (!this.held && key === 72) // 'H', buffer used
         {

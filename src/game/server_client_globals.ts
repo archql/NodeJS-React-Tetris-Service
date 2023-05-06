@@ -3,7 +3,10 @@ export const BUFFER_SIZE = 1024;
 export const TPS = 30;
 
 export class GameInput {
+    // defines the tick when input was received (based on the TPS value)
     tick: number
+    // defines the absolute number of the input in queue of inputs starting from the very
+    // first one
     event: number
     input: any
     constructor(tick: number, event: number, input) {
@@ -14,13 +17,18 @@ export class GameInput {
 }
 
 export class GameState {
+    // defines the tick when corresponding input was received (based on the TPS value)
     tick: number
+    // defines the absolute number of the input in queue of inputs starting from the very
+    // first one
     event: number
+    // defines the game state which were produced by the input
     state: {}
 
-    constructor(tick, state) {
+    constructor(tick: number, event: number, state) {
         this.tick = tick;
-        this.state = state;
+        this.event = event;
+        this.state = state; // create a copy of passed state
     }
 }
 
