@@ -8,10 +8,13 @@ export class GameInput {
     // defines the absolute number of the input in queue of inputs starting from the very
     // first one
     event: number
+    // defines the time in ms since the game started
+    time: number
     input: any
-    constructor(tick: number, event: number, input) {
+    constructor(tick: number, event: number, time: number, input) {
         this.tick = tick;
         this.event = event;
+        this.time = time;
         this.input = input;
     }
 }
@@ -22,12 +25,14 @@ export class GameState {
     // defines the absolute number of the input in queue of inputs starting from the very
     // first one
     event: number
+    time: number
     // defines the game state which were produced by the input
     state: {}
 
-    constructor(tick: number, event: number, state) {
+    constructor(tick: number, event: number, time: number, state) {
         this.tick = tick;
         this.event = event;
+        this.time = time;
         this.state = state; // create a copy of passed state
     }
 }

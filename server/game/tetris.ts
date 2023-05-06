@@ -1,5 +1,4 @@
 // EXACT THE SAME CODE AS ON THE CLIENT
-
 const RANDOM_MAX = 0x7FFFFFFF;
 class Random {
 
@@ -176,14 +175,14 @@ export class Tetris {
     nextFigures: Figure[];
     nextFigureNumber: number;
     //
-    paused = false;
-    playing = false;
-    softDrop = false;
-    held = false;
-    score = 0;
-    highScore = 0;
-    placed = 0;
-    tickSpeed = START_TICK_SPEED;
+    paused: boolean = false;
+    playing: boolean = false;
+    softDrop: boolean = false;
+    held: boolean = false;
+    score: number = 0;
+    highScore: number = 0;
+    placed: number = 0;
+    tickSpeed: number = START_TICK_SPEED;
 
     field: number[] = new Array(FIELD_W * FIELD_H);
 
@@ -194,7 +193,9 @@ export class Tetris {
     random: Random = null;
 
     deepCopy() {
-        return {...this, callback: null};
+        const clone = JSON.parse(JSON.stringify(this));
+        clone.callback = null;
+        return clone;
     }
 
     constructor(renderCallback: (buffer: RenderBuffer) => void, prototype = undefined){
@@ -379,7 +380,7 @@ export class Tetris {
     }
 
     #nextFigure() {
-        this.currentFigure = this.nextFigures[this.nextFigureNumber];
+        this.currentFigure = new Figure(undefined, this.nextFigures[this.nextFigureNumber]);
         this.nextFigureNumber++;
         if (this.nextFigureNumber >= Figure.figCount) {
             this.nextFigureNumber = 0;
