@@ -11,6 +11,7 @@ export class ClientGameSessionControl {
     game: Tetris = null;
     //shared
     currentTick;
+    currentEvent;
     time;
 
     // client specific
@@ -24,8 +25,10 @@ export class ClientGameSessionControl {
         this.socket = socket;
         this.time = performance.now();
         this.currentTick = 0; // TODO
+        this.currentEvent = 0;
     }
 
+    // client specific
     sync() {
         this.socket.emit('sync');
     }
@@ -36,15 +39,15 @@ export class ClientGameSessionControl {
     }
 
     onServerConnect() {
-        this.game.status = STATUS_TABLE.connected;
+        this.game.status = "connected";
         this.game.callback(this.game.render());
     }
 
     onServerDisconnect () {
         if (this.game.playing) {
-            this.game.status = STATUS_TABLE.connLost;
+            this.game.status = "connLost";
         } else {
-            this.game.status = STATUS_TABLE.offline;
+            this.game.status = "offline";
         }
         this.game.callback(this.game.render());
     }
@@ -96,15 +99,12 @@ export class ClientGameSessionControl {
         this.currentTick += ticksPassed;
         this.time = newTime;
         // add input to input buffer
-        let bufferIndex = this.currentTick % BUFFER_SIZE;
-        // check if input buffer is free
-        while (this.inputBuffer[bufferIndex] && this.inputBuffer[bufferIndex].tick >= this.currentTick) {
-            bufferIndex = (bufferIndex + 1) % BUFFER_SIZE;
-        }
+        let bufferIndex = this.currentEvent % BUFFER_SIZE;
         // add new Input event
-        this.inputBuffer[bufferIndex] = new GameInput(this.currentTick, {id: event});
+        this.inputBuffer[bufferIndex] = new GameInput(this.currentTick, this.currentEvent, {id: event});
         // process event
         this.game.processEvent(event);
+        this.currentEvent++;
         // add game state to state buffer
         this.stateBuffer[bufferIndex] = new GameState(this.currentTick, this.game);
         // send input to server

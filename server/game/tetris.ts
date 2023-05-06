@@ -82,16 +82,16 @@ export const STATUS_TABLE = {
 
 class Figure {
     // defines fig number
-    id;
+    id: number;
     // defines rotation 0..3
-    rotation;
+    rotation: number;
     // defines x pos
-    x;
+    x: number;
     // defines y pos;
-    y;
+    y: number;
     // defines color
-    color;
-    value;
+    color: number;
+    value: number;
 
     constructor(id: number, prototype: {} = undefined) {
         if (prototype) {
@@ -148,14 +148,33 @@ class Figure {
         return sequence;
     }
 }
+export class RenderString {
+    x: number;
+    y: number;
+    text: string;
+    align: string;
+
+    constructor(x: number, y: number, text: string, align: string = "left") {
+        this.text = text;
+        this.x = x;
+        this.y = y;
+        this.align = align;
+    }
+}
+export class RenderBuffer {
+    vertices: number[] = [];
+    colors: number[] = [];
+    count: number = 0;
+    strings: RenderString[] = [];
+}
 
 export class Tetris {
     // current figure
-    currentFigure;
-    figPreviewY;
+    currentFigure: Figure;
+    figPreviewY: number;
     heldFigure = null;
-    nextFigures;
-    nextFigureNumber;
+    nextFigures: Figure[];
+    nextFigureNumber: number;
     //
     paused = false;
     playing = false;
@@ -166,15 +185,15 @@ export class Tetris {
     placed = 0;
     tickSpeed = START_TICK_SPEED;
 
-    field = new Array(FIELD_W * FIELD_H);
+    field: number[] = new Array(FIELD_W * FIELD_H);
 
-    callback = null;
+    callback: (buffer: RenderBuffer) => void = null;
 
     status = "offline"
 
-    random = null;
+    random: Random = null;
 
-    constructor(renderCallback, prototype = undefined){
+    constructor(renderCallback: (buffer: RenderBuffer) => void, prototype = undefined){
         if (prototype) {
             this.constructFromPrototype(prototype);
         } else {
@@ -183,6 +202,9 @@ export class Tetris {
         this.callback = renderCallback;
     }
     constructFromPrototype(prototype) {
+        // preserve callback function
+        const callback = this.callback;
+        //
         Object.assign(this, prototype);
         // convert figures to objects too
         this.currentFigure = this.currentFigure && new Figure(undefined, this.currentFigure);
@@ -194,6 +216,8 @@ export class Tetris {
         this.random = new Random(this.random.seed, this.random.prev);
         // copy link to random
         random = this.random;
+        // setup render back
+        this.callback = callback;
     }
 
     //############### KEY EVENT ############
@@ -296,12 +320,7 @@ export class Tetris {
     }
 
     render() {
-        const renderBuffer = {
-            vertices: [],
-            colors: [],
-            count: 0,
-            strings: []
-        }
+        const renderBuffer = new RenderBuffer();
         this.#renderFieldInto(renderBuffer);
         this.#renderFigureInto(renderBuffer, this.currentFigure, undefined, this.figPreviewY, 2);
         this.#renderFigureInto(renderBuffer, this.currentFigure);
@@ -317,9 +336,9 @@ export class Tetris {
         }
         renderBuffer.strings.push({x: FIELD_W + 4, y: 2  +  4  +  1, text: "HELD FIGURE", align: "center"});
         renderBuffer.strings.push({x: FIELD_W + 4, y: 1            , text: "NEXT FIGURE", align: "center"});
-        renderBuffer.strings.push({x: FIELD_W + 3, y: 2 + 4 + 6 + 2, text: `${String(this.score).padStart(6, ' ')}`});
-        renderBuffer.strings.push({x: FIELD_W + 3, y: 2 + 4 + 6 + 3, text: `${String(this.highScore).padStart(6, ' ')}`});
-        renderBuffer.strings.push({x: FIELD_W + 3, y: FIELD_H - 1, text: STATUS_TABLE[this.status]});
+        renderBuffer.strings.push({x: FIELD_W + 3, y: 2 + 4 + 6 + 2, text: `${String(this.score).padStart(6, ' ')}`, align: "left"});
+        renderBuffer.strings.push({x: FIELD_W + 3, y: 2 + 4 + 6 + 3, text: `${String(this.highScore).padStart(6, ' ')}`, align: "left"});
+        renderBuffer.strings.push({x: FIELD_W + 3, y: FIELD_H - 1, text: STATUS_TABLE[this.status], align: "left"});
         return renderBuffer;
     }
     #renderFigureInto(renderBuffer, fig, xPos: number = undefined, yPos: number = undefined, colorId: number = undefined) {

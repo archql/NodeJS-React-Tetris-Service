@@ -4,16 +4,18 @@ export const TPS = 30;
 
 export class GameInput {
     tick: number
+    event: number
     input: any
-    constructor(tick, input) {
+    constructor(tick: number, event: number, input) {
         this.tick = tick;
+        this.event = event;
         this.input = input;
     }
-
 }
 
 export class GameState {
     tick: number
+    event: number
     state: {}
 
     constructor(tick, state) {

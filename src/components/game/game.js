@@ -1,11 +1,11 @@
 import { withRouter } from '../../common/with_router.js';
 
 import React from "react";
-import {GlProgramInfo} from "../../game/glutils";
+import {GlProgramInfo} from "../../game/glutils.ts";
 import {mat4} from 'gl-matrix';
-import {FIELD_H, FIELD_W, RECT_MODIFIER, Tetris} from "../../game/tetris.ts";
+import {FIELD_H, FIELD_W, RECT_MODIFIER, RenderBuffer, Tetris} from "../../game/tetris.ts";
 import { io } from 'socket.io-client';
-import {ClientGameSessionControl} from "../../game/reconciliator.js";
+import {ClientGameSessionControl} from "../../game/reconciliator.ts";
 import type {GameState} from "../../game/server_client_globals.ts";
 
 const vertexShaderSource = `#version 300 es
@@ -52,6 +52,7 @@ export class Game extends React.Component {
         this.canvasRef = React.createRef();
         this.textCanvasRef = React.createRef();
         this.programInfo = null;
+        this.session = null;
         this.game = null;
         // FPS info
         this.frames = 0;
@@ -74,7 +75,7 @@ export class Game extends React.Component {
         //
         window.addEventListener('resize', this.resizeCanvas, false);
         window.addEventListener('keydown', this.onKeyEvent);
-        //
+        // get links
         const canvas = this.canvasRef.current;
         const textCanvas = this.textCanvasRef.current;
         const gl = canvas.getContext('webgl2');
@@ -101,6 +102,8 @@ export class Game extends React.Component {
         this.session = new ClientGameSessionControl(this.game, this.socket);
         // update
         this.resizeCanvas();
+        // render
+        this.onGameStateChanged(this.game.render());
         // setup game interval
         // this.interval = setInterval(() => {
         //     this.session.processEvent(7); // timer
@@ -144,7 +147,7 @@ export class Game extends React.Component {
         requestAnimationFrame(this.drawScene);
     }
 
-    onGameStateChanged = (data) => {
+    onGameStateChanged = (data: RenderBuffer) => {
         // render game
         this.programInfo.strings = data.strings;
         this.programInfo.buffers["a_position"].setData(data.vertices);
@@ -201,16 +204,19 @@ export class Game extends React.Component {
 
     onConnect = () => {
         console.log("onConnect");
+        this.session.onServerConnect();
         this.session.sync();
     }
     onDisconnect = () => {
         console.log("onDisconnect");
+        this.session.onServerDisconnect();
     }
     onError = () => {
         console.log("onError");
     }
     onConnectError = (e) => {
         console.log("onConnectError " + e);
+        this.session.onServerDisconnect();
     }
     onSync = (serverState: GameState) => {
         console.log("onSync");

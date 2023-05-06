@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "es2020",
+    "target": "es2020",
+    "sourceMap": true,
+    "outDir": "build",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "baseUrl": ".",
+    "allowImportingTsExtensions": true,
+    "moduleResolution":"node"
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}

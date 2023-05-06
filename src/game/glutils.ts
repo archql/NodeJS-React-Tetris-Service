@@ -3,7 +3,8 @@
 // compiles it.
 //
 import {mat4, vec4} from 'gl-matrix';
-import {FIELD_W} from "./tetris.ts";
+import {FIELD_W} from "./tetris";
+import {ServerGameSessionControl} from "../../server/game/reconciliator";
 
 export class GlBuffer {
     #gl = null;
@@ -44,8 +45,8 @@ export class GlBuffer {
 
 export class GlUniform {
     gl = null;
-    value;
-    name;
+    value: any;
+    name: string;
     method;
 
     constructor(gl, name: string, value: any, method) {
@@ -62,7 +63,7 @@ export class GlUniform {
 }
 
 export class GlUniformMatrix extends GlUniform {
-    transpose;
+    transpose: boolean;
     constructor(gl, name: string, value: any, method, transpose: boolean = false) {
         super(gl, name, value, method);
         this.transpose = transpose;
@@ -74,13 +75,19 @@ export class GlUniformMatrix extends GlUniform {
     }
 }
 
+type UniformsType = {
+    [key: string]: GlUniform;
+};
+type BuffersType = {
+    [key: string]: GlBuffer;
+};
 
 export class GlProgramInfo {
     gl = null;
     ctx = null;
     program = null;
-    buffers = {};
-    uniforms = {};
+    buffers: BuffersType = {};
+    uniforms: UniformsType = {};
     strings = [];
 
     // how much to render
@@ -219,7 +226,6 @@ export class GlProgramInfo {
         this.ctx.font = `700 ${size}px Lucida Sans Typewriter`;
         this.ctx.fillStyle = 'white';
         this.ctx.fillText(text, canvasX, canvasY);
-
     }
 }
 //
