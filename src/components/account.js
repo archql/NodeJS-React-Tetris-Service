@@ -13,10 +13,9 @@ import * as faIcons from "@fortawesome/fontawesome-free-solid";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
 import { io } from 'socket.io-client';
-const socket = io("http://localhost:5000", {
+const socket = io("http://localhost:5000/chat", {
     autoConnect: false,
     //withCredentials: true,
-    path: '/chat',
     auth: {
         token: Cookies.get('jwt')
     }

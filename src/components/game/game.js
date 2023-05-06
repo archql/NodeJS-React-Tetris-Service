@@ -1,9 +1,12 @@
 import { withRouter } from '../../common/with_router.js';
 
 import React from "react";
-import {GlProgramInfo} from "./glutils";
+import {GlProgramInfo} from "../../game/glutils";
 import {mat4} from 'gl-matrix';
-import {FIELD_H, FIELD_W, RECT_MODIFIER, Tetris} from "./tetris.js";
+import {FIELD_H, FIELD_W, RECT_MODIFIER, Tetris} from "../../game/tetris.ts";
+import { io } from 'socket.io-client';
+import {ClientGameSessionControl} from "../../game/reconciliator.js";
+import type {GameState} from "../../game/server_client_globals.ts";
 
 const vertexShaderSource = `#version 300 es
 precision highp float;
@@ -50,9 +53,25 @@ export class Game extends React.Component {
         this.textCanvasRef = React.createRef();
         this.programInfo = null;
         this.game = null;
+        // FPS info
+        this.frames = 0;
+        this.prevTime = 0;
+        // Socket IO connection
+        this.socket = io("http://localhost:5000/game", {
+            autoConnect: false
+        });
     }
 
     componentDidMount() {
+        // open a socket IO connection
+        this.socket.connect();
+        this.socket.on('connect', this.onConnect);
+        this.socket.on('disconnect', this.onDisconnect);
+        this.socket.on('error', this.onError);
+        this.socket.on('connect_error', this.onConnectError);
+        this.socket.on('sync', this.onSync);
+        this.socket.on('update', this.onUpdate);
+        //
         window.addEventListener('resize', this.resizeCanvas, false);
         window.addEventListener('keydown', this.onKeyEvent);
         //
@@ -64,8 +83,6 @@ export class Game extends React.Component {
             console.error('Unable to initialize WebGL2 or canvas context.');
             return;
         }
-        // create game
-        this.game = new Tetris();
         // Create view
         const modelViewMatrix = mat4.create();
         const projectionMatrix = mat4.create();
@@ -78,19 +95,29 @@ export class Game extends React.Component {
         this.programInfo.addUniform("u_pointSize", 10.0, gl.uniform1f);
         this.programInfo.addUniformMatrix("u_modelViewMatrix", modelViewMatrix, gl.uniformMatrix4fv);
         this.programInfo.addUniformMatrix("u_projectionMatrix", projectionMatrix, gl.uniformMatrix4fv);
-
+        // create a game
+        let saved = localStorage.getItem('game');
+        this.game = saved ? new Tetris(this.onGameStateChanged, JSON.parse(saved)) : new Tetris(this.onGameStateChanged);
+        this.session = new ClientGameSessionControl(this.game, this.socket);
+        // update
         this.resizeCanvas();
-        this.onGameStateChanged();
-
+        // setup game interval
         // this.interval = setInterval(() => {
-        //      requestAnimationFrame(this.drawScene);
+        //     this.session.processEvent(7); // timer
         // }, 100);
     }
 
     componentWillUnmount() {
-        // clearInterval(this.interval);
+        clearInterval(this.interval);
         window.removeEventListener('resize', this.resizeCanvas, false);
         window.removeEventListener('keydown', this.onKeyEvent);
+        //
+        this.socket.off('connect', this.onConnect);
+        this.socket.off('disconnect', this.onDisconnect);
+        this.socket.off('error', this.onError);
+        this.socket.off('connect_error', this.onConnectError);
+        this.socket.off('sync', this.onSync);
+        this.socket.off('update', this.onUpdate);
     }
 
     resizeCanvas = () => {
@@ -114,20 +141,31 @@ export class Game extends React.Component {
         mat4.ortho(projectionMatrix, -1, fieldW, FIELD_H, -1, -1.0, 1000.0);
         this.programInfo.uniforms["u_projectionMatrix"].value = projectionMatrix;
         // rerender
-        this.drawScene();
+        requestAnimationFrame(this.drawScene);
     }
 
-    onGameStateChanged = () => {
-        const data = this.game.render();
+    onGameStateChanged = (data) => {
+        // render game
+        this.programInfo.strings = data.strings;
         this.programInfo.buffers["a_position"].setData(data.vertices);
         this.programInfo.buffers["a_color"].setData(data.colors);
         this.programInfo.count = data.count;
-
-        this.drawScene();
+        // save state
+        localStorage.setItem('game', JSON.stringify(this.game));
+        // draw
+        requestAnimationFrame(this.drawScene);
     }
 
     drawScene = () => {
-        //console.log("draw");
+        const time = Date.now();
+        this.frames++;
+        if (time > this.prevTime + 1000) {
+            let fps = Math.round( ( this.frames * 1000 ) / ( time - this.prevTime ) );
+            this.prevTime = time;
+            this.frames = 0;
+
+            console.info('FPS: ', fps);
+        }
 
         const gl = this.programInfo.gl;
         const ctx = this.programInfo.ctx;
@@ -148,17 +186,40 @@ export class Game extends React.Component {
         //
         gl.drawArrays(gl.POINTS, 0, this.programInfo.count);
         //
-        const textSize = this.programInfo.uniforms["u_pointSize"].value;
-        this.programInfo.text(FIELD_W + 4, 2  +  4  +  1, textSize, "HELD FIGURE", "center");
-        this.programInfo.text(FIELD_W + 4, 1, textSize, "NEXT FIGURE", "center");
-        this.programInfo.text(FIELD_W + 3, 2 + 4 + 6 + 2, textSize, `${String(this.game.score).padStart(6, ' ')}`);
-        this.programInfo.text(FIELD_W + 3, 2 + 4 + 6 + 3, textSize, `${String(this.game.highScore).padStart(6, ' ')}`);
+        this.programInfo.drawStrings();
+        // const textSize = this.programInfo.uniforms["u_pointSize"].value;
+        // this.programInfo.text(FIELD_W + 4, 2  +  4  +  1, textSize, "HELD FIGURE", "center");
+        // this.programInfo.text(FIELD_W + 4, 1, textSize, "NEXT FIGURE", "center");
+        // this.programInfo.text(FIELD_W + 3, 2 + 4 + 6 + 2, textSize, `${String(this.game.score).padStart(6, ' ')}`);
+        // this.programInfo.text(FIELD_W + 3, 2 + 4 + 6 + 3, textSize, `${String(this.game.highScore).padStart(6, ' ')}`);
     }
 
     onKeyEvent = (e) => {
-        console.log("key event " + e.keyCode);
-        this.game.processEvent(e.keyCode);
-        this.onGameStateChanged();
+        //console.log("key event " + e.keyCode);
+        this.session.processEvent(e.keyCode);
+    }
+
+    onConnect = () => {
+        console.log("onConnect");
+        this.session.sync();
+    }
+    onDisconnect = () => {
+        console.log("onDisconnect");
+    }
+    onError = () => {
+        console.log("onError");
+    }
+    onConnectError = (e) => {
+        console.log("onConnectError " + e);
+    }
+    onSync = (serverState: GameState) => {
+        console.log("onSync");
+        this.session.onServerSynced(serverState);
+    }
+    onUpdate = (serverState: GameState) => {
+        console.log("onUpdate");
+        console.log(serverState);
+        this.session.onServerUpdate(serverState);
     }
 
     render() {

@@ -3,6 +3,7 @@
 // compiles it.
 //
 import {mat4, vec4} from 'gl-matrix';
+import {FIELD_W} from "./tetris.ts";
 
 export class GlBuffer {
     #gl = null;
@@ -80,6 +81,7 @@ export class GlProgramInfo {
     program = null;
     buffers = {};
     uniforms = {};
+    strings = [];
 
     // how much to render
     count = 0;
@@ -129,6 +131,9 @@ export class GlProgramInfo {
     addUniformMatrix(uniformName: string, value: any, method, transpose: boolean = false) {
         this.uniforms[uniformName] = (new GlUniformMatrix(this.gl, uniformName, value, method, transpose));
     }
+    addString(name, stringObj: {}) {
+        this.strings[name] = (stringObj);
+    }
 
     load() {
         if (!this.program) {
@@ -165,6 +170,34 @@ export class GlProgramInfo {
         return shader;
     }
 
+    drawStrings() {
+        //
+        const projMatrix = this.uniforms["u_projectionMatrix"].value;
+        let textSize = this.uniforms["u_pointSize"].value;
+        //
+        let MVPMatrix = mat4.create();
+        mat4.multiply(MVPMatrix, MVPMatrix, projMatrix);
+        //
+        textSize = Math.round(textSize);
+        this.ctx.textBaseline = "middle";
+
+        this.ctx.font = `700 ${textSize}px Lucida Sans Typewriter`;
+        this.ctx.fillStyle = 'white';
+
+        for (const str of this.strings) {
+            let clip = vec4.fromValues(str.x, str.y, 0, 1);
+            vec4.transformMat4(clip, clip, MVPMatrix);
+
+            let canvasX = (clip[0] / clip[3] + 1) / 2 * this.ctx.canvas.width;
+            let canvasY = (1 - clip[1] / clip[3]) / 2 * this.ctx.canvas.height;
+            canvasX = Math.round(canvasX);
+            canvasY = Math.round(canvasY);
+
+            this.ctx.textAlign = str.align || "left";
+            this.ctx.fillText(str.text, canvasX, canvasY);
+        }
+    }
+
     text(x: number, y: number, size: number, text: string, align: string = "left") {
         const projMatrix = this.uniforms["u_projectionMatrix"].value;
         //const modelMatrix = this.uniforms["u_modelViewMatrix"].value;
@@ -183,7 +216,7 @@ export class GlProgramInfo {
         size = Math.round(size);
         this.ctx.textBaseline = "middle";
         this.ctx.textAlign = align;
-        this.ctx.font = `${size}px Lucida Sans Typewriter`;
+        this.ctx.font = `700 ${size}px Lucida Sans Typewriter`;
         this.ctx.fillStyle = 'white';
         this.ctx.fillText(text, canvasX, canvasY);
 

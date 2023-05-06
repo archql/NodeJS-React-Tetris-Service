@@ -11,7 +11,9 @@ import SocketIOFileUpload from 'socketio-file-upload';
 
 import authRouter from './routes/auth.js'
 import chatSockets from './routes/api.js'
+import gameSockets from './routes/game.ts'
 import {isAuthenticated} from "./bin/jwt.js";
+import {launchGameLoop} from './routes/game.ts'
 
 const __filename = fileURLToPath(import.meta.url);
 export const __dirname = path.dirname(__filename);
@@ -23,8 +25,8 @@ export const io = new Server(server, {
         origin: "http://localhost:3000",
         credentials: true
     },
-    path: '/chat',
-    maxHttpBufferSize: 100 * 1024 * 1024
+    //path: '/chat',
+    maxHttpBufferSize: 100 * 1024 * 1024,
 }); // Attach Socket.io to HTTP server
 
 // view engine setup
@@ -41,7 +43,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/attachments', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/auth', authRouter)
-io.use(isAuthenticated).on("connection", chatSockets);
+
+io.on("connection", (socket) => {});
+io.use((socket, next) => { next() });
+io.of('/chat').use(isAuthenticated).on("connection", chatSockets);
+io.of('/game').on("connection", gameSockets);
 server.listen(5000, () => {
     console.log('Listening on port 5000')
 })
+// Launch game loop
+launchGameLoop();
+
+
