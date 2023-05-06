@@ -188,8 +188,10 @@ export class ClientGameSessionControl {
         // const ticksPassed = Math.floor(newTime / TPS) - Math.floor(this.time / TPS);
         // this.currentTick += ticksPassed;
         // this.time = newTime;
-        // TODO test
-        if (event !== 7 && ((this.globalTime - this.gameTime) > this.game.tickSpeed)) {
+
+        // guarantee 7th event when time from last 7th event is expired
+        if (this.game.playing && !this.game.paused && event !== 7
+            && ((this.globalTime - this.gameTime) > this.game.tickSpeed)) {
             console.log("RECONCILIATION FORCE 7");
             // force process 7 event and ignore next one
             this.onTimer();
