@@ -47,6 +47,9 @@
 .link:hover {
     color: var(--btn-color-hovered);
 }
+.link.active {
+    color: var(--btn-color-clicked);
+}
 
 .container {
     margin-right: auto;

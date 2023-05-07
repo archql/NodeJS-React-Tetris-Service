@@ -39,12 +39,12 @@ export class App extends React.Component {
     render() {
         return (
         <Routes>
-            <Route path='*' element={<NotFound />} />
-            <Route exact path="/" element={<Navigate to={"/chat"} />} />
+            <Route index element={<Navigate to={"/account"} />} />
             <Route path={"/auth/register"} exact element={<RegisterFormRouted />} />
             <Route path={"/auth/login"} element={<LoginFormRouted />} />
-            <Route path={"/chat"} element={<AccountRouted />} />
+            <Route path={"/account/*"} element={<AccountRouted />} />
             <Route path={"/game"} element={<GameRouted />} />
+            <Route path='*' element={<NotFound />} />
         </Routes>);
     }
 

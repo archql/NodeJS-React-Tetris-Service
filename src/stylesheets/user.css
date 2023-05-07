@@ -224,16 +224,45 @@ main ul (DUPLICATION)
     display: flex;
     align-items: baseline;
 }
+.user_info div:not(:last-child) {
+    margin-right: 10px;
+}
 .user_card {
     position: relative;
     flex-direction: row;
 }
 .user_image {
+    aspect-ratio : 1 / 1;
     height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--text-color-success);
+    overflow: hidden;
+}
+.user_image img {
+    flex-shrink: 0;
+    min-width: 100%;
+    min-height: 100%
+}
+.user_image .online {
+    border-color: var(--text-color-success);
+}
+.user_info_pane {
+    margin-right: 100px;
+    margin-left: 20px;
+}
+.tetris-font {
+    font-family: "Lucida Sans Typewriter", sans-serif;
+}
+.user_score {
+    position: absolute;
+    top: 80%;
+    left: 0;
+    right: 0;
 }
 .user_name {
     font-size: xx-large;
     border-bottom: black;
+    font-weight: bold;
 }
 .user_role {
     border-radius: 10px;
@@ -296,6 +325,12 @@ scrollbar
     padding: 15px 32px;
     display: inline-block;
     font-size: 16px;
+}
+
+.navbar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
 }
 
 /*input[type="file"] {*/

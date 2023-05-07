@@ -11,25 +11,39 @@ export class UserCard extends React.Component {
         const user = this.props.user;
         return (
             <div className="box card user_card">
-                <div className="user_image">
-                    <img src="./images/icon_user.png" alt="user_icon"></img>
+                <div style={{position: "relative"
+                }}>
+                    <div className="user_image">
+                        <img src="/images/icon_user.png" alt="user_icon"></img>
+                    </div>
+                    <div className="user_score">
+                        {user.role.role_name}
+                    </div>
                 </div>
-                <div style={{marginRight: "100px"}}>
-                    <div className="user_info">
+                <div className="user_info_pane">
+                    <div className="user_info tetris-font">
+                        <div className="user_name">
+                            {user.user_nickname}
+                        </div>
                         <div className="user_role" style={{
                             backgroundColor: user.role.role_color
                         }}>
                             {user.role.role_name}
                         </div>
-                        <div className="user_name">
+                        <div>
+                            {user.status.status_name}
+                        </div>
+                    </div>
+                    <div className="user_info">
+                        <div>
                             {user.user_name}
                         </div>
                         <div>
-                            status = {user.status.status_name}
+                            {user.user_name}
                         </div>
                     </div>
-                    <div className="user_bio">
-
+                    <div className="user_info">
+                        {"\"user bio\""}
                     </div>
                 </div>
                 <div className={"logout"} onClick={e => this.props.logout(e)}>
