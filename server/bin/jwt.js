@@ -22,3 +22,18 @@ export const isAuthenticated = (socket, next) => {
     }
     return next();
 };
+
+export const isAuthenticatedGame = (socket, next) => {
+    const token = socket.handshake?.auth?.token;
+    socket.request.user = null;
+    if (!token) {
+        return next();
+    }
+    try {
+        socket.request.user = jwt.verify(token, secret);
+    } catch (err) {
+
+    } finally {
+        return next();
+    }
+};

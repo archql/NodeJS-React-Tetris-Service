@@ -7,6 +7,7 @@ import {FIELD_H, FIELD_W, RECT_MODIFIER, RenderBuffer, Tetris} from "../../game/
 import { io } from 'socket.io-client';
 import {ClientGameSessionControl} from "../../game/reconciliator.ts";
 import type {GameState} from "../../game/server_client_globals.ts";
+import Cookies from "js-cookie";
 
 const vertexShaderSource = `#version 300 es
 precision highp float;
@@ -59,7 +60,10 @@ export class Game extends React.Component {
         this.prevTime = 0;
         // Socket IO connection
         this.socket = io("http://localhost:5000/game", {
-            autoConnect: false
+            autoConnect: false,
+            auth: {
+                token: Cookies.get('jwt')
+            }
         });
     }
 

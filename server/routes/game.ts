@@ -2,6 +2,7 @@
 import {GameInput} from "../game/server_client_globals.ts";
 import {ServerGameSessionControl} from "../game/reconciliator.ts";
 import {TPS} from "../game/server_client_globals.ts";
+import {User} from "../bin/db.js";
 
 type UserGameSessionsType = {
     [key: string]: ServerGameSessionControl;
@@ -10,8 +11,17 @@ const userGameSessions: UserGameSessionsType = {};
 
 const gameHandler = async (socket) => {
     console.log(`Socket connected: ${socket.id}`);
+    //
+    const user = socket.request.user;
+    //
+    // request user info from DB
+    let usr = user && await User.findByPk(user.user_id);
+    // TODO set user status to PLAYING
+    // if (usr !== null) {
+    //     usr = await usr.update({user_status_id: 2});
+    // }
     // create a game instance for user
-    userGameSessions[socket.id] = new ServerGameSessionControl(socket);
+    userGameSessions[socket.id] = new ServerGameSessionControl(socket, usr);
     //
     socket.on('disconnect', async () => {
         console.log('A client disconnected');

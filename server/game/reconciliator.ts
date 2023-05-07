@@ -4,6 +4,8 @@ import {Tetris} from "./tetris.ts";
 import {STATUS_TABLE} from "./tetris.ts";
 
 export class ServerGameSessionControl {
+    // Database user
+    user = null;
     game = null;
     socket;
 
@@ -22,8 +24,9 @@ export class ServerGameSessionControl {
     // special boolean to show if game was just resumed/paused
     justResumed: boolean = false;
 
-    constructor(socket) { // happens on connection
+    constructor(socket, user) { // happens on connection
         this.socket = socket;
+        this.user = user;
     }
 
     onSync() {
@@ -37,8 +40,14 @@ export class ServerGameSessionControl {
         this.gameTick = 0;
         // create brand-new game
         this.game = new Tetris(null);
-        // set game status to be registered
-        this.game.status = "registered";
+        // get user nickname
+        if (this.user) {
+            this.game.name = this.user.user_nickname || "@DEFAULT";
+            this.game.status = "registered";
+        } else {
+            this.game.name = "@DEFAULT";
+            this.game.status = "connected";
+        }
         // set game state buffer
         const bufferIndex = this.currentEvent % BUFFER_SIZE;
         this.stateBuffer[bufferIndex] = new GameState(this.currentTick, this.currentEvent,

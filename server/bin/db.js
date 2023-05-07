@@ -36,13 +36,17 @@ export const User = sequelize.define("user", {
         type: DataTypes.STRING(64),
         allowNull: false
     },
+    user_nickname: {
+        type: DataTypes.CHAR(8),
+        allowNull: true,
+        defaultValue: null
+    },
     user_last_online: DataTypes.DATE
 }, {
     timestamps: true,
     createdAt: "user_created",
     updatedAt: false,
 });
-
 export const Role = sequelize.define("role", {
     role_id: {
         type: DataTypes.TINYINT,
@@ -157,6 +161,11 @@ Message.hasMany(Attachment,
 
 await sequelize.sync();
 
+const root = await User.findOne({ where: { user_name: 'root' } });
+if (root) {
+    await root.update({ user_nickname: "_ARCHQL_" });
+}
+
 // await Status.create({
 //     status_id: 1,
 //     status_name: "offline"
@@ -164,6 +173,10 @@ await sequelize.sync();
 // await Status.create({
 //     status_id: 2,
 //     status_name: "on-line"
+// });
+// await Status.create({
+//     status_id: 3,
+//     status_name: "playing"
 // });
 // await Role.create({
 //     role_id: 1,

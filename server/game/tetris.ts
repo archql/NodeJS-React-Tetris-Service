@@ -192,6 +192,8 @@ export class Tetris {
 
     random: Random = null;
 
+    name: string = "@DEFAULT"
+
     deepCopy() {
         const clone = JSON.parse(JSON.stringify(this));
         clone.callback = null;
@@ -346,6 +348,8 @@ export class Tetris {
         renderBuffer.strings.push({x: FIELD_W + 3, y: 2 + 4 + 6 + 2, text: `${String(this.score).padStart(6, ' ')}`, align: "left"});
         renderBuffer.strings.push({x: FIELD_W + 3, y: 2 + 4 + 6 + 3, text: `${String(this.highScore).padStart(6, ' ')}`, align: "left"});
         renderBuffer.strings.push({x: FIELD_W + 3, y: FIELD_H - 1, text: STATUS_TABLE[this.status], align: "left"});
+        renderBuffer.strings.push({x: FIELD_W + 3, y: FIELD_H - 4, text: this.name, align: "left"});
+        renderBuffer.strings.push({x: FIELD_W + 3, y: FIELD_H - 3, text: "~~~~~~~~", align: "left"});
         return renderBuffer;
     }
     #renderFigureInto(renderBuffer, fig, xPos: number = undefined, yPos: number = undefined, colorId: number = undefined) {

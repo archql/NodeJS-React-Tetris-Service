@@ -12,7 +12,7 @@ import SocketIOFileUpload from 'socketio-file-upload';
 import authRouter from './routes/auth.js'
 import chatSockets from './routes/api.js'
 import gameSockets from './routes/game.ts'
-import {isAuthenticated} from "./bin/jwt.js";
+import {isAuthenticated, isAuthenticatedGame} from "./bin/jwt.js";
 import {launchGameLoop} from './routes/game.ts'
 
 const __filename = fileURLToPath(import.meta.url);
@@ -47,7 +47,7 @@ app.use('/auth', authRouter)
 io.on("connection", (socket) => {});
 io.use((socket, next) => { next() });
 io.of('/chat').use(isAuthenticated).on("connection", chatSockets);
-io.of('/game').on("connection", gameSockets);
+io.of('/game').use(isAuthenticatedGame).on("connection", gameSockets);
 server.listen(5000, () => {
     console.log('Listening on port 5000')
 })

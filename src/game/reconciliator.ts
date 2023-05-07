@@ -40,7 +40,7 @@ function isDeepEqual (object1, object2) {
 
 function isObject (object) {
     return object != null && typeof object === "object";
-};
+}
 
 export class ClientGameSessionControl {
 
