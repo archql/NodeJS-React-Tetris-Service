@@ -13,10 +13,7 @@ export class ListContainer extends React.Component {
         const {list} = this.props;
         console.log("List rendered with selection " + this.state.selectedId);
         return (
-            <div
-                role="list"
-                className="dd-list"
-            >
+            <React.Fragment>
             {list.map((item) => (
                 <div
                     className={this.getClassName(item)}
@@ -27,7 +24,7 @@ export class ListContainer extends React.Component {
                 </div>
             ))
             }
-            </div>
+            </React.Fragment>
         );
     }
 

@@ -64,7 +64,7 @@ export class Message extends React.Component {
 
     getClassName() {
         const item = this.props.item;
-        return "message" +
+        return "box message" +
             ((item.message_from_id === this.props.curUserId) ?
                 ' message_out' : ' message_in');
     }

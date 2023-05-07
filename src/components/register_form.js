@@ -4,6 +4,7 @@ import { required } from '../common/helpers.js';
 import { authService } from  "../services/auth_service.js"
 import '../stylesheets/forms.css';
 import { Link } from "react-router-dom";
+import {InputField} from "./input_field";
 
 export class RegisterForm extends React.Component {
 
@@ -93,28 +94,51 @@ export class RegisterForm extends React.Component {
     render() {
         return (
             <div className="reg_container">
-                <div className="reg_box">
+                <div className="box reg_box">
                     <div className="reg_header">Register Form</div>
                     <form method="POST" className="reg_form" onSubmit={this.handleRegister}>
-                        <div>
-                            <label htmlFor="name-reg" className="form-label">Name</label>
-                            <input value={this.state.name} onChange={this.onChangeName} type="text" className="input-field" id="name-reg"></input>
-                        </div>
-                        <div>
-                            <label htmlFor="password-reg" className="form-label">Password</label>
-                            <input value={this.state.password} onChange={this.onChangePassword} type="password" className="input-field" id="password-reg"></input>
-                        </div>
-                        <div>
-                            <label htmlFor="password-conf-reg" className="form-label">Confirm Password</label>
-                            <input value={this.state.password_repeat} onChange={this.onChangePasswordRepeat} type="password" className="input-field" id="password-conf-reg"></input>
-                        </div>
+                        <InputField
+                            onChange={e => this.onChangeName(e)}
+                            id={"reg-name"}
+                            type={"text"}
+                        >
+                            Name
+                        </InputField>
+                        <InputField
+                            onChange={e => this.onChangeName(e)}
+                            id={"reg-surname"}
+                            type={"text"}
+                        >
+                            Surname
+                        </InputField>
+                        <InputField
+                            onChange={e => this.onChangeName(e)}
+                            id={"reg-nickname"}
+                            type={"text"}
+                        >
+                            Nickname
+                        </InputField>
+                        <InputField
+                            onChange={e => this.onChangeName(e)}
+                            id={"reg-password"}
+                            type={"password"}
+                        >
+                            Password
+                        </InputField>
+                        <InputField
+                            onChange={e => this.onChangeName(e)}
+                            id={"reg-password-conf"}
+                            type={"password"}
+                        >
+                            Confirm your password
+                        </InputField>
 
-                        <button className="reg_button" type="submit">Submit</button>
+                        <button className="btn reg_btn" type="submit">Submit</button>
                     </form>
-                    <Link to={"/auth/login"}> Already have an account? Login here </Link>
+                    <Link className={"link"} to={"/auth/login"}> Already have an account? Login here</Link>
                 </div>
                 {this.state.message && (
-                    <div className="reg_bo_info">
+                    <div className="box reg_bo_info">
                         <div
                             className={
                                 this.state.successful
@@ -122,7 +146,7 @@ export class RegisterForm extends React.Component {
                                     : "alert alert-danger"
                             }
                             role="alert"
-                        >{this.state.message}</div>
+                        >{this.state.successful ? '\u2705 ': '\u26A0 '}{this.state.message}</div>
                     </div>
                 )}
             </div>

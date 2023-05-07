@@ -4,6 +4,7 @@ import { required } from '../common/helpers.js';
 import { authService } from  "../services/auth_service.js"
 import '../stylesheets/forms.css';
 import { Link } from "react-router-dom";
+import {InputField} from "./input_field";
 
 export class LoginForm extends React.Component {
 
@@ -75,27 +76,30 @@ export class LoginForm extends React.Component {
     render() {
         return (
             <div className="reg_container">
-                <div className="reg_box">
+                <div className="box reg_box">
                     <div className="reg_header">Login Form</div>
                     <form method="POST" className="login_form" onSubmit={e => this.handleLogin(e)}>
-                        <div>
-                            <label htmlFor="name-reg" className="form-label">Name</label>
-                            <input value={this.state.name} onChange={e => this.onChangeName(e)} type="text" className="input-field" id="name-reg"></input>
-                        </div>
-                        <div>
-                            <label htmlFor="password-reg" className="form-label">Password</label>
-                            <input value={this.state.password} onChange={e => this.onChangePassword(e)} type="password" className="input-field" id="password-reg"></input>
-                        </div>
+                        <InputField
+                            onChange={e => this.onChangeName(e)}
+                            id={"reg-name"}
+                            type={"text"}
+                        >
+                            Name
+                        </InputField>
+                        <InputField
+                            onChange={e => this.onChangePassword(e)}
+                            id={"reg-password"}
+                            type={"password"}
+                        >
+                            Password
+                        </InputField>
 
-                        <button className="reg_button" type="submit">Submit</button>
+                        <button className="btn reg_btn" type="submit">Submit</button>
                     </form>
-                    <Link to={"/auth/register"}> Do not have an account? Register here </Link>
-                    {/*
-                    TODO no page reload (same on register)
-                    */}
+                    <Link className={"link"} to={"/auth/register"}> Do not have an account? Register here </Link>
                 </div>
                 {this.state.message && (
-                    <div className="reg_bo_info">
+                    <div className="box reg_bo_info">
                         <div
                             className={
                                 this.state.successful
@@ -103,7 +107,7 @@ export class LoginForm extends React.Component {
                                     : "alert alert-danger"
                             }
                             role="alert"
-                        >{this.state.message}</div>
+                        >{this.state.successful ? '\u2705 ': '\u26A0 '}{this.state.message}</div>
                     </div>
                 )}
             </div>

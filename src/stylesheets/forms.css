@@ -1,44 +1,13 @@
+@import url(colors.css);
+@import url(global.css);
+
 body {
-    background: paleturquoise;
+    background: #121212;
     height: 100vh;
     margin: 0;
     display: flex;
     flex-direction: column;
 }
-
-/*
-main ul
- */
-
-.main_nav_ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: CadetBlue;
-    position: sticky;
-}
-
-.main_nav_ul li {
-    float: left;
-}
-
-.main_nav_ul li a {
-    display: block;
-    color: white;
-    text-align: center;
-    padding: 14px 16px;
-    text-decoration: none;
-}
-
-/* Change the link color to #111 (black) on hover */
-.main_nav_ul a:hover {
-    background-color: Teal;
-}
-.main_nav_ul .active {
-    background-color: #04AA6D;
-}
-
 
 /*
 registration
@@ -58,29 +27,19 @@ registration
     width: 100%;
 }
 .reg_bo_info {
-    background-color: white;
-    border-radius: 25px;
     margin-top: 10px;
     padding: 10px;
-
-    box-shadow: 10px 5px 5px cadetblue;
-
-    font-family: cursive;
 }
 .reg_box {
-    background-color: white;
     border-radius: 25px;
     margin-top: 50px;
     padding: 50px;
-
-    box-shadow: 10px 5px 5px cadetblue;
-
-    font-family: cursive;
 }
 .reg_header {
     font-weight: bold;
     font-size: xx-large;
     text-align: center;
+    color: var(--text-color-primary);
 }
 .reg_form {
     display: flex;
@@ -97,30 +56,11 @@ registration
     display: block;
     padding: 5px;
 }
-.display_main, .form_upload {
-    background-color: white;
-    box-shadow: 10px 5px 5px cadetblue;
-
-    padding: 25px;
-    margin: 25px;
-    border-radius: 25px;
-
-    font-family: cursive;
-}
-.reg_button {
-    background-color: cadetblue; /* Green */
+.reg_btn {
     border: none;
-    color: white;
     padding: 15px 32px;
-    text-align: center;
-    text-decoration: none;
     display: inline-block;
     font-size: 16px;
     margin-top: 30px;
     margin-bottom: 15px;
-    transition-duration: 0.1s;
-}
-.reg_button:hover {
-    background-color: darkcyan; /* Green */
-    color: white;
 }

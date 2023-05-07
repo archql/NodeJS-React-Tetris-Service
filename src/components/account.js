@@ -13,6 +13,7 @@ import * as faIcons from "@fortawesome/fontawesome-free-solid";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
 import { io } from 'socket.io-client';
+import {UserCard} from "./user_card";
 const socket = io("http://localhost:5000/chat", {
     autoConnect: false,
     //withCredentials: true,
@@ -220,42 +221,25 @@ export class Account extends React.Component {
             const messageEdited = this.state.messageEdited;
             return (
             <div className="container flex_spread">
-                <div className="card user_card">
-                    <div className="user_image">
-                        <img src="./images/icon_user.png" alt="user_icon"></img>
-                    </div>
-                    <div className="user_info">
-                        <div className="user_name">
-                            {this.state.user.user_name}
-                        </div>
-                        <div className="user_role" style={{
-                            backgroundColor: this.state.user.role.role_color
-                        }}>
-                            {this.state.user.role.role_name}
-                        </div>
-                        <div>
-                            status = {this.state.user.status.status_name}
-                        </div>
-                    </div>
-                    <div className={"logout"} onClick={e => this.logout(e)}>
-                        <FontAwesomeIcon icon={faIcons.faSignOutAlt}/>
-                    </div>
-                </div>
-                <div className="card flex_spread">
+                <UserCard
+                    user={this.state.user}
+                    logout={e => this.logout(e)}
+                />
+                <div className="box card flex_spread">
                     <div className="messages_grid" style={{flex: 1, flexBasis: 0}}>
-                        <div className="box top_left top">
+                        <div className="cell top_left top">
                             Select user to start messaging
                         </div>
-                        <div className="box top_right top">
+                        <div className="cell top_right top">
                             Messages
                         </div>
-                        <div className="box user_list">
+                        <div className="cell user_list">
                             <ListContainer
                                 list={this.state.others}
                                 callback={e => this.userSelected(e)}
                                 idMap={(item) => item.user_id} // TODO
                                 nameMap={(item) => <div><div>{item.user_name}</div> <div style={{fontSize: 'smaller', fontStyle: 'italic'}}>{item.user_status_id === 1 ? "offline" : "on-line" }</div></div>}
-                                cssItemClass={"user"}
+                                cssItemClass={"box user"}
                                 cssActiveClass={"active"}
                             />
                         </div>
@@ -266,10 +250,10 @@ export class Account extends React.Component {
                             editMessage={id => this.editMessage(id)}
                             selectedMsgId={this.state.messageEdited ? this.state.messageEdited.message_id : 0}
                         />
-                        <div className="box bottom_left">
+                        <div className="cell bottom_left">
                             <div>Add new user</div>
                         </div>
-                        <div className="box bottom_right">
+                        <div className="cell bottom_right">
                             {/*TODO separate*/}
                             <form
                                 id={"message_input_form"}
@@ -279,7 +263,7 @@ export class Account extends React.Component {
                                 <div>
                                     <label
                                         htmlFor="message_content"
-                                        className="form_label"
+                                        className="input_field_label"
                                     >
                                         Content
                                     </label>
@@ -290,17 +274,26 @@ export class Account extends React.Component {
                                         hack={this.state.inputUpdateHack}
                                     />
                                 </div>
-                                <input
-                                    multiple
-                                    type="file"
-                                    ref={ref => (this.fileInputRef = ref)}
-                                    name="attachment"
-                                    accept=".jpg, .jpeg, .png"
-                                    id={"message_attachments"}
-                                />
+                                <div>
+                                    <label
+                                        htmlFor="message_attachments"
+                                        className="input_field_label file_upload_label"
+                                    >
+                                        Attachments
+                                    </label>
+                                    <input
+                                        multiple
+                                        className="input_field file-upload"
+                                        type="file"
+                                        ref={ref => (this.fileInputRef = ref)}
+                                        name="attachment"
+                                        accept=".jpg, .jpeg, .png"
+                                        id={"message_attachments"}
+                                    />
+                                </div>
                                 <button
                                     type="submit"
-                                    className="send_button"
+                                    className="btn btn-send"
                                     onClick={messageEdited? e => this.doEditMessage(e) : e => this.sendMessage(e)}
                                 >
                                     { messageEdited ? 'Edit message' : 'Send message' }

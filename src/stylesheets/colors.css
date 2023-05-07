@@ -1,0 +1,14 @@
+:root {
+    --shadow-color: #0008;
+    --background-color: #121212;
+    --card-color-primary: #1E1E1E;
+    --card-color-secondary: #2A2A2A;
+    --card-color-third: #2d1020;
+    --text-color-primary: #E2E2E2;
+    --text-color-secondary: #A1A1A1;
+    --text-color-error: #ff3333;
+    --text-color-success: #4BB543;
+    --btn-color: #FF0082;
+    --btn-color-hovered: #ff509c;
+    --btn-color-clicked: #ee0068;
+}

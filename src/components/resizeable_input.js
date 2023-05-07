@@ -30,6 +30,7 @@ export class ResizeableInput extends React.Component {
             placeholder="Type your message here..."
             id={this.props.id}
             name="message_body"
+            className="input_field"
             cols="50"
             rows="1"
             maxLength="255"

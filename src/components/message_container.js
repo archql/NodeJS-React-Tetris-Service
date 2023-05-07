@@ -37,7 +37,7 @@ export class MessageContainer extends React.Component {
         console.log("Messages rendered with selection " + this.state.selectedId);
         return (
                 <div
-                    className="box messaging"
+                    className="cell messaging"
                 >
                     <div style={{ float:"left", clear: "both" }}
                          ref={(el) => { this.messagesStart = el; }}/>

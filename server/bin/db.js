@@ -1,6 +1,7 @@
 import { Sequelize, Model, DataTypes } from 'sequelize';
 import sqlite3 from 'sqlite3';
 import crypto from "crypto";
+import exp from "constants";
 
 export const sequelize = new Sequelize('sqlite:database/database.db', {
     //logging: (...msg) => console.log(msg), // Displays all log function call parameters
@@ -86,7 +87,7 @@ export const Message = sequelize.define("message", {
     },
     message_to_id: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true
     },
     message_content: {
         type: DataTypes.TEXT,
@@ -113,6 +114,62 @@ export const Attachment = sequelize.define("attachment", {
         allowNull: false
     },
 }, {timestamps: false});
+export const Record = sequelize.define("record", {
+    record_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    record_user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    record_score: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        unsigned: true
+    },
+    record_time_elapsed: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        unsigned: true
+    },
+    record_figures_placed: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        unsigned: true
+    },
+    record_image: {
+        type: DataTypes.BLOB,
+        allowNull: true
+    },
+    record_file: {
+        type: DataTypes.BLOB,
+        allowNull: true
+    },
+}, {
+    timestamps: true,
+    createdAt: "record_created", // alias createdAt as created_date
+    updatedAt: false
+});
+
+export const Like = sequelize.define("like", {
+    like_user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true,
+    },
+    like_message_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true,
+    },
+}, {
+    timestamps: true,
+    createdAt: "like_created", // alias createdAt as created_date
+    updatedAt: false
+});
 
 Status.hasMany(User);
 User.belongsTo(Status, {
@@ -145,7 +202,7 @@ Message.belongsTo(User, {
     //as: 'message_to_id',
     foreignKey: {
         name: 'message_to_id',
-        allowNull: false
+        allowNull: true
     },
     as: "user_to"
 })
@@ -158,6 +215,36 @@ Attachment.belongsTo(Message, {
 });
 Message.hasMany(Attachment,
     { foreignKey: 'attachment_message_id' });
+
+User.hasMany(Record);
+Record.belongsTo(User,
+    {
+        foreignKey: {
+            name: 'record_user_id',
+            allowNull: false
+        }
+    }
+);
+
+User.hasMany(Like);
+Like.belongsTo(User,
+    {
+        foreignKey: {
+            name: 'like_user_id',
+            allowNull: false
+        }
+    }
+);
+
+Message.hasMany(Like);
+Like.belongsTo(Message,
+    {
+        foreignKey: {
+            name: 'like_message_id',
+            allowNull: false
+        }
+    }
+);
 
 await sequelize.sync();
 
