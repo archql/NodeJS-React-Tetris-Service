@@ -41,13 +41,13 @@ export class Account extends React.Component {
         console.log("mount " + Cookies.get('jwt'));
         socket.auth.token = Cookies.get('jwt');
 
-        socket.connect();
-
         socket.on('connect', this.onConnect);
         socket.on('disconnect', this.onDisconnect);
         socket.on('error', this.onError);
         socket.on('connect_error', this.onConnectError)
         socket.on('self', this.onSelf);
+
+        socket.connect();
     }
 
     componentWillUnmount() {
@@ -99,6 +99,7 @@ export class Account extends React.Component {
                 />
                 <div className="box card navbar">
                     <NavLink to={"/account"}
+                             end
                              className={({ isActive }) =>
                                  isActive ? "link active" : "link"
                              }
@@ -111,6 +112,10 @@ export class Account extends React.Component {
                              className={({ isActive }) =>
                                  isActive ? "link active" : "link"
                              }>Play</NavLink>
+                    <NavLink to={"/help"}
+                             className={({ isActive }) =>
+                                 isActive ? "link active" : "link"
+                             }>Help</NavLink>
                     <a className="link" href={"#logout"} onClick={e => this.logout(e)} >
                         Logout
                     </a>

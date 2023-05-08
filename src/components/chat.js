@@ -36,6 +36,9 @@ export class Chat extends React.Component {
         socket.on('messages', this.onMessages);
         socket.on('new message', this.onNewMessage);
         socket.on('user updated', this.onUserUpdated);
+
+        // get members
+        socket.emit('members');
     }
 
     componentWillUnmount() {

@@ -81,18 +81,21 @@ const chatHandler = async (socket) => {
         ]
     });
     socket.emit("self", userDB);
-    const users = await User.findAll({
-        where: {
-            user_id: {
-                [Op.not]: user.user_id
-            }
-        },
-        include: [
-            { model: Status },
-            { model: Role }
-        ]
+
+    socket.on('members', async () => {
+        const users = await User.findAll({
+            where: {
+                user_id: {
+                    [Op.not]: user.user_id
+                }
+            },
+            include: [
+                { model: Status },
+                { model: Role }
+            ]
+        });
+        socket.emit('members', users);
     });
-    socket.emit('members', users);
 
     socket.on('disconnect', async () => {
         console.log('A client disconnected');

@@ -42,13 +42,13 @@
 }
 
 .link {
-    color: var(--btn-color);
+    color: var(--btn-color-clicked);
 }
 .link:hover {
     color: var(--btn-color-hovered);
 }
 .link.active {
-    color: var(--btn-color-clicked);
+    color: var(--btn-color);
 }
 
 .container {
