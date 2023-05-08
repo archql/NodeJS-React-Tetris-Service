@@ -19,6 +19,8 @@ import {NotFound} from "./not_found";
 import {RegisterFormRouted} from "./register_form";
 import {LoginFormRouted} from "./login_form";
 import {GameRouted} from "./game/game";
+import {HelpRouted} from "./help";
+import {PersonalRouted} from "./personal";
 export const socket = io("http://localhost:5000/chat", {
     autoConnect: false,
     //withCredentials: true,
@@ -47,7 +49,11 @@ export class Account extends React.Component {
         socket.on('connect_error', this.onConnectError)
         socket.on('self', this.onSelf);
 
-        socket.connect();
+        if (socket.connected) {
+            socket.emit('self');
+        } else {
+            socket.connect();
+        }
     }
 
     componentWillUnmount() {
@@ -112,7 +118,7 @@ export class Account extends React.Component {
                              className={({ isActive }) =>
                                  isActive ? "link active" : "link"
                              }>Play</NavLink>
-                    <NavLink to={"/help"}
+                    <NavLink to={"/account/help"}
                              className={({ isActive }) =>
                                  isActive ? "link active" : "link"
                              }>Help</NavLink>
@@ -122,12 +128,13 @@ export class Account extends React.Component {
                 </div>
                 <div className="box card flex_spread">
                     <Routes>
-                        <Route path={"/"} element={<ChatRouted
+                        <Route path={"/"} element={<PersonalRouted
                             user={this.state.user}
                         />} />
                         <Route path={"/chat"} element={<ChatRouted
                             user={this.state.user}
                         />} />
+                        <Route path={"/help"} element={<HelpRouted/>} />
                     </Routes>
                     {/*<Chat*/}
                     {/*    user={this.state.user}*/}

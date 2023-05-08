@@ -82,6 +82,18 @@ const chatHandler = async (socket) => {
     });
     socket.emit("self", userDB);
 
+    socket.on('self', async () => {
+        // Retrieve user data from db
+        const userDB = await User.findByPk(user.user_id, {
+            include: [
+                { model: Status },
+                { model: Role },
+                { model: Message }
+            ]
+        });
+        socket.emit("self", userDB);
+    });
+
     socket.on('members', async () => {
         const users = await User.findAll({
             where: {
