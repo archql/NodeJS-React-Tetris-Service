@@ -141,23 +141,19 @@ export class Game extends React.Component {
         }
         // TODO separate leaderboard logics
         if (this.leaderboard) {
-            let i = 0;
             this.programInfo.strings.push(
                 {
                     x: FIELD_W + 8,
-                    y: 1 + i,
+                    y: 1,
                     text: "--<LEADERBOARD>--",
                 }
             );
-            this.leaderboard.forEach((e) => {
-                // inc y pos
-                i++;
-                // render string
+            this.leaderboard.forEach((e, index) => {
                 this.programInfo.strings.push(
                     {
                         x: FIELD_W + 8,
-                        y: 1 + i,
-                        text: `#${e.appended ? '#' : i.toString(16)} ${e.user_nickname}${String(e.user_max_score).padStart(6, ' ')}`,
+                        y: 2 + index,
+                        text: `#${e.appended ? '#' : (index + 1).toString(16)} ${e.user_nickname}${String(e.user_max_score).padStart(6, ' ')}`,
                         color: e.self ? 'yellow' : 'white'
                     }
                 );

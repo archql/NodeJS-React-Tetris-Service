@@ -332,6 +332,17 @@ scrollbar
     flex-direction: row;
     justify-content: space-evenly;
 }
+/*
+records
+ */
+
+.record .time {
+    font-size: smaller;
+    color: var(--text-color-secondary)
+}
+.record {
+    margin-bottom: 10px;
+}
 
 /*input[type="file"] {*/
 /*    display: none;*/

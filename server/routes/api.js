@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import {Attachment, Message, Role, Status, User} from "../bin/db.js";
+import {Attachment, Message, Record, Role, sequelize, Status, User} from "../bin/db.js";
 import {Op} from "sequelize";
 import {io} from "../app.ts"
 import { promises as fs } from 'fs';
@@ -107,6 +107,16 @@ const chatHandler = async (socket) => {
             ]
         });
         socket.emit('members', users);
+    });
+
+    socket.on('records', async () => {
+        const records = await Record.findAll({
+            where: {
+                record_user_id: user.user_id
+            },
+            order: sequelize.literal('record_created DESC'),
+        });
+        socket.emit('records', records);
     });
 
     socket.on('disconnect', async () => {
