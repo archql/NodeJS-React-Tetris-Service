@@ -236,8 +236,9 @@ export class Tetris {
     // - processes a key code, stored in key
     // - then calls render
     // - Special control codes:
-    //   - Game update               - 7
+    //   - Game update               - 7 (undefined in VK table)
     //   - Ignore downward collision - 0 (only for actual figure, not preview)
+    //   - Shift key up              - 15 (undefined in VK table)
     processEvent(key: number) {
         this.processEventSilent(key);
         this.callback(this.render());
@@ -257,8 +258,6 @@ export class Tetris {
         if (key === 82) { // 'R'
             this.#endGame();
             this.#initialize();
-            this.playing = true;
-            this.paused = true;
             return;
         }
         if (this.playing === false)
@@ -296,8 +295,11 @@ export class Tetris {
             case 39: // >
                 fig.x++;
                 break;
-            case 18: // shift
+            case 16: // shift
                 this.softDrop = true;
+                break;
+            case 15: // shift up
+                this.softDrop = false;
                 break;
         }
         if (this.#collideFigure(fig)) {

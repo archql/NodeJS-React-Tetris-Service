@@ -21,6 +21,7 @@ export class ServerGameSessionControl {
     currentEvent: number;
     time;
     timeStarted;
+    timeGameStarted;
 
     gameTick;
     gameTime;
@@ -107,13 +108,16 @@ export class ServerGameSessionControl {
     onGameOver(score: number, newRecord: boolean) {
         console.log(`GAME OVER new record? ${newRecord} score ${score}`);
         this.socket.emit('game over');
+        // TODO FIX THIS!!!
+        const gameTime = this.time - this.timeGameStarted;
+        this.timeGameStarted = this.time;
         if (this.user && this.user.user_nickname && newRecord) {
             (async () => {
                 // create new record (TODO mk screenshot)
                 const record = await Record.create({
                     record_user_id: this.user.user_id,
                     record_score: this.game.score,
-                    record_time_elapsed: this.time - this.timeStarted, // TODO FIX THIS!!!
+                    record_time_elapsed: gameTime, // TODO FIX THIS!!!
                     record_figures_placed: this.game.placed
                 });
                 // set record
@@ -163,7 +167,8 @@ export class ServerGameSessionControl {
             let gameDelta = (input.time - this.gameTime);
             if (this.game.playing && !this.game.paused) {
                 // console.log(`passed ${gameDelta} ms from last 7 event`)
-                if (gameDelta > this.game.tickSpeed) {
+                if (gameDelta > (this.game.softDrop ?
+                    (this.game.tickSpeed / 4) : this.game.tickSpeed)) {
                     //
                     const gameTicksSkipped = Math.floor(gameDelta / this.game.tickSpeed);
                     let gameTicksToProcess = 0;

@@ -54,6 +54,7 @@ export class Game extends React.Component {
         }
         //
         window.addEventListener('keydown', this.onKeyEvent);
+        window.addEventListener('keyup', this.onKeyUpEvent);
         // create a game
         let saved = localStorage.getItem('game');
         this.game = saved ? new Tetris(this.onGameStateChanged, JSON.parse(saved)) : new Tetris(this.onGameStateChanged);
@@ -64,6 +65,7 @@ export class Game extends React.Component {
     }
     componentWillUnmount() {
         window.removeEventListener('keydown', this.onKeyEvent);
+        window.removeEventListener('keyup', this.onKeyUpEvent);
         //
         this.socket.off('connect', this.onConnect);
         this.socket.off('disconnect', this.onDisconnect);
@@ -174,6 +176,12 @@ export class Game extends React.Component {
             this.props.router.navigate("/");
         } else {
             this.session.processEvent(e.keyCode);
+        }
+    }
+    onKeyUpEvent = (e) => {
+        console.log("key up event " + e.keyCode);
+        if (e.keyCode === 16) {
+            this.session.processEvent(15);
         }
     }
 

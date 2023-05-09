@@ -94,7 +94,8 @@ export class ClientGameSessionControl {
             this.time = now;
         }
         if (this.game.playing && !this.game.paused) {
-            if (gameDelta > this.game.tickSpeed) {
+            if (gameDelta > (this.game.softDrop ?
+                (this.game.tickSpeed / 4) : this.game.tickSpeed)) {
                 //console.log(`reconciliation 7th event at ${gameDelta} ms from last 7 event`)
                 this.gameTick++;
                 this.gameTime = now;
