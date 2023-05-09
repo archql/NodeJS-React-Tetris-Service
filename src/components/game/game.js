@@ -106,16 +106,20 @@ export class Game extends React.Component {
     }
 
     onLocalGameOver = (score: number, newRecord: boolean) => {
-        // TODO enable loading if connected
-        this.setState({
-            loading: true
-        })
+        // TODO mk this condition more clear
+        if (this.socket.connected) {
+            if (this.game?.status === "registered") {
+                this.setState({
+                    loading: true
+                })
+            } else if (window.confirm("U're not synced with the server! U will loose all your progress in that mode! Sync now?")){
+                this.session.sync();
+            }
+        }
     }
 
     onServerGameOver = () => {
         console.log("LOG onServerGameOver");
-        // TODO loading = false
-        // game state is changed by reconciliation
         this.setState({
             loading: false
         })
@@ -173,7 +177,15 @@ export class Game extends React.Component {
     onConnect = () => {
         console.log("LOG onConnect");
         this.session.onServerConnect();
-        this.session.sync();
+
+        // TODO mk this condition more clear
+        if (this.game.playing && this.game.score > 0 && !window.confirm("Just connected! But u will loose all your progress. Continue?")) {
+            this.setState({
+                loading: false
+            })
+        } else {
+            this.session.sync();
+        }
     }
     onDisconnect = () => {
         console.log("LOG onDisconnect");
@@ -184,6 +196,9 @@ export class Game extends React.Component {
     }
     onConnectError = (e) => {
         console.log("LOG onConnectError " + e);
+        this.setState({
+            loading: false
+        })
         this.session.onServerDisconnect();
     }
     onSync = (serverState: GameState) => {

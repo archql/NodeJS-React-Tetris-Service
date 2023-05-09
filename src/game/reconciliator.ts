@@ -126,10 +126,6 @@ export class ClientGameSessionControl {
         {
             this.#reconcile();
         }
-        else
-        {
-            console.log("NO reconciliation");
-        }
     }
 
     onServerConnect() {
@@ -139,7 +135,7 @@ export class ClientGameSessionControl {
     }
 
     onServerDisconnect () {
-        if (this.game.playing) {
+        if (this.game.playing && this.game.score > 0) {
             this.game.status = "connLost";
         } else {
             this.game.status = "offline";
