@@ -135,7 +135,12 @@ export class RegisterForm extends React.Component {
 
                         <button className="btn reg_btn" type="submit">Submit</button>
                     </form>
-                    <Link className={"link"} to={"/auth/login"}> Already have an account? Login here</Link>
+                    <div>
+                        <Link className={"link"} to={"/auth/login"}> Already have an account? Login here</Link>
+                    </div>
+                    <div>
+                        <Link className={"link"} to={"/game"}> Want to play without an account? Click here </Link>
+                    </div>
                 </div>
                 {this.state.message && (
                     <div className="box reg_bo_info">

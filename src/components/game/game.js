@@ -112,9 +112,10 @@ export class Game extends React.Component {
                 this.setState({
                     loading: true
                 })
-            } else if (window.confirm("U're not synced with the server! U will loose all your progress in that mode! Sync now?")){
-                this.session.sync();
             }
+            // } else if (this.game.playing && window.confirm("U're not synced with the server! U will loose all your progress in that mode! Sync now?")){
+            //     this.session.sync();
+            // }
         }
     }
 
@@ -170,8 +171,14 @@ export class Game extends React.Component {
         this.repaint = repaint;
     }
     onKeyEvent = (e) => {
-        //console.log("key event " + e.keyCode);
-        this.session.processEvent(e.keyCode);
+        console.log("key event " + e.keyCode);
+        // TODO mk exit based on callback
+        // 27 is ESC key code
+        if (this.game.playing === false && e.keyCode === 27) {
+            this.props.router.navigate("/");
+        } else {
+            this.session.processEvent(e.keyCode);
+        }
     }
 
     onConnect = () => {

@@ -249,6 +249,11 @@ export class Tetris {
     //   - Game update               - 7
     //   - Ignore downward collision - 0 (only for actual figure, not preview)
     processEventSilent(key: number) {
+        if (key === 27) { // ESC
+            this.#endGame();
+            this.paused = false;
+            return;
+        }
         if (key === 82) { // 'R'
             this.#endGame();
             this.#initialize();
