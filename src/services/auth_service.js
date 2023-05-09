@@ -12,13 +12,13 @@ class AuthService {
             return {};
         }
     }
-    login(username, password) {
+    login(nickname, password) {
         const password_hash = SHA256(password).toString();
         return fetch('/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                name: username,
+                nickname: nickname,
                 password_hash: password_hash
             })
         })
@@ -32,13 +32,15 @@ class AuthService {
         }).then(r => ({status: r.status, body: {}}));
     }
 
-    register(username, password) {
+    register(username, surname, nickname, password) {
         const password_hash = SHA256(password).toString();
         return fetch('/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name: username,
+                surname: surname,
+                nickname: nickname,
                 password_hash: password_hash
             })
         }).then(r =>  r.json().then(data => ({status: r.status, body: data})));

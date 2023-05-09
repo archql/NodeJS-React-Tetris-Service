@@ -72,7 +72,7 @@ const chatHandler = async (socket) => {
         usr = await usr.update({user_status_id: 2});
     }
     socket.broadcast.emit("user updated", usr);
-    // Retrieve user data from db
+    // Retrieve user data from db TODO duplicated
     const userDB = await User.findByPk(user.user_id, {
         include: [
             { model: Status },
@@ -80,7 +80,15 @@ const chatHandler = async (socket) => {
             { model: Message }
         ]
     });
-    socket.emit("self", userDB);
+    let userPlain = userDB.get({plain: true});
+    const rcd = user && await Record.findOne({
+        where: {
+            record_user_id: user.user_id
+        },
+        order: sequelize.literal('record_score DESC'),
+    });
+    userPlain["user_max_score"] = rcd ? rcd.record_score : 0;
+    socket.emit("self", userPlain);
 
     socket.on('self', async () => {
         // Retrieve user data from db
@@ -91,7 +99,16 @@ const chatHandler = async (socket) => {
                 { model: Message }
             ]
         });
-        socket.emit("self", userDB);
+        // find users max score
+        let userPlain = userDB.get({plain: true});
+        const rcd = user && await Record.findOne({
+            where: {
+                record_user_id: user.user_id
+            },
+            order: sequelize.literal('record_score DESC'),
+        });
+        userPlain["user_max_score"] = rcd ? rcd.record_score : 0;
+        socket.emit("self", userPlain);
     });
 
     socket.on('members', async () => {

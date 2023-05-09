@@ -84,7 +84,7 @@ export class LoginForm extends React.Component {
                             id={"reg-name"}
                             type={"text"}
                         >
-                            Name
+                            Nickname
                         </InputField>
                         <InputField
                             onChange={e => this.onChangePassword(e)}

@@ -113,16 +113,8 @@ export class ServerGameSessionControl {
                 const record = await Record.create({
                     record_user_id: this.user.user_id,
                     record_score: this.game.score,
-                    record_time_elapsed: {
-                        type: DataTypes.INTEGER,
-                        allowNull: false,
-                        unsigned: true
-                    },
-                    record_figures_placed: {
-                        type: DataTypes.INTEGER,
-                        allowNull: false,
-                        unsigned: true
-                    },
+                    record_time_elapsed: this.time - this.timeStarted, // TODO FIX THIS!!!
+                    record_figures_placed: this.game.placed
                 });
                 // set record
                 if (record) {

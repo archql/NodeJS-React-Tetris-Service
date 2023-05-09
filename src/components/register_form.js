@@ -16,29 +16,33 @@ export class RegisterForm extends React.Component {
             name: '',
             password: '',
             password_repeat: '',
+            nickname: '',
+            surname: '',
             loading: false,
             successful: false,
             message: ''
         };
-
-        //
-        this.onChangeName = this.onChangeName.bind(this);
-        this.onChangePassword = this.onChangePassword.bind(this);
-        this.onChangePasswordRepeat = this.onChangePasswordRepeat.bind(this);
-        this.handleRegister = this.handleRegister.bind(this);
     }
 
-    handleRegister(event) {
+    handleRegister = (event) => {
         event.preventDefault();
 
-        const { name, password, password_repeat } = this.state;
+        const { name, surname, nickname, password, password_repeat } = this.state;
 
         // check input
-        let badInput = name.length < 3 || password !== password_repeat || password.length < 4;
+        let badInput = name.length < 3 || surname.length < 3 || password !== password_repeat || password.length < 4;
         if (badInput) {
             this.setState({
                 loading: false,
                 message: "bad input!"
+            });
+            return;
+        }
+        const badNickName = !nickname.match(/^[_A-Z]{8}$/g);
+        if (badNickName) {
+            this.setState({
+                loading: false,
+                message: "bad nickname! (8 capitalized latin letters or '_' symbol)"
             });
             return;
         }
@@ -49,7 +53,7 @@ export class RegisterForm extends React.Component {
             loading: true
         });
 
-        authService.register(name, password).then(
+        authService.register(name, surname, nickname, password).then(
             (response) => {
                 if (response.status !== 200) {
                     this.setState({
@@ -75,17 +79,27 @@ export class RegisterForm extends React.Component {
             });
     }
 
-    onChangeName(e) {
+    onChangeName = (e) => {
         this.setState({
             name: e.target.value
         });
     }
-    onChangePassword(e) {
+    onChangeSurname = (e) => {
+        this.setState({
+            surname: e.target.value
+        });
+    }
+    onChangeNickname = (e) => {
+        this.setState({
+            nickname: e.target.value
+        });
+    }
+    onChangePassword = (e) => {
         this.setState({
             password: e.target.value
         });
     }
-    onChangePasswordRepeat(e) {
+    onChangePasswordRepeat = (e) => {
         this.setState({
             password_repeat: e.target.value
         });
@@ -105,28 +119,28 @@ export class RegisterForm extends React.Component {
                             Name
                         </InputField>
                         <InputField
-                            onChange={e => this.onChangeName(e)}
+                            onChange={e => this.onChangeSurname(e)}
                             id={"reg-surname"}
                             type={"text"}
                         >
                             Surname
                         </InputField>
                         <InputField
-                            onChange={e => this.onChangeName(e)}
+                            onChange={e => this.onChangeNickname(e)}
                             id={"reg-nickname"}
                             type={"text"}
                         >
                             Nickname
                         </InputField>
                         <InputField
-                            onChange={e => this.onChangeName(e)}
+                            onChange={e => this.onChangePassword(e)}
                             id={"reg-password"}
                             type={"password"}
                         >
                             Password
                         </InputField>
                         <InputField
-                            onChange={e => this.onChangeName(e)}
+                            onChange={e => this.onChangePasswordRepeat(e)}
                             id={"reg-password-conf"}
                             type={"password"}
                         >

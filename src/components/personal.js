@@ -33,7 +33,9 @@ export class Personal extends React.Component {
 
     render() {
         const list = this.state.records;
-        if (!list) {return (
+        console.log("personal render")
+        console.log(list);
+        if (!list || list.length === 0) {return (
             <React.Fragment>
                 <div>No records yet* :(</div>
                 <div style={{fontStyle: "italic"}}>*try to obtain one in the game!</div>
@@ -51,7 +53,7 @@ export class Personal extends React.Component {
                             {`SCORE: ${item.record_score}`}
                         </div>
                         <div>
-                            {`time played: ${(item.record_time_elapsed / 1000)} s`}
+                            {`time played: ${(item.record_time_elapsed / 1000).toFixed(1)} s`}
                         </div>
                         <div>
                             {`figures placed: ${(item.record_figures_placed)} pieces`}

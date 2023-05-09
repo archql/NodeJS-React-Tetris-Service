@@ -17,7 +17,7 @@ export class UserCard extends React.Component {
                         <img src="/images/icon_user.png" alt="user_icon"></img>
                     </div>
                     <div className="user_score">
-                        {user.role.role_name}
+                        {user.user_max_score}
                     </div>
                 </div>
                 <div className="user_info_pane">
@@ -39,7 +39,7 @@ export class UserCard extends React.Component {
                             {user.user_name}
                         </div>
                         <div>
-                            {user.user_name}
+                            {user.user_surname}
                         </div>
                     </div>
                     <div className="user_info">

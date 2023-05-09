@@ -33,6 +33,10 @@ export const User = sequelize.define("user", {
         type: DataTypes.STRING(100),
         allowNull: false
     },
+    user_surname: {
+        type: DataTypes.STRING(100),
+        allowNull: false
+    },
     user_password_hash: {
         type: DataTypes.STRING(64),
         allowNull: false
@@ -248,50 +252,6 @@ Like.belongsTo(Message,
 
 await sequelize.sync();
 
-// await User.create({
-//     user_role_id: 1,
-//     user_status_id: 1,
-//     user_name: 'abcd',
-//     user_password_hash: crypto.createHash("sha256").update("1234").digest('hex')
-// })
-const abcd = await User.findOne({ where: { user_name: 'abcd' } });
-if (abcd) {
-    await abcd.update({user_nickname: "BBBBBBBB"});
-}
-const records = await Record.findAll({ where: { record_user_id: abcd.user_id } });
-if (records) {
-    records.forEach(async (record) => {
-        await record.update({record_score: 1});
-    })
-}
-
-const root = await User.findOne({ where: { user_name: 'root' } });
-if (root) {
-    await root.update({ user_nickname: "_ARCHQL_" });
-    // await Record.create({
-    //     record_user_id: root.user_id,
-    //     record_score: 1000,
-    //     record_time_elapsed: 100000,
-    //     record_figures_placed: 240,
-    // });
-    // await Record.create({
-    //     record_user_id: root.user_id,
-    //     record_score: 2000,
-    //     record_time_elapsed: 200000,
-    //     record_figures_placed: 480,
-    // });
-}
-const abc = await User.findOne({ where: { user_name: 'abc' } });
-if (abc) {
-    await abc.update({ user_nickname: "AAAAAAAA" });
-    // await Record.create({
-    //     record_user_id: abc.user_id,
-    //     record_score: 500,
-    //     record_time_elapsed: 30000,
-    //     record_figures_placed: 120,
-    // });
-}
-
 // await Status.create({
 //     status_id: 1,
 //     status_name: "offline"
@@ -317,20 +277,56 @@ if (abc) {
 // await User.create({
 //     user_role_id: 1,
 //     user_status_id: 1,
-//     user_name: 'abc',
+//     user_name: 'Test',
+//     user_surname: 'Testovich',
 //     user_password_hash: crypto.createHash("sha256").update("1234").digest('hex')
 // })
 // await User.create({
 //     user_role_id: 20,
 //     user_status_id: 1,
-//     user_name: 'root',
+//     user_name: 'Artiom',
+//     user_surname: 'Drankevich',
+//     user_nickname: "_ARCHQL_",
 //     user_password_hash: crypto.createHash("sha256").update("2212").digest('hex')
+// })
+// await User.create({
+//     user_role_id: 1,
+//     user_status_id: 1,
+//     user_name: 'Test',
+//     user_surname: 'Testovich',
+//     user_nickname: "BBBBBBBB",
+//     user_password_hash: crypto.createHash("sha256").update("1234").digest('hex')
 // })
 // await Message.create({
 //     message_from_id: 2,
 //     message_to_id: 1,
 //     message_content: "Welcome to the Tetris Chat!"
 // })
+//
+// const root = await User.findOne({ where: { user_nickname: '_ARCHQL_' } });
+// if (root) {
+//     await Record.create({
+//         record_user_id: root.user_id,
+//         record_score: 1000,
+//         record_time_elapsed: 100000,
+//         record_figures_placed: 240,
+//     });
+//     await Record.create({
+//         record_user_id: root.user_id,
+//         record_score: 2000,
+//         record_time_elapsed: 200000,
+//         record_figures_placed: 480,
+//     });
+// }
+// const abc = await User.findOne({ where: { user_nickname: 'AAAAAAAA' } });
+// if (abc) {
+//     await Record.create({
+//         record_user_id: abc.user_id,
+//         record_score: 500,
+//         record_time_elapsed: 30000,
+//         record_figures_placed: 120,
+//     });
+// }
 
 
 

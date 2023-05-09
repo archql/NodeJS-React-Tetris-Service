@@ -32,8 +32,8 @@ registration
 }
 .reg_box {
     border-radius: 25px;
-    margin-top: 50px;
-    padding: 50px;
+    margin-top: 20px;
+    padding: 20px;
 }
 .reg_header {
     font-weight: bold;
@@ -47,7 +47,7 @@ registration
     align-items: center;
 }
 .reg_box > div {
-    margin: 25px;
+    margin: 10px;
 }
 .reg_box input {
     padding: 10px;
