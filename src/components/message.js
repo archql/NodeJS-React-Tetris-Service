@@ -23,7 +23,7 @@ export class Message extends React.Component {
                         <img
                             key={item.attachment_id}
                             className="attachment"
-                            src={"./attachments/" + item.attachment_filename}
+                            src={"/attachments/" + item.attachment_filename}
                             alt={item.attachment_filename}
                         />
                     ))

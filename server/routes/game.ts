@@ -1,8 +1,8 @@
-//import {User} from "../bin/db.js";
 import {GameInput} from "../game/server_client_globals.ts";
 import {ServerGameSessionControl} from "../game/reconciliator.ts";
 import {TPS} from "../game/server_client_globals.ts";
-import {User} from "../bin/db.js";
+import {Record, sequelize, User} from "../bin/db.js";
+import {io} from "../app.ts";
 
 type UserGameSessionsType = {
     [key: string]: ServerGameSessionControl;
@@ -13,27 +13,43 @@ const gameHandler = async (socket) => {
     console.log(`Socket connected: ${socket.id}`);
     //
     const user = socket.request.user;
-    //
-    // request user info from DB
-    let usr = user && await User.findByPk(user.user_id);
-    // TODO set user status to PLAYING
-    // if (usr !== null) {
-    //     usr = await usr.update({user_status_id: 2});
-    // }
-    // create a game instance for user
-    userGameSessions[socket.id] = new ServerGameSessionControl(socket, usr);
-    //
+    // create a game instance
+    userGameSessions[socket.id] = new ServerGameSessionControl(socket, io, null, null);
+    // Create socket connections
     socket.on('disconnect', async () => {
         console.log('A client disconnected');
+        userGameSessions[socket.id].onDisconnect();
         delete userGameSessions[socket.id];
     });
 
     socket.on('input', (input: GameInput) => {
         userGameSessions[socket.id].onInput(input);
     })
-    socket.on('sync', () => {
-        userGameSessions[socket.id].onSync();
+    socket.on('sync', async () => {
+        // request user info from DB
+        let usr = user && await User.findByPk(user.user_id);
+        // TODO set user status to PLAYING
+        // if (usr !== null) {
+        //     usr = await usr.update({user_status_id: 2});
+        // }
+        // find all records which correspond to user
+        const rcd = user && await Record.findOne({
+            where: {
+                record_user_id: user.user_id
+            },
+            order: sequelize.literal('record_score DESC'),
+        });
+        //
+        userGameSessions[socket.id].onSync(usr, rcd);
     });
+    socket.on('leaderboard', async () => {
+        const leaderboardData = await ServerGameSessionControl.getLeaderboard();
+        socket.emit('leaderboard', leaderboardData);
+    });
+    //
+    // send leaderboard
+    const leaderboardData = await ServerGameSessionControl.getLeaderboard();
+    socket.emit('leaderboard', leaderboardData);
 }
 
 export default gameHandler;

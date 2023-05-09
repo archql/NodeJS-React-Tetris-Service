@@ -109,6 +109,7 @@ export class ClientGameSessionControl {
 
     // client specific
     sync() {
+        console.log("LOG sync");
         this.socket.emit('sync');
     }
 
@@ -132,6 +133,7 @@ export class ClientGameSessionControl {
     }
 
     onServerConnect() {
+        console.log("LOG connected");
         this.game.status = "connected";
         this.game.callback(this.game.render());
     }

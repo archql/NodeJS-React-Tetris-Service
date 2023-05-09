@@ -5,7 +5,7 @@ import React from "react";
 import Cookies from "js-cookie";
 import { io } from 'socket.io-client';
 
-import {RenderBuffer, Tetris} from "../../game/tetris.ts";
+import {FIELD_W, RenderBuffer, Tetris} from "../../game/tetris.ts";
 import {ClientGameSessionControl} from "../../game/reconciliator.ts";
 import type {GameState} from "../../game/server_client_globals.ts";
 import {GameCanvas} from "./game_canvas";
@@ -20,6 +20,9 @@ export class Game extends React.Component {
         // game info
         this.session = null;
         this.game = null;
+        this.leaderboard = null;
+        this.rawLeaderboard = null;
+        this.self = null;
         // Socket IO connection
         this.socket = io("http://localhost:5000/game", {
             autoConnect: false,
@@ -27,23 +30,35 @@ export class Game extends React.Component {
                 token: Cookies.get('jwt')
             }
         });
+        //
+        this.state = {
+            loading: true
+        }
     }
 
     componentDidMount() {
         // open a socket IO connection
-        this.socket.connect();
         this.socket.on('connect', this.onConnect);
         this.socket.on('disconnect', this.onDisconnect);
         this.socket.on('error', this.onError);
         this.socket.on('connect_error', this.onConnectError);
         this.socket.on('sync', this.onSync);
         this.socket.on('update', this.onUpdate);
+        this.socket.on('leaderboard', this.onLeaderboard);
+        this.socket.on('game over', this.onServerGameOver);
+        //
+        if (this.socket.connected) {
+            this.socket.emit('leaderboard');
+        } else {
+            this.socket.connect();
+        }
         //
         window.addEventListener('keydown', this.onKeyEvent);
         // create a game
         let saved = localStorage.getItem('game');
         this.game = saved ? new Tetris(this.onGameStateChanged, JSON.parse(saved)) : new Tetris(this.onGameStateChanged);
         this.session = new ClientGameSessionControl(this.game, this.socket);
+        this.game.gameOverCallback = this.onLocalGameOver;
         // render
         this.onGameStateChanged(this.game.render());
     }
@@ -56,8 +71,54 @@ export class Game extends React.Component {
         this.socket.off('connect_error', this.onConnectError);
         this.socket.off('sync', this.onSync);
         this.socket.off('update', this.onUpdate);
+        this.socket.off('leaderboard', this.onLeaderboard);
+        this.socket.off('game over', this.onServerGameOver);
+        //
+        this.socket.disconnect();
         //
         this.session.destroy();
+    }
+
+    onLeaderboard = (leaderboard) => {
+        console.log(`LOG LEADERBOARD ${this.game.name}`);
+        // save servers leaderboard instance (DEEP COPY)
+        this.rawLeaderboard = JSON.parse(JSON.stringify(leaderboard));
+        // preprocess leaderboard
+        let obj = leaderboard.find((e) => e.user_nickname === this.game.name);
+        console.log(obj);
+        // TODO fix @default case
+        if (!obj ) {
+            if (this.game.name !== "@DEFAULT") {
+                leaderboard.push({
+                    user_nickname: this.game.name,
+                    user_max_score: this.game.highScore,
+                    appended: true,
+                    self: true
+                });
+            }
+        } else {
+            obj.self = true;
+        }
+        //
+        this.leaderboard = leaderboard;
+        //
+        this.onGameStateChanged(this.game.render());
+    }
+
+    onLocalGameOver = (score: number, newRecord: boolean) => {
+        // TODO enable loading if connected
+        this.setState({
+            loading: true
+        })
+    }
+
+    onServerGameOver = () => {
+        console.log("LOG onServerGameOver");
+        // TODO loading = false
+        // game state is changed by reconciliation
+        this.setState({
+            loading: false
+        })
     }
 
     onGameStateChanged = (data: RenderBuffer) => {
@@ -65,12 +126,38 @@ export class Game extends React.Component {
             return;
         }
         // render game
-        this.programInfo.strings = data.strings;
-        this.programInfo.buffers["a_position"].setData(data.vertices);
-        this.programInfo.buffers["a_color"].setData(data.colors);
-        this.programInfo.count = data.count;
-        // save state
-        localStorage.setItem('game', JSON.stringify(this.game));
+        if (data) {
+            this.programInfo.strings = data.strings;
+            this.programInfo.buffers["a_position"].setData(data.vertices);
+            this.programInfo.buffers["a_color"].setData(data.colors);
+            this.programInfo.count = data.count;
+            // save state
+            localStorage.setItem('game', JSON.stringify(this.game));
+        }
+        // TODO separate leaderboard logics
+        if (this.leaderboard) {
+            let i = 0;
+            this.programInfo.strings.push(
+                {
+                    x: FIELD_W + 8,
+                    y: 1 + i,
+                    text: "--<LEADERBOARD>--",
+                }
+            );
+            this.leaderboard.forEach((e) => {
+                // inc y pos
+                i++;
+                // render string
+                this.programInfo.strings.push(
+                    {
+                        x: FIELD_W + 8,
+                        y: 1 + i,
+                        text: `#${e.appended ? '#' : i.toString(16)} ${e.user_nickname}${String(e.user_max_score).padStart(6, ' ')}`,
+                        color: e.self ? 'yellow' : 'white'
+                    }
+                );
+            });
+        }
         // draw
         this.repaint();
     }
@@ -84,24 +171,31 @@ export class Game extends React.Component {
     }
 
     onConnect = () => {
-        console.log("onConnect");
+        console.log("LOG onConnect");
         this.session.onServerConnect();
         this.session.sync();
     }
     onDisconnect = () => {
-        console.log("onDisconnect");
+        console.log("LOG onDisconnect");
         this.session.onServerDisconnect();
     }
     onError = () => {
-        console.log("onError");
+        console.log("LOG onError");
     }
     onConnectError = (e) => {
-        console.log("onConnectError " + e);
+        console.log("LOG onConnectError " + e);
         this.session.onServerDisconnect();
     }
     onSync = (serverState: GameState) => {
-        console.log("onSync");
+        console.log("LOG onSync");
+        // reset game state
         this.session.onServerSynced(serverState);
+        // reset leaderboard state IMPORTANT after game state set
+        this.onLeaderboard(this.rawLeaderboard);
+        // stop loader
+        this.setState({
+            loading: false
+        })
     }
     onUpdate = (serverState: GameState) => {
         console.log("onUpdate");
@@ -109,9 +203,12 @@ export class Game extends React.Component {
     }
     render() {
         return (
-            <GameCanvas
-                set={this.canvasSet}
-            />
+            <React.Fragment>
+                {this.state.loading && (<div className="loader"/>)}
+                <GameCanvas
+                    set={this.canvasSet}
+                />
+            </React.Fragment>
         );
     }
 }

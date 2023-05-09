@@ -187,6 +187,7 @@ export class Tetris {
     field: number[] = new Array(FIELD_W * FIELD_H);
 
     callback: (buffer: RenderBuffer) => void = null;
+    gameOverCallback: (score: number, newRecord: boolean) => void = null;
 
     status = "offline"
 
@@ -196,7 +197,9 @@ export class Tetris {
 
     deepCopy() {
         const clone = JSON.parse(JSON.stringify(this));
+        // clear callbacks (they are different)
         clone.callback = null;
+        clone.gameOverCallback = null;
         return clone;
     }
 
@@ -209,8 +212,9 @@ export class Tetris {
         this.callback = renderCallback;
     }
     constructFromPrototype(prototype) {
-        // preserve callback function
+        // preserve callbacks functions
         const callback = this.callback;
+        const gameOverCallback = this.gameOverCallback;
         //
         Object.assign(this, prototype);
         // convert figures to objects too
@@ -223,8 +227,9 @@ export class Tetris {
         this.random = new Random(this.random.seed, this.random.prev);
         // copy link to random
         random = this.random;
-        // setup render back
+        // setup callbacks back
         this.callback = callback;
+        this.gameOverCallback = gameOverCallback;
     }
 
     //############### KEY EVENT ############
@@ -492,10 +497,12 @@ export class Tetris {
     }
 
     #endGame() {
-        if (this.highScore < this.score) {
+        const newRecord = this.highScore < this.score;
+        this.gameOverCallback && this.gameOverCallback(this.score, newRecord);
+        if (newRecord) {
             this.highScore = this.score;
-            // TODO SEND UPDATE SIG
         }
+        //
         this.playing = false;
     }
 

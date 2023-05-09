@@ -1,7 +1,7 @@
 import express from 'express';
 import {User} from "../bin/db.js";
 import crypto from "crypto";
-import {generateAccessToken} from "../bin/jwt.js";
+import {authenticateToken, generateAccessToken} from "../bin/jwt.js";
 
 const router = express.Router();
 
@@ -67,6 +67,27 @@ router.post('/login', async function (req, res, next) {
     res.cookie("jwt", token/*, { httpOnly: true }*/);
     // return success
     return res.json({accessToken: token, user_id: user.user_id});
+});
+
+router.get('/logout', authenticateToken, async function (req, res, next) {
+    if (!req.user) {
+        return res.status(401).json({error_message: "unauthorized" });
+    }
+
+    const user = await User.findByPk(req.user.user_id);
+    if (!user) {
+        return res.status(409).json({error_message: "user do not exists" });
+    }
+    try {
+        await user.update({user_status_id: 1});
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({error_message: "internal server error" });
+    }
+    // generate access token
+    res.clearCookie("jwt");
+    // return success
+    res.sendStatus(200);
 });
 
 export default router;

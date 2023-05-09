@@ -62,3 +62,21 @@
     max-width: 60rem;
     width: 100%;
 }
+
+.loader {
+    border: 32px solid var(--card-color-secondary);
+    border-top: 32px solid  var(--btn-color);
+    border-radius: 50%;
+    animation: spin 2s cubic-bezier(0.55, 0.28, 0.42, 0.69) infinite;
+    margin: auto;
+    width: 128px;
+    aspect-ratio: 1;
+    z-index: 15;
+    background-color: transparent;
+    box-shadow: 0 0 10px 10px var(--shadow-color), inset 0 0 10px 10px var(--shadow-color);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

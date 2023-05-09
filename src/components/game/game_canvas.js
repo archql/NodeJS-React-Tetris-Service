@@ -40,7 +40,7 @@ void main() {
   outColor = vec4(v_color, 1.0);
 }
 `;
-export class GameCanvas extends React.Component {
+export class GameCanvas extends React.PureComponent {
 
     constructor(props) {
         super(props);
@@ -79,6 +79,10 @@ export class GameCanvas extends React.Component {
         this.resizeCanvas();
         //
         this.props.set(this.programInfo, this.repaint);
+    }
+
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        console.log("CANVAS RERENDER!")
     }
 
     repaint = () => {
@@ -154,6 +158,7 @@ export class GameCanvas extends React.Component {
                         style={{
                             width: "100%",
                             height: "100%",
+                            position: "absolute",
                         }}
                 >
                 </canvas>
@@ -165,7 +170,7 @@ export class GameCanvas extends React.Component {
                             position: "absolute",
                             left: 0,
                             top: 0,
-                            zIndex: 10,
+                            zIndex: 10
                         }}
                 >
                 </canvas>

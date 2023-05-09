@@ -1,24 +1,14 @@
 import React from 'react';
 import Cookies from 'js-cookie';
 import { authService } from  "../services/auth_service.js";
-import { userService } from "../services/user_service.js";
-import {Link, Navigate, NavLink, Route, Routes} from "react-router-dom";
+import {Navigate, NavLink, Route, Routes} from "react-router-dom";
 import { withRouter } from '../common/with_router.js';
 
 import '../stylesheets/user.css';
-import {ListContainer} from "./list_container";
-import {ResizeableInput} from "./resizeable_input";
-import {MessageContainer} from "./message_container";
-import * as faIcons from "@fortawesome/fontawesome-free-solid";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
 import { io } from 'socket.io-client';
 import {UserCard} from "./user_card";
-import {Chat, ChatRouted} from "./chat";
-import {NotFound} from "./not_found";
-import {RegisterFormRouted} from "./register_form";
-import {LoginFormRouted} from "./login_form";
-import {GameRouted} from "./game/game";
+import {ChatRouted} from "./chat";
 import {HelpRouted} from "./help";
 import {PersonalRouted} from "./personal";
 export const socket = io("http://localhost:5000/chat", {

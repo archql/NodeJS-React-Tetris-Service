@@ -200,6 +200,7 @@ export class GlProgramInfo {
             canvasX = Math.round(canvasX);
             canvasY = Math.round(canvasY);
 
+            this.ctx.fillStyle = str.color || "white";
             this.ctx.textAlign = str.align || "left";
             this.ctx.fillText(str.text, canvasX, canvasY);
         }

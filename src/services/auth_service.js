@@ -1,12 +1,13 @@
 import { SHA256 } from 'crypto-js';
+import Cookies from 'js-cookie';
 
 class AuthService {
 
+    // TODO bad
     authHeader() {
-        const user = JSON.parse(localStorage.getItem('user'));
-
-        if (user && user.accessToken) {
-            return { 'Authorization': 'Bearer ' + user.accessToken };
+        const token = Cookies.get('jwt');
+        if (token) {
+            return { 'Authorization': 'Bearer ' + token };
         } else {
             return {};
         }
@@ -21,19 +22,14 @@ class AuthService {
                 password_hash: password_hash
             })
         })
-        .then(r =>  r.json().then(data => ({status: r.status, body: data})))
-        .then(response => {
-            console.log(response);
-            if (response.status === 200 && response.body.accessToken) {
-                localStorage.setItem("user", JSON.stringify(response.body));
-            }
-
-            return response;
-        });
+        .then(r =>  r.json().then(data => ({status: r.status, body: data})));
     }
 
     logout() {
-        localStorage.removeItem("user");
+        return fetch('/auth/logout', {
+            method: 'GET',
+            headers: { ...authService.authHeader() }
+        }).then(r => ({status: r.status, body: {}}));
     }
 
     register(username, password) {
@@ -46,10 +42,6 @@ class AuthService {
                 password_hash: password_hash
             })
         }).then(r =>  r.json().then(data => ({status: r.status, body: data})));
-    }
-
-    getCurrentUser() {
-        return JSON.parse(localStorage.getItem('user'));
     }
 }
 
