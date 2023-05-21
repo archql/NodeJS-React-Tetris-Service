@@ -252,6 +252,58 @@ Like.belongsTo(Message,
 
 await sequelize.sync();
 
+// const test = await User.findOne({ where: { user_name: 'Test', user_nickname: null } });
+// if (test) {
+//     await User.destroy({ where: { user_name: 'Test', user_nickname: null } });
+// } else {
+//     console.log("NOT FOUND");
+// }
+
+async function createUser(name, surname, nickname, password, role_id, status_id, score) {
+    const usr = await User.findOne({ where: { user_nickname: nickname } });
+    if (!usr) {
+        const newUsr = await User.create({
+            user_role_id: role_id,
+            user_status_id: status_id,
+            user_name: name,
+            user_surname: surname,
+            user_nickname: nickname,
+            user_password_hash: crypto.createHash("sha256").update(password).digest('hex')
+        });
+        await Record.create({
+            record_user_id: newUsr.user_id,
+            record_score: score,
+            record_time_elapsed: score * 700,
+            record_figures_placed: Math.floor(score * 0.8),
+        });
+    }
+}
+
+await createUser('Dummy', 'Testovich', 'AAAAAAAA', '1234', 1, 1, 6284);
+await createUser('Dummy', 'Testovich', 'TETRISTE', '1234', 1, 1, 6272);
+await createUser('Dummy', 'Testovich', '_KJIOYN_', '1234', 1, 1, 4412);
+await createUser('Dummy', 'Testovich', 'GHGGHGHG', '1234', 1, 1, 4400);
+await createUser('Dummy', 'Testovich', 'PUTINLFF', '1234', 1, 1, 3096);
+await createUser('Dummy', 'Testovich', 'ELBARONO', '1234', 1, 1, 2700);
+await createUser('Dummy', 'Testovich', 'ANNASAYU', '1234', 1, 1, 2228);
+await createUser('Dummy', 'Testovich', 'WHISKEYJ', '1234', 1, 1, 1192);
+await createUser('Dummy', 'Testovich', 'GOODIKER', '1234', 1, 1, 1112);
+await createUser('Dummy', 'Testovich', 'AMONG_US', '1234', 1, 1, 1084);
+await createUser('Dummy', 'Testovich', 'KOSTAHKA', '1234', 1, 1, 1076);
+await createUser('Dummy', 'Testovich', '_CMEXOB_', '1234', 1, 1, 968);
+await createUser('Dummy', 'Testovich', 'DAMIORAD', '1234', 1, 1, 672);
+await createUser('Dummy', 'Testovich', 'FILKADFS', '1234', 1, 1, 228);
+
+// const usr = await User.findOne({ where: { user_nickname: '_ARCHQL_' } });
+// if (usr) {
+//     await Record.create({
+//         record_user_id: usr.user_id,
+//         record_score: 7336,
+//         record_time_elapsed: 1438192,
+//         record_figures_placed: 691,
+//     });
+// }
+
 // await Status.create({
 //     status_id: 1,
 //     status_name: "offline"

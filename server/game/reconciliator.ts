@@ -135,8 +135,7 @@ export class ServerGameSessionControl {
                     //this.socket.emit('leaderboard', leaderboard);
                     //console.log(this.io);
                     // TODO costili
-                    this.socket.emit('leaderboard', leaderboard);
-                    this.socket.broadcast.emit('leaderboard', leaderboard);
+                    this.io.emit('leaderboard', leaderboard);
                 }
             })();
         }

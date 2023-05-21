@@ -27,6 +27,7 @@ export const io = new Server(server, {
     },
     //path: '/chat',
     maxHttpBufferSize: 100 * 1024 * 1024,
+    transports: ['websocket']
 }); // Attach Socket.io to HTTP server
 
 // view engine setup
@@ -43,7 +44,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/attachments', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/auth', authRouter)
-
 io.on("connection", (socket) => {});
 io.use((socket, next) => { next() });
 io.of('/chat').use(isAuthenticated).on("connection", chatSockets);

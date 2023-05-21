@@ -85,6 +85,8 @@ export class Chat extends React.Component {
     }
 
     onNewMessage = (newMessage) => {
+        console.log("On new message");
+        console.log(newMessage);
         this.setState({
             messages: [...this.state.messages, newMessage]
         });
@@ -182,7 +184,7 @@ export class Chat extends React.Component {
                         list={this.state.others}
                         callback={e => this.userSelected(e)}
                         idMap={(item) => item.user_id} // TODO
-                        nameMap={(item) => <div><div>{item.user_name}</div><div style={{fontSize: 'smaller', fontStyle: 'italic'}}>{item.user_status_id === 1 ? "offline" : "on-line" }</div></div>}
+                        nameMap={(item) => <div><div>{item.user_nickname}</div><div>{item.user_name}</div><div style={{fontSize: 'smaller', fontStyle: 'italic'}}>{item.user_status_id === 1 ? "offline" : "on-line" }</div></div>}
                         cssItemClass={"box user"}
                         cssActiveClass={"active"}
                     />

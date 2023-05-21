@@ -185,7 +185,7 @@ const chatHandler = async (socket) => {
             // send success
             socket.emit("create message", result);
             // send message to target user
-            const targetSocket = io.sockets.sockets.get(userSockets[user_to_id]);
+            const targetSocket = io.of('/chat').sockets.get(userSockets[user_to_id]);
             if (targetSocket) {
                 targetSocket.emit('new message', result);
             }
@@ -210,7 +210,7 @@ const chatHandler = async (socket) => {
             if (delRes) {
                 // send message to target user
                 socket.emit("delete message", message_id);
-                const targetSocket = io.sockets.sockets.get(userSockets[msg.message_to_id]);
+                const targetSocket = io.of('/chat').sockets.get(userSockets[msg.message_to_id]);
                 if (targetSocket) {
                     targetSocket.emit('delete message', message_id);
                 }
@@ -238,7 +238,10 @@ const chatHandler = async (socket) => {
             // send success
             socket.emit("edit message", msg);
             // send message to target user
-            const targetSocket = io.sockets.sockets.get(userSockets[msg.message_to_id]);
+            const targetSocket = io.of('/chat').sockets.get(userSockets[msg.message_to_id]);
+            console.log(userSockets[msg.message_to_id]);
+            console.log("targetSocket");
+            console.log(targetSocket);
             if (targetSocket) {
                 targetSocket.emit('edit message', msg);
             }

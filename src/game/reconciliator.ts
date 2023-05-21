@@ -71,6 +71,14 @@ export class ClientGameSessionControl {
         this.game = game;
         this.socket = socket;
 
+        let bufArr = new ArrayBuffer(4);
+        let bufView = new Uint8Array(bufArr);
+        bufView[0]=1;
+        bufView[1]=2;
+        bufView[2]=3;
+        bufView[3]=4;
+        this.socket.emit('test',bufArr);
+
         const time = performance.now();
         this.time = time
         this.gameTime = time;

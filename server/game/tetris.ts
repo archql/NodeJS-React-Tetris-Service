@@ -266,8 +266,16 @@ export class Tetris {
             this.paused = !this.paused;
             return;
         }
+        if (key ===  15) { // shift up
+            this.softDrop = false;
+            return;
+        }
         if (this.paused === true)
             return;
+        if (key === 16) {// shift
+            this.softDrop = true;
+            return;
+        }
         if (!this.held && key === 72) // 'H', buffer used
         {
             this.held = true;
@@ -294,12 +302,6 @@ export class Tetris {
                 break;
             case 39: // >
                 fig.x++;
-                break;
-            case 16: // shift
-                this.softDrop = true;
-                break;
-            case 15: // shift up
-                this.softDrop = false;
                 break;
         }
         if (this.#collideFigure(fig)) {
@@ -350,10 +352,10 @@ export class Tetris {
             this.#renderFigureInto(renderBuffer, this.heldFigure, FIELD_W + 3, 2  +  4  +  2);
         }
         if (this.paused) {
-            renderBuffer.strings.push({x: FIELD_W / 2, y: 0, text: "PAUSED", align: "center"});
+            renderBuffer.strings.push({x: FIELD_W / 2, y: 1, text: "PAUSED", align: "center"});
         }
         if (!this.playing) {
-            renderBuffer.strings.push({x: FIELD_W / 2, y: 0, text: "GAME OVER", align: "center"});
+            renderBuffer.strings.push({x: FIELD_W / 2, y: 1, text: "GAME OVER", align: "center"});
         }
         renderBuffer.strings.push({x: FIELD_W + 4, y: 2  +  4  +  1, text: "HELD FIGURE", align: "center"});
         renderBuffer.strings.push({x: FIELD_W + 4, y: 1            , text: "NEXT FIGURE", align: "center"});

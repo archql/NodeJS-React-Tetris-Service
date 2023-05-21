@@ -14,7 +14,7 @@ const gameHandler = async (socket) => {
     //
     const user = socket.request.user;
     // create a game instance
-    userGameSessions[socket.id] = new ServerGameSessionControl(socket, io, null, null);
+    userGameSessions[socket.id] = new ServerGameSessionControl(socket, io.of('/game'), null, null);
     // Create socket connections
     socket.on('disconnect', async () => {
         console.log('A client disconnected');
@@ -45,6 +45,15 @@ const gameHandler = async (socket) => {
     socket.on('leaderboard', async () => {
         const leaderboardData = await ServerGameSessionControl.getLeaderboard();
         socket.emit('leaderboard', leaderboardData);
+    });
+    socket.on('test', ()=>{
+        let bufArr = new ArrayBuffer(4);
+        let bufView = new Uint8Array(bufArr);
+        bufView[0]=6;
+        bufView[1]=7;
+        bufView[2]=8;
+        bufView[3]=9;
+        socket.emit('test',bufArr);
     });
     //
     // send leaderboard

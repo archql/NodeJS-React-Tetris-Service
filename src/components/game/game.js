@@ -28,7 +28,8 @@ export class Game extends React.Component {
             autoConnect: false,
             auth: {
                 token: Cookies.get('jwt')
-            }
+            },
+            transports: ['websocket'], upgrade: false
         });
         //
         this.state = {
@@ -91,12 +92,21 @@ export class Game extends React.Component {
         // TODO fix @default case
         if (!obj ) {
             if (this.game.name !== "@DEFAULT") {
-                leaderboard.push({
-                    user_nickname: this.game.name,
-                    user_max_score: this.game.highScore,
-                    appended: true,
-                    self: true
-                });
+                if (leaderboard.length < 15) {
+                    leaderboard.push({
+                        user_nickname: this.game.name,
+                        user_max_score: this.game.highScore,
+                        appended: true,
+                        self: true
+                    });
+                } else {
+                    leaderboard[14] = ({
+                        user_nickname: this.game.name,
+                        user_max_score: this.game.highScore,
+                        appended: true,
+                        self: true
+                    });
+                }
             }
         } else {
             obj.self = true;
@@ -155,7 +165,7 @@ export class Game extends React.Component {
                     {
                         x: FIELD_W + 8,
                         y: 2 + index,
-                        text: `#${e.appended ? '#' : (index + 1).toString(16)} ${e.user_nickname}${String(e.user_max_score).padStart(6, ' ')}`,
+                        text: `#${e.appended ? '#' : (index + 1).toString(16).toUpperCase()} ${e.user_nickname}${String(e.user_max_score).padStart(6, ' ')}`,
                         color: e.self ? 'yellow' : 'white'
                     }
                 );
