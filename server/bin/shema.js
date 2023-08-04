@@ -134,8 +134,7 @@ const RootMutationType = new GraphQLObjectType({
             async resolve(parent, { file }) {
                 // `file` will be an object with `filename`, `mimetype`, `encoding` and `createReadStream`
                 // Use this object to save the file to your desired location, e.g. using `fs.createWriteStream`
-                const { createReadStream, filename } = await file;
-                const stream = createReadStream();
+                const { filename } = await file;
                 // Add logic to save the file
                 console.log(`Received file: ${filename}`);
                 return 'File uploaded successfully';

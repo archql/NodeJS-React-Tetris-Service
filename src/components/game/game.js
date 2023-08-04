@@ -24,12 +24,13 @@ export class Game extends React.Component {
         this.rawLeaderboard = null;
         this.self = null;
         // Socket IO connection
-        this.socket = io("http://localhost:5000/game", {
+        this.socket = io("http://localhost:5555/game", {
             autoConnect: false,
             auth: {
                 token: Cookies.get('jwt')
             },
-            transports: ['websocket'], upgrade: false
+            transports: ['websocket'], upgrade: false,
+            path: '/socket-io'
         });
         //
         this.state = {

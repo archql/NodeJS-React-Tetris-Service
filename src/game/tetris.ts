@@ -36,7 +36,7 @@ const SPEED_MUL = 0.95;
 
 const INC_EVERY_FIGS = 15; // 2^N-1
 
-const TOP_LINE = 1;
+const TOP_LINE = 0;
 
 const FIG_START_Y = -1;
 
@@ -74,7 +74,7 @@ export const STATUS_TABLE = {
     offline:               '@OFFLINE',
     connected:             '@ON-LINE',
     registered:            '@REGSTRD',
-    rgRejected:            '@REJCTED',
+    rejected:              '@REJCTED',
     keyFail:               '@UUIDERR',
     connLost:              '@CNCLOST',
 };

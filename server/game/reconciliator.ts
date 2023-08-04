@@ -4,6 +4,7 @@ import {Tetris} from "./tetris.ts";
 import {STATUS_TABLE} from "./tetris.ts";
 import {Record, sequelize} from "../bin/db.js";
 import {DataTypes, QueryTypes} from "sequelize";
+import {bufferFromState, leaderboardToBuffer} from "./tetrisAsm.ts";
 
 export class ServerGameSessionControl {
     // Database user
@@ -67,15 +68,20 @@ export class ServerGameSessionControl {
         this.currentEvent = 0;
         this.gameTime = 0;
         this.gameTick = 0;
+        this.timeGameStarted = this.time;
         // create brand-new game
         this.game = new Tetris(null);
         this.game.gameOverCallback = (score: number, newRecord: boolean) => this.onGameOver(score, newRecord);
         // get user nickname
         if (this.user) {
             this.game.name = this.user.user_nickname || "@DEFAULT";
-            this.game.status = "registered";
-            if (this.record) {
-                this.game.highScore = this.record.record_score;
+            if (!this.user.error) {
+                this.game.status = "registered";
+                if (this.record) {
+                    this.game.highScore = this.record.record_score;
+                }
+            } else {
+                this.game.status = "rejected";
             }
         } else {
             this.game.name = "@DEFAULT";
@@ -87,9 +93,12 @@ export class ServerGameSessionControl {
             this.time - this.timeStarted, this.game.deepCopy());
         // send game state
         this.socket.emit('sync', this.stateBuffer[bufferIndex]);
+        // TODO
+        this.socket.emit('sncX', bufferFromState(this.stateBuffer[bufferIndex]));
     }
 
     onInput(input: GameInput) {
+        console.log(`on input evtId=${input.input.id} evtNo=${input.event} evtTime=${input.time}`);
         this.inputQueue.push(input);
         // TOO MANY PACKETS
         if (this.inputQueue.length > BUFFER_SIZE) {
@@ -129,13 +138,9 @@ export class ServerGameSessionControl {
                     // TODO
                     // send leaderboard update (TODO deep compare)
                     const leaderboard = await ServerGameSessionControl.getLeaderboard();
-                    // console.log("leaderboard");
-                    // console.log(record);
-                    // console.log(leaderboard);
-                    //this.socket.emit('leaderboard', leaderboard);
-                    //console.log(this.io);
-                    // TODO costili
                     this.io.emit('leaderboard', leaderboard);
+                    // TODO
+                    this.io.emit('lbXX', leaderboardToBuffer(leaderboard));
                 }
             })();
         }
@@ -150,6 +155,7 @@ export class ServerGameSessionControl {
         if (this.inputQueue.length === 0) {
             return;
         }
+        console.log(`process`);
         // get current time
         this.time = performance.now();
         //
@@ -164,9 +170,10 @@ export class ServerGameSessionControl {
             // timer event
             //console.log(`game time ${this.gameTime} ms`)
             let gameDelta = (input.time - this.gameTime);
+            console.log(`game delta ${gameDelta}`)
             if (this.game.playing && !this.game.paused) {
                 // console.log(`passed ${gameDelta} ms from last 7 event`)
-                if (gameDelta > (this.game.softDrop ?
+                if (gameDelta >= (this.game.softDrop ?
                     (this.game.tickSpeed / 4) : this.game.tickSpeed)) {
                     //
                     const gameTicksSkipped = Math.floor(gameDelta / this.game.tickSpeed);
@@ -204,6 +211,8 @@ export class ServerGameSessionControl {
         // console.log("send update");
         // console.log(this.stateBuffer[bufferIndex]);
         this.socket.emit('update', this.stateBuffer[bufferIndex]);
+        // TODO
+        this.socket.emit('updX', bufferFromState(this.stateBuffer[bufferIndex]));
         //console.log(this.stateBuffer[bufferIndex])
     }
 

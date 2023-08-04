@@ -1,3 +1,4 @@
+import {Tetris} from "./tetris.ts";
 
 export const BUFFER_SIZE = 1024;
 export const TPS = 30;
@@ -27,7 +28,7 @@ export class GameState {
     event: number
     time: number
     // defines the game state which were produced by the input
-    state: {}
+    state: Tetris
 
     constructor(tick: number, event: number, time: number, state) {
         this.tick = tick;

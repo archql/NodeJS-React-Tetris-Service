@@ -21,19 +21,15 @@ export const __dirname = path.dirname(__filename);
 export let app = express();
 export const server = http.createServer(app); // Create HTTP server
 export const io = new Server(server, {
-    cors: {
-        origin: "http://localhost:3000",
-        credentials: true
-    },
-    //path: '/chat',
     maxHttpBufferSize: 100 * 1024 * 1024,
-    transports: ['websocket']
+    transports: ['websocket'], // do not create http long polling
+    path: '/socket-io'
 }); // Attach Socket.io to HTTP server
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
-
+// TODO find what is what here
 app.use(cors());
 app.use(SocketIOFileUpload.router);
 app.use(cookieParser());
@@ -44,12 +40,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/attachments', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/auth', authRouter)
-io.on("connection", (socket) => {});
-io.use((socket, next) => { next() });
+
+//io.on("connection", (socket) => {});
+
+//io.use((socket, next) => { next() });
 io.of('/chat').use(isAuthenticated).on("connection", chatSockets);
 io.of('/game').use(isAuthenticatedGame).on("connection", gameSockets);
-server.listen(5000, () => {
-    console.log('Listening on port 5000')
+
+const PORT = process.env.PORT || '3000';
+server.listen(PORT, () => {
+    console.log(`Listening on port ${PORT}`);
 })
 // Launch game loop
 launchGameLoop();

@@ -11,12 +11,14 @@ import {UserCard} from "./user_card";
 import {ChatRouted} from "./chat";
 import {HelpRouted} from "./help";
 import {PersonalRouted} from "./personal";
-export const socket = io("http://localhost:5000/chat", {
+export const socket = io("http://localhost:5555/chat", {
     autoConnect: false,
     //withCredentials: true,
     auth: {
         token: Cookies.get('jwt')
-    }
+    },
+    transports: ['websocket'], upgrade: false,
+    path: '/socket-io'
 });
 
 export class Account extends React.Component {
