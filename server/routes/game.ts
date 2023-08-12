@@ -100,7 +100,7 @@ export const launchGameLoop = () => {
     if (userGameSessions) {
         let now = performance.now();
         let delta = (now - time) / 1000;
-        console.log(`real TPS = ${1 / delta}`)
+        // console.log(`real TPS = ${1 / delta}`)
         // TODO game update loop
         for (const [, session] of Object.entries(userGameSessions)) {
             session.process();

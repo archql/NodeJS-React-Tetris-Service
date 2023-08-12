@@ -3,9 +3,17 @@ import fontawesome from '@fortawesome/fontawesome'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as faIcons from '@fortawesome/fontawesome-free-solid'
 
-fontawesome.library.add(faIcons.faTrash, faIcons.faPencilAlt, faIcons.faSignOutAlt);
+//fontawesome.library.add(faIcons.faTrash, faIcons.faPencilAlt, faIcons.faSignOutAlt);
 
 export class Message extends React.Component {
+
+    constructor(props) {
+        super(props);
+
+        // this.state = {
+        //     likeIsShown: false
+        // }
+    }
 
     render() {
         const item = this.props.item;
@@ -13,6 +21,8 @@ export class Message extends React.Component {
             <div
                 className={this.getClassName()}
                 key={item.message_id}
+                // onMouseEnter={() => this.setState({likeIsShown:true})}
+                // onMouseLeave={() => this.setState({likeIsShown:false})}
             >
                 <div style={{fontSize: 'larger'}}>
                     from {item.user_from.user_name}
@@ -55,6 +65,14 @@ export class Message extends React.Component {
                             onClick={() => this.props.editMessage(item)}
                         >
                         <FontAwesomeIcon icon={faIcons.faPencilAlt}/>
+                        </div>
+                    )
+                }
+                {
+                    ((item.message_from_id !== this.props.curUserId) || item.liked) && (
+                        <div className={item.liked ? "float like selected" : "float like"}
+                             onClick={() => this.props.likeMessage(item.message_id)}>
+                            <FontAwesomeIcon icon={faIcons.faHeart}/>
                         </div>
                     )
                 }

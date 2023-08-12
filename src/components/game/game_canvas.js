@@ -1,6 +1,6 @@
 import React from "react";
 import {GlProgramInfo} from "../../game/glutils.ts";
-import {mat4} from 'gl-matrix';
+import {mat4, vec3} from 'gl-matrix';
 import {FIELD_H, FIELD_W, RECT_MODIFIER} from "../../game/tetris.ts";
 
 const vertexShaderSource = `#version 300 es
@@ -36,7 +36,6 @@ in vec3 v_color;
 out vec4 outColor;
  
 void main() {
-  // Just set the output to a constant reddish-purple
   outColor = vec4(v_color, 1.0);
 }
 `;
@@ -47,9 +46,11 @@ export class GameCanvas extends React.PureComponent {
         this.canvasRef = React.createRef();
         this.textCanvasRef = React.createRef();
         this.programInfo = null;
+        this.renderBuffers = {};
         // FPS info
         this.frames = 0;
         this.prevTime = 0;
+        this.fps = 0;
     }
 
     componentDidMount() {
@@ -72,13 +73,13 @@ export class GameCanvas extends React.PureComponent {
         // Bind appropriate array buffer to it
         this.programInfo.addBuffer([], "a_position", 2, gl.DYNAMIC_DRAW);
         this.programInfo.addBuffer([], "a_color", 3, gl.DYNAMIC_DRAW);
-        this.programInfo.addUniform("u_pointSize", 10.0, gl.uniform1f);
-        this.programInfo.addUniformMatrix("u_modelViewMatrix", modelViewMatrix, gl.uniformMatrix4fv);
-        this.programInfo.addUniformMatrix("u_projectionMatrix", projectionMatrix, gl.uniformMatrix4fv);
+        this.programInfo.addUniform("u_pointSize", 10.0, gl.uniform1f, (v) => v);
+        this.programInfo.addUniformMatrix("u_modelViewMatrix", modelViewMatrix, gl.uniformMatrix4fv, (v) => mat4.clone(v));
+        this.programInfo.addUniformMatrix("u_projectionMatrix", projectionMatrix, gl.uniformMatrix4fv, (v) => mat4.clone(v));
         // update
         this.resizeCanvas();
         //
-        this.props.set(this.programInfo, this.repaint);
+        this.props.set(this.renderBuffers, this.repaint);
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -118,15 +119,26 @@ export class GameCanvas extends React.PureComponent {
     }
 
     drawScene = () => {
+        //
+        console.log("draw scene()")
+        //
         const time = Date.now();
         this.frames++;
         if (time > this.prevTime + 1000) {
-            let fps = Math.round( ( this.frames * 1000 ) / ( time - this.prevTime ) );
+            this.fps = Math.round( ( this.frames * 1000 ) / ( time - this.prevTime ) );
             this.prevTime = time;
             this.frames = 0;
 
-            console.info('FPS: ', fps);
+            console.info('FPS: ', this.fps);
         }
+        this.programInfo.strings.push(
+            {
+                x: FIELD_W + 8,
+                y: 0,
+                text: `FPS ${String(this.fps).padStart(4, ' ')}`,
+                color: 'white'
+            }
+        );
 
         const gl = this.programInfo.gl;
         const ctx = this.programInfo.ctx;
@@ -142,11 +154,39 @@ export class GameCanvas extends React.PureComponent {
         // Set the view port
         gl.viewport(0, 0, this.canvasRef.current.width, this.canvasRef.current.height);
 
-        // Use the combined shader program object
-        this.programInfo.load();
-        //
-        gl.drawArrays(gl.POINTS, 0, this.programInfo.count);
-        //
+        // TODO foreach renderbuffer call this vvv
+        for (const [, value] of Object.entries(this.renderBuffers)) {
+            // save uniforms
+            this.programInfo.push();
+            // set new uniforms
+            this.programInfo.uniforms["u_pointSize"].value *= value.scale;
+            const mat = this.programInfo.uniforms["u_projectionMatrix"].value;
+            mat4.translate(mat, mat, vec3.fromValues(value.x, value.y, 0.0));
+            mat4.scale(mat, mat, vec3.fromValues(value.scale, value.scale, 1.0));
+            this.programInfo.uniforms["u_projectionMatrix"].value = mat;
+            // load data of the buffer
+            this.programInfo.strings = value.strings;
+            this.programInfo.buffers["a_position"].setData(value.vertices);
+            this.programInfo.buffers["a_color"].setData(value.colors);
+            this.programInfo.count = value.count;
+            // Use the combined shader program object
+            this.programInfo.load();
+            //
+            gl.drawArrays(gl.POINTS, 0, this.programInfo.count);
+            //
+            this.programInfo.drawStrings();
+            //
+            this.programInfo.pop();
+        }
+        // TODO test fps
+        this.programInfo.strings = [
+            {
+                x: FIELD_W + 8,
+                y: 0,
+                text: `FPS ${String(this.fps).padStart(4, ' ')}`,
+                color: 'white'
+            }
+        ];
         this.programInfo.drawStrings();
     }
 

@@ -165,6 +165,11 @@ export class RenderBuffer {
     colors: number[] = [];
     count: number = 0;
     strings: RenderString[] = [];
+
+    // translations
+    scale: number = 1.0;
+    x: number = 0;
+    y: number = 0;
 }
 
 export class Tetris {
@@ -186,6 +191,7 @@ export class Tetris {
 
     field: number[] = new Array(FIELD_W * FIELD_H);
 
+    // render callback
     callback: (buffer: RenderBuffer) => void = null;
     gameOverCallback: (score: number, newRecord: boolean) => void = null;
 
@@ -342,6 +348,7 @@ export class Tetris {
         }
     }
 
+    // TODO move out or change render function
     render() {
         const renderBuffer = new RenderBuffer();
         this.#renderFieldInto(renderBuffer);

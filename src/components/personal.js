@@ -33,17 +33,15 @@ export class Personal extends React.Component {
 
     render() {
         const list = this.state.records;
-        console.log("personal render")
-        console.log(list);
         if (!list || list.length === 0) {return (
             <React.Fragment>
-                <div>No records yet* :(</div>
-                <div style={{fontStyle: "italic"}}>*try to obtain one in the game!</div>
+                <div>No records yet :(</div>
+                <div style={{fontStyle: "italic"}}>try to obtain one in the game!</div>
             </React.Fragment>
         )}
 
         return (
-            <div className="card messaging">
+            <div className="card flex_scroll">
                 {list.map((item) => (
                     <div
                         className="box record"

@@ -13,7 +13,7 @@ export class UserCard extends React.Component {
             <div className="box card user_card">
                 <div style={{position: "relative"
                 }}>
-                    <div className="user_image">
+                    <div className={user.status.status_name === "offline" ? "user_image offline" : "user_image online"}>
                         <img src="/images/icon_user.png" alt="user_icon"></img>
                     </div>
                     <div className="user_score">

@@ -48,6 +48,7 @@ export class MessageContainer extends React.Component {
                             item={item}
                             deleteMessage={this.props.deleteMessage}
                             editMessage={this.props.editMessage}
+                            likeMessage={this.props.likeMessage}
                             selected={this.props.selectedMsgId === item.message_id}
                         />
                     ))

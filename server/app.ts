@@ -21,6 +21,10 @@ export const __dirname = path.dirname(__filename);
 export let app = express();
 export const server = http.createServer(app); // Create HTTP server
 export const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:3000",
+        credentials: true
+    },
     maxHttpBufferSize: 100 * 1024 * 1024,
     transports: ['websocket'], // do not create http long polling
     path: '/socket-io'

@@ -2,7 +2,7 @@
 import {GameInput, GameState} from "./server_client_globals.ts";
 import {BUFFER_SIZE, TPS} from "./server_client_globals.ts";
 import type {Tetris} from "./tetris.ts";
-import {STATUS_TABLE} from "./tetris.ts";
+import {RenderBuffer, STATUS_TABLE} from "./tetris.ts";
 import * as process from "process";
 
 function arrayEquals(a: any[], b: any[]) {
@@ -71,14 +71,6 @@ export class ClientGameSessionControl {
         this.game = game;
         this.socket = socket;
 
-        let bufArr = new ArrayBuffer(4);
-        let bufView = new Uint8Array(bufArr);
-        bufView[0]=1;
-        bufView[1]=2;
-        bufView[2]=3;
-        bufView[3]=4;
-        this.socket.emit('test',bufArr);
-
         const time = performance.now();
         this.time = time
         this.gameTime = time;
@@ -131,7 +123,7 @@ export class ClientGameSessionControl {
         console.log(this.lastServerProcessedState);
         // check if server & client are synced
         if (!isDeepEqual(this.stateBuffer[this.lastServerProcessedState.event % BUFFER_SIZE],
-            this.lastServerProcessedState)) // TODO deep comparison
+            this.lastServerProcessedState))
         {
             this.#reconcile();
         }
@@ -198,7 +190,8 @@ export class ClientGameSessionControl {
 
         // guarantee 7th event when time from last 7th event is expired
         if (this.game.playing && !this.game.paused && event !== 7
-            && ((this.globalTime - this.gameTime) > this.game.tickSpeed)) {
+            && ((this.globalTime - this.gameTime) >
+                (this.game.softDrop ? this.game.tickSpeed / 4 : this.game.tickSpeed))) {
             console.log("RECONCILIATION FORCE 7");
             // force process 7 event and ignore next one
             this.onTimer();

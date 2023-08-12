@@ -31,6 +31,12 @@ body {
     /* spread container */
     flex: 1 1 auto;
 }
+.flex_scroll {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0px;
+    overflow-y: auto;
+}
 .card {
     margin-top: 10px;
     padding: 10px;
@@ -132,11 +138,14 @@ body {
 .card .message .float.delete {
     top: 20px;
 }
+.card .message .float.like {
+    right: 5px;
+}
 .card .message .float.selected {
-    color:skyblue;
+    color:var(--btn-color);
 }
 .card .message .float.selected:hover {
-    color:deepskyblue;
+    color:var(--btn-color-hovered);
 }
 .card .message .float:hover {
     color:#888;
@@ -237,6 +246,7 @@ main ul (DUPLICATION)
     border-radius: 50%;
     border: 2px solid var(--text-color-success);
     overflow: hidden;
+    transition: 1.0s;
 }
 .user_image img {
     flex-shrink: 0;
@@ -245,6 +255,9 @@ main ul (DUPLICATION)
 }
 .user_image .online {
     border-color: var(--text-color-success);
+}
+.user_image .offline {
+    border-color: var(--text-color-secondary);
 }
 .user_info_pane {
     margin-right: 100px;
@@ -289,24 +302,34 @@ scrollbar
     width: 6px;               /* width of the entire scrollbar */
 }
 .messaging::-webkit-scrollbar-track {
-    background: ghostwhite;        /* color of the tracking area */
+    background: var(--background-color);        /* color of the tracking area */
+    border-radius: 4px;
 }
 .messaging::-webkit-scrollbar-thumb {
-    background-color: gray;    /* color of the scroll thumb */
+    background-color: var(--card-color-secondary);    /* color of the scroll thumb */
     border-radius: 4px;       /* roundness of the scroll thumb */
-    /*border: 3px solid CadetBlue;  /* creates padding around scroll thumb */
 }
-
+.flex_scroll::-webkit-scrollbar {
+    width: 6px;               /* width of the entire scrollbar */
+}
+.flex_scroll::-webkit-scrollbar-track {
+    background: var(--background-color);        /* color of the tracking area */
+    border-radius: 4px;
+}
+.flex_scroll::-webkit-scrollbar-thumb {
+    background-color: var(--card-color-secondary);    /* color of the scroll thumb */
+    border-radius: 4px;       /* roundness of the scroll thumb */
+}
 .user_list::-webkit-scrollbar {
     width: 6px;               /* width of the entire scrollbar */
 }
 .user_list::-webkit-scrollbar-track {
-    background: ghostwhite;        /* color of the tracking area */
+    background: var(--background-color);        /* color of the tracking area */
+    border-radius: 4px;
 }
 .user_list::-webkit-scrollbar-thumb {
-    background-color: gray;    /* color of the scroll thumb */
+    background-color: var(--card-color-secondary);    /* color of the scroll thumb */
     border-radius: 4px;       /* roundness of the scroll thumb */
-    /*border: 3px solid CadetBlue;  /* creates padding around scroll thumb */
 }
 
 #message_content::-webkit-scrollbar {
@@ -325,6 +348,10 @@ scrollbar
     padding: 15px 32px;
     display: inline-block;
     font-size: 16px;
+}
+.btn_add_user {
+    width: 100%;
+    height: 100%;
 }
 
 .navbar {

@@ -3,7 +3,7 @@
 // compiles it.
 //
 import {mat4, vec4} from 'gl-matrix';
-import {FIELD_W} from "./tetris";
+import {FIELD_W, RenderBuffer} from "./tetris";
 import {ServerGameSessionControl} from "../../server/game/reconciliator";
 
 export class GlBuffer {
@@ -48,24 +48,37 @@ export class GlUniform {
     value: any;
     name: string;
     method;
+    clone;
 
-    constructor(gl, name: string, value: any, method) {
+    history: any[]
+
+    constructor(gl, name: string, value: any, method, clone) {
         this.gl = gl;
         this.name = name;
         this.value = value;
         this.method = method.bind(this.gl);
+        this.clone = clone;
+        this.history = []
     }
     associateWith(shaderProgram: WebGLProgram) {
         const gl = this.gl;
         const location = gl.getUniformLocation(shaderProgram, this.name);
         this.method(location, this.value);
     }
+
+    push() {
+        this.history.push(this.clone(this.value));
+    }
+
+    pop() {
+        this.value = this.history.pop();
+    }
 }
 
 export class GlUniformMatrix extends GlUniform {
     transpose: boolean;
-    constructor(gl, name: string, value: any, method, transpose: boolean = false) {
-        super(gl, name, value, method);
+    constructor(gl, name: string, value: any, method, clone, transpose: boolean = false) {
+        super(gl, name, value, method, clone);
         this.transpose = transpose;
     }
     associateWith(shaderProgram: WebGLProgram) {
@@ -132,11 +145,11 @@ export class GlProgramInfo {
         this.buffers[attributeName] = (new GlBuffer(this.gl, data, attributeName, chunkSize, type));
     }
 
-    addUniform(uniformName: string, value: any, method) {
-        this.uniforms[uniformName] = (new GlUniform(this.gl, uniformName, value, method));
+    addUniform(uniformName: string, value: any, method, clone) {
+        this.uniforms[uniformName] = (new GlUniform(this.gl, uniformName, value, method, clone));
     }
-    addUniformMatrix(uniformName: string, value: any, method, transpose: boolean = false) {
-        this.uniforms[uniformName] = (new GlUniformMatrix(this.gl, uniformName, value, method, transpose));
+    addUniformMatrix(uniformName: string, value: any, method, clone, transpose: boolean = false) {
+        this.uniforms[uniformName] = (new GlUniformMatrix(this.gl, uniformName, value, method, clone, transpose));
     }
     addString(name, stringObj: {}) {
         this.strings[name] = (stringObj);
@@ -152,6 +165,18 @@ export class GlProgramInfo {
         }
         for (const [, uniform] of Object.entries(this.uniforms)) {
             uniform.associateWith(this.program);
+        }
+    }
+
+    push() {
+        for (const [, uniform] of Object.entries(this.uniforms)) {
+            uniform.push();
+        }
+    }
+
+    pop() {
+        for (const [, uniform] of Object.entries(this.uniforms)) {
+            uniform.pop();
         }
     }
 

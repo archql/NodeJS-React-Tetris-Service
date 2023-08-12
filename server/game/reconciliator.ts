@@ -1,9 +1,8 @@
 import {GameInput, GameState} from "./server_client_globals.ts";
 import {BUFFER_SIZE, TPS} from "./server_client_globals.ts";
 import {Tetris} from "./tetris.ts";
-import {STATUS_TABLE} from "./tetris.ts";
 import {Record, sequelize} from "../bin/db.js";
-import {DataTypes, QueryTypes} from "sequelize";
+import {QueryTypes} from "sequelize";
 import {bufferFromState, leaderboardToBuffer} from "./tetrisAsm.ts";
 
 export class ServerGameSessionControl {
@@ -25,7 +24,7 @@ export class ServerGameSessionControl {
     timeGameStarted;
 
     gameTick;
-    gameTime;
+    gameTime; // time of last processed evt
 
     // special boolean to show if game was just resumed/paused
     justResumed: boolean = false;
@@ -64,11 +63,11 @@ export class ServerGameSessionControl {
         // init
         this.time = performance.now();
         this.timeStarted = this.time;
+        this.timeGameStarted = this.time;
         this.currentTick = 0; // TODO
         this.currentEvent = 0;
         this.gameTime = 0;
         this.gameTick = 0;
-        this.timeGameStarted = this.time;
         // create brand-new game
         this.game = new Tetris(null);
         this.game.gameOverCallback = (score: number, newRecord: boolean) => this.onGameOver(score, newRecord);
@@ -111,6 +110,7 @@ export class ServerGameSessionControl {
 
     onDisconnect() {
         // TODO here I want somehow to handle client disconnection
+        // set client state to not playing
         // for now it is just destruction
     }
 
@@ -151,8 +151,8 @@ export class ServerGameSessionControl {
             // game is null - so there is nothing to be processed
             return;
         }
-        // if there are no pending messages - ignore
         if (this.inputQueue.length === 0) {
+            // there are no pending messages - ignore
             return;
         }
         console.log(`process`);
@@ -163,25 +163,25 @@ export class ServerGameSessionControl {
         while (this.inputQueue.length > 0) {
             const input = this.inputQueue.shift();
             bufferIndex = input.event % BUFFER_SIZE;
-            // TODO check if input is too far away
             //console.log(`I     ${this.time - this.timeStarted} ms`);
             //console.log(`input ${input.time} ms`);
-            // console.log(`processing input no ${input.event} "${input.input.id}" ${this.time - this.timeStarted - input.time} ms behind`);
+            console.log(`processing input no ${input.event} "${input.input.id}" ${this.time - this.timeStarted - input.time} ms behind`);
+            // TODO check if input is too far away
             // timer event
             //console.log(`game time ${this.gameTime} ms`)
             let gameDelta = (input.time - this.gameTime);
             console.log(`game delta ${gameDelta}`)
+            //
             if (this.game.playing && !this.game.paused) {
-                // console.log(`passed ${gameDelta} ms from last 7 event`)
-                if (gameDelta >= (this.game.softDrop ?
-                    (this.game.tickSpeed / 4) : this.game.tickSpeed)) {
-                    //
-                    const gameTicksSkipped = Math.floor(gameDelta / this.game.tickSpeed);
+                const gameTicksSkipped = Math.floor(gameDelta / (this.game.softDrop ?
+                    (this.game.tickSpeed / 4) : this.game.tickSpeed));
+                if (gameTicksSkipped > 0) {
+                    // 1 or more game ticks passed since last update
                     let gameTicksToProcess = 0;
-                    if (input.input.id !== 7) { // means that were already have one 7 event
+                    if (input.input.id !== 7) { // means that were already somehow skipped at least one 7 event
                         gameTicksToProcess ++;
                     } else {
-                        this.gameTick++;
+                        this.gameTick++; // apply effect of 7 event id
                     }
                     if (!this.justResumed) { // means that we need to process all skipped ticks
                         gameTicksToProcess += gameTicksSkipped - 1;
@@ -210,9 +210,14 @@ export class ServerGameSessionControl {
         // send the last processed state
         // console.log("send update");
         // console.log(this.stateBuffer[bufferIndex]);
-        this.socket.emit('update', this.stateBuffer[bufferIndex]);
+        this.io.emit('update', this.stateBuffer[bufferIndex]);
+        // TODO send to ASM
+        const asmBuffer = bufferFromState(this.stateBuffer[bufferIndex]);
+        this.socket.broadcast.emit('updo', asmBuffer);
+        this.socket.emit('updX', asmBuffer);
+        //this.socket.emit('update', this.stateBuffer[bufferIndex]);
         // TODO
-        this.socket.emit('updX', bufferFromState(this.stateBuffer[bufferIndex]));
+        //this.socket.emit('updX', bufferFromState(this.stateBuffer[bufferIndex]));
         //console.log(this.stateBuffer[bufferIndex])
     }
 

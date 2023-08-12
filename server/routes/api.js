@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import {Attachment, Message, Record, Role, sequelize, Status, User} from "../bin/db.js";
+import {Attachment, Message, Record, Role, Room, RoomUser, sequelize, Status, User} from "../bin/db.js";
 import {Op} from "sequelize";
 import {io} from "../app.ts"
 import { promises as fs } from 'fs';
@@ -223,6 +223,24 @@ const chatHandler = async (socket) => {
         }
     });
 
+    socket.on('like message', async (message_id) => {
+        try {
+            let msg = await Message.findOne({
+                where: {
+                    message_id: message_id,
+                    message_from_id: user.user_id
+                }
+            })
+            if (!msg) {
+                return socket.emit("error", { status: 403, who: "like message", message: "Failed to like message" });
+            }
+            // TODO like message logics
+        } catch (e) {
+            console.log(e);
+            return socket.emit("error", { status: 409, who: "like message", message: "Failed to like message" });
+        }
+    })
+
     socket.on('edit message', async (message_id, content) => {
         try {
             let msg = await Message.findOne({
@@ -295,6 +313,72 @@ const chatHandler = async (socket) => {
         });
         return socket.emit('messages', messages);
     });
+
+    // TODO separate rooms info logics
+    socket.on('rooms', async () => {
+        // retrieve all rooms available
+        const rooms = await Room.findAll({
+            // where: {
+            //     user_id: {
+            //         [Op.not]: user.user_id
+            //     }
+            // },
+            attributes: ['room_id', 'room_name', 'room_max_members', 'room_description'],
+            include: [{
+                model: RoomUser,
+                as: "room_users",
+                include: {
+                    model: User,
+                    attributes: ['user_nickname'],
+                    as: "ru_user",
+                }
+            }, { model: User, as: "room_owner", attributes: ['user_nickname'] }],
+        });
+        socket.emit('rooms', rooms);
+    })
+
+    socket.on('room join', async (room_id) => {
+                // 1st find the room
+        const room = await Room.findByPk(room_id);
+        if (!room) return socket.emit("error", {status: 409, who: "create message", message: "Failed to join room"});
+        // TODO check the limit in the DB
+        // 2nd check if already joined
+        const ru = await RoomUser.findOne({
+            where: {
+                ru_room_id: room.room_id,
+                ru_user_id: user.user_id,
+            }
+        });
+        if (!ru) {
+            await RoomUser.create({
+                ru_user_id: user.user_id,
+                ru_room_id: room.room_id
+            });
+        }
+        // join completed
+        //socket.emit("room join");
+        io.of('/chat').emit('room join', room.room_id);
+    })
+
+    socket.on('room leave', async (room_id) => {
+        const room = await Room.findByPk(room_id);
+        if (!room) return socket.emit("error", {status: 409, who: "create message", message: "Failed to leave room"});
+        // find record and delete it
+        const ru = await RoomUser.findOne({
+            where: {
+                ru_room_id: room.room_id,
+                ru_user_id: user.user_id,
+            }
+        });
+        if (!ru) return socket.emit("error", {status: 409, who: "create message", message: "Failed to leave room"});
+        const delRes = await ru.destroy();
+        if (!delRes) {
+            return socket.emit("error", {status: 409, who: "create message", message: "Failed to leave room"});
+        } else {
+            //return socket.emit("room leave");
+            io.of('/chat').emit('room leave', room.room_id);
+        }
+    })
 }
 
 export default chatHandler;

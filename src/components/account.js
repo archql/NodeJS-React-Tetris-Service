@@ -11,9 +11,12 @@ import {UserCard} from "./user_card";
 import {ChatRouted} from "./chat";
 import {HelpRouted} from "./help";
 import {PersonalRouted} from "./personal";
-export const socket = io("http://localhost:5555/chat", {
+import {RoomsRouted} from "./rooms";
+
+const server_ip = process.env.SERVER_IP || 'localhost';
+
+export const socket = io(`http://${server_ip}:5555/chat`, {
     autoConnect: false,
-    //withCredentials: true,
     auth: {
         token: Cookies.get('jwt')
     },
@@ -110,6 +113,10 @@ export class Account extends React.Component {
                              className={({ isActive }) =>
                                  isActive ? "link active" : "link"
                              }>Play</NavLink>
+                    <NavLink to={"/account/rooms"}
+                             className={({ isActive }) =>
+                                 isActive ? "link active" : "link"
+                             }>Rooms</NavLink>
                     <NavLink to={"/account/help"}
                              className={({ isActive }) =>
                                  isActive ? "link active" : "link"
@@ -126,6 +133,7 @@ export class Account extends React.Component {
                         <Route path={"/chat"} element={<ChatRouted
                             user={this.state.user}
                         />} />
+                        <Route path={"/rooms"} element={<RoomsRouted/>} />
                         <Route path={"/help"} element={<HelpRouted/>} />
                     </Routes>
                     {/*<Chat*/}

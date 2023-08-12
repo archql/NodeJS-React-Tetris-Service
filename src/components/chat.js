@@ -31,6 +31,7 @@ export class Chat extends React.Component {
 
         socket.on('members', this.onMembers);
         socket.on('create message', this.onCreateMessage);
+        socket.on('like message', this.onLikeMessage);
         socket.on('delete message', this.onDeleteMessage);
         socket.on('edit message', this.onEditMessage);
         socket.on('messages', this.onMessages);
@@ -44,6 +45,7 @@ export class Chat extends React.Component {
     componentWillUnmount() {
         socket.off('members', this.onMembers);
         socket.off('create message', this.onCreateMessage);
+        socket.off('like message', this.onLikeMessage);
         socket.off('delete message', this.onDeleteMessage);
         socket.off('edit message', this.onEditMessage);
         socket.off('messages', this.onMessages);
@@ -72,6 +74,14 @@ export class Chat extends React.Component {
         });
         this.setState({messages: newMessages})
     }
+    onLikeMessage = (msgId) => {
+        const messages = [...this.state.messages];
+        const newMessages = messages.filter(function( obj ) {
+            return obj.message_id !== msgId;
+        });
+        this.setState({messages: newMessages})
+    }
+
     onEditMessage = (msg) => {
         const messages = this.state.messages.map((item) => {
             if (item.message_id === msg.message_id) {
@@ -151,6 +161,9 @@ export class Chat extends React.Component {
             this.setState({messageEdited: msg})
         }
     }
+    likeMessage(msgId) {
+        socket.emit('like message', msgId );
+    }
     doEditMessage(e) {
         e.preventDefault();
 
@@ -184,7 +197,7 @@ export class Chat extends React.Component {
                         list={this.state.others}
                         callback={e => this.userSelected(e)}
                         idMap={(item) => item.user_id} // TODO
-                        nameMap={(item) => <div><div>{item.user_nickname}</div><div>{item.user_name}</div><div style={{fontSize: 'smaller', fontStyle: 'italic'}}>{item.user_status_id === 1 ? "offline" : "on-line" }</div></div>}
+                        nameMap={(item) => <div><div style={{fontStyle: "bold"}}>{item.user_nickname}</div><div style={{fontSize: 'smaller'}}>{item.user_name} {item.user_surname}</div><div style={{fontSize: 'smaller', fontStyle: 'italic'}}>{item.user_status_id === 1 ? "offline" : "on-line" }</div></div>}
                         cssItemClass={"box user"}
                         cssActiveClass={"active"}
                     />
@@ -194,10 +207,11 @@ export class Chat extends React.Component {
                     messages={this.state.messages}
                     deleteMessage={id => this.deleteMessage(id)}
                     editMessage={id => this.editMessage(id)}
+                    likeMessage={id => this.likeMessage(id)}
                     selectedMsgId={this.state.messageEdited ? this.state.messageEdited.message_id : 0}
                 />
                 <div className="cell bottom_left">
-                    <div>Add new user</div>
+                    <button className="btn btn_add_user bottom_left">Find user to connect</button>
                 </div>
                 <div className="cell bottom_right">
                     {/*TODO separate*/}
@@ -239,7 +253,7 @@ export class Chat extends React.Component {
                         </div>
                         <button
                             type="submit"
-                            className="btn btn-send"
+                            className="btn btn-send bottom_right"
                             onClick={messageEdited? e => this.doEditMessage(e) : e => this.sendMessage(e)}
                         >
                             { messageEdited ? 'Edit message' : 'Send message' }

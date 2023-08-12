@@ -5,26 +5,30 @@ import React from "react";
 import Cookies from "js-cookie";
 import { io } from 'socket.io-client';
 
-import {FIELD_W, RenderBuffer, Tetris} from "../../game/tetris.ts";
+import {FIELD_H, FIELD_W, RenderBuffer, Tetris} from "../../game/tetris.ts";
 import {ClientGameSessionControl} from "../../game/reconciliator.ts";
 import type {GameState} from "../../game/server_client_globals.ts";
 import {GameCanvas} from "./game_canvas";
+
+const server_ip = process.env.SERVER_IP || 'localhost';
 
 export class Game extends React.Component {
 
     constructor(props) {
         super(props);
         // canvas info
-        this.programInfo = null;
+        this.renderBuffers = null;
         this.repaint = null;
         // game info
         this.session = null;
         this.game = null;
-        this.leaderboard = null;
+        this.games = [];
+        this.leaderboard = null; // TODO move leaderboard logics into GameSessionControl ??
         this.rawLeaderboard = null;
-        this.self = null;
+        // get room info
+        const roomId = props.router?.location?.state?.roomId || 1; // TODO ????
         // Socket IO connection
-        this.socket = io("http://localhost:5555/game", {
+        this.socket = io(`http://${server_ip}:5555/game`, {
             autoConnect: false,
             auth: {
                 token: Cookies.get('jwt')
@@ -58,7 +62,7 @@ export class Game extends React.Component {
         window.addEventListener('keydown', this.onKeyEvent);
         window.addEventListener('keyup', this.onKeyUpEvent);
         // create a game
-        let saved = localStorage.getItem('game');
+        const saved = localStorage.getItem('game');
         this.game = saved ? new Tetris(this.onGameStateChanged, JSON.parse(saved)) : new Tetris(this.onGameStateChanged);
         this.session = new ClientGameSessionControl(this.game, this.socket);
         this.game.gameOverCallback = this.onLocalGameOver;
@@ -140,21 +144,22 @@ export class Game extends React.Component {
     }
 
     onGameStateChanged = (data: RenderBuffer) => {
-        if (!this.programInfo && !this.repaint) {
+        if (!this.renderBuffers && !this.repaint) {
             return;
         }
         // render game
         if (data) {
-            this.programInfo.strings = data.strings;
-            this.programInfo.buffers["a_position"].setData(data.vertices);
-            this.programInfo.buffers["a_color"].setData(data.colors);
-            this.programInfo.count = data.count;
+            // add game buffer to map of buffers to be rendered
+            this.renderBuffers["game"] = data;
             // save state
             localStorage.setItem('game', JSON.stringify(this.game));
         }
         // TODO separate leaderboard logics
         if (this.leaderboard) {
-            this.programInfo.strings.push(
+            // add game buffer to map of buffers to be rendered
+            const rblb = new RenderBuffer();
+            this.renderBuffers["leaderboard"] = rblb;
+            rblb.strings.push(
                 {
                     x: FIELD_W + 8,
                     y: 1,
@@ -162,7 +167,7 @@ export class Game extends React.Component {
                 }
             );
             this.leaderboard.forEach((e, index) => {
-                this.programInfo.strings.push(
+                rblb.strings.push(
                     {
                         x: FIELD_W + 8,
                         y: 2 + index,
@@ -172,11 +177,31 @@ export class Game extends React.Component {
                 );
             });
         }
+        const sz = Object.keys(this.games).length;
+        if (sz > 0) {
+            console.log()
+            const rectSz = Math.ceil(Math.sqrt(sz));
+            const scaleF = 1 / rectSz;
+            let i = 0;
+            for (const [name, game] of Object.entries(this.games)) {
+                const grb = new Tetris(null, game).render(); // TODO expensive!!!!
+                //
+                grb.scale = scaleF;
+                grb.x = 22 + (i % rectSz) * (FIELD_W + 1) * scaleF;
+                grb.y = Math.floor(i / rectSz) * (FIELD_H + 1) * scaleF;
+                //
+                this.renderBuffers[name] = grb;
+                console.log(this.renderBuffers);
+                //
+                i++;
+            }
+        }
         // draw
         this.repaint();
     }
-    canvasSet = (programInfo, repaint) => {
-        this.programInfo = programInfo;
+    // renderBuffers is map of buffers to be rendered
+    canvasSet = (renderBuffers, repaint) => {
+        this.renderBuffers = renderBuffers;
         this.repaint = repaint;
     }
     onKeyEvent = (e) => {
@@ -215,6 +240,9 @@ export class Game extends React.Component {
     }
     onError = () => {
         console.log("LOG onError");
+        this.setState({
+            loading: false
+        })
     }
     onConnectError = (e) => {
         console.log("LOG onConnectError " + e);
@@ -236,7 +264,14 @@ export class Game extends React.Component {
     }
     onUpdate = (serverState: GameState) => {
         console.log("onUpdate");
-        this.session.onServerUpdate(serverState);
+        console.log(`serverState.state.name === this.state.name ${serverState.state.name} ${this.state.name}`)
+        if (serverState.state.name === this.state.name) { // TODO
+            // update to session
+            this.session.onServerUpdate(serverState);
+        } else {
+            // update OGV
+            this.games[serverState.state.name] = serverState.state;
+        }
     }
     render() {
         return (

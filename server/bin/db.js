@@ -175,6 +175,149 @@ export const Like = sequelize.define("like", {
     updatedAt: false
 });
 
+export const Connection = sequelize.define("connection", {
+    connection_from_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true
+    },
+    connection_to_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true
+    },
+    connection_status: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    }
+}, {
+    timestamps: true,
+    createdAt: "connection_created", // alias createdAt as created_date
+    updatedAt: "connection_updated",
+    validate: {
+        noSelfConnection() {
+            if ((this.connection_from_id === this.connection_to_id)) {
+                throw new Error('Cannot create self-connection');
+            }
+        }
+    }
+});
+
+export const ConStatus = sequelize.define("constatus", {
+    constatus_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true
+    },
+    constatus_name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    }
+}, {
+    timestamps: false,
+});
+
+export const Room = sequelize.define("room", {
+    room_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true,
+        autoIncrement: true,
+    },
+    room_owner_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    room_name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    room_max_members: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    room_description: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    room_password_hash: {
+        type: DataTypes.STRING(64),
+        allowNull: true
+    },
+}, {
+    timestamps: true,
+    createdAt: "room_created",
+    updatedAt: false
+});
+
+export const RoomUser = sequelize.define("ru", {
+    ru_user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true
+    },
+    ru_room_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true
+    },
+    ru_game_id: { // TODO games
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 1
+    },
+    ru_last_score: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+    ru_max_score: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+}, {
+    timestamps: true,
+    createdAt: "ru_joined",
+    updatedAt: false
+});
+
+//User.hasMany(Room);
+Room.belongsTo(User, {
+    foreignKey: {
+        name: 'room_owner_id',
+        allowNull: false,
+    },
+    as: "room_owner"
+})
+
+Room.hasMany(RoomUser, {
+    foreignKey: {
+        name: 'ru_room_id',
+        allowNull: false,
+    },
+    as: "room_users"
+});
+User.hasMany(RoomUser, {
+    foreignKey: {
+        name: 'ru_user_id',
+        allowNull: false,
+    },
+    as: "user_rooms"
+});
+RoomUser.belongsTo(User, {
+    foreignKey: {
+        name: 'ru_user_id',
+        allowNull: false,
+    },
+    as: "ru_user"
+})
+RoomUser.belongsTo(Room, {
+    foreignKey: {
+        name: 'ru_room_id',
+        allowNull: false,
+    },
+    as: "ru_room"
+})
+
 Status.hasMany(User);
 User.belongsTo(Status, {
     foreignKey: {
@@ -250,6 +393,34 @@ Like.belongsTo(Message,
     }
 );
 
+User.hasMany(Connection);
+Connection.belongsTo(User, {
+    // as: 'message_from_id',
+    foreignKey: {
+        name: 'connection_from_id',
+        allowNull: false
+    },
+    as: "user_from"
+});
+Connection.belongsTo(User, {
+    //as: 'message_to_id',
+    foreignKey: {
+        name: 'connection_to_id',
+        allowNull: true
+    },
+    as: "user_to"
+})
+
+ConStatus.hasMany(Connection);
+Connection.belongsTo(ConStatus,
+    {
+        foreignKey: {
+            name: 'connection_status',
+            allowNull: false
+        }
+    }
+);
+
 await sequelize.sync();
 
 // const test = await User.findOne({ where: { user_name: 'Test', user_nickname: null } });
@@ -278,6 +449,24 @@ async function createUser(name, surname, nickname, password, role_id, status_id,
         });
     }
 }
+
+async function createRoom(name, owner_nickname, description, max_members = null, password = null) {
+    const usr = await User.findOne({ where: { user_nickname: owner_nickname } });
+    if (usr) {
+        const room = await Room.findOne({ where: { room_owner_id: usr.user_id } });
+        if (!room) {
+            await Room.create({
+                room_owner_id: usr.user_id,
+                room_name: name,
+                room_description: description,
+                room_max_members: max_members,
+                room_password_hash: password && crypto.createHash("sha256").update(password).digest('hex')
+            });
+        }
+    }
+}
+
+await createRoom('Global', '_ARCHQL_', 'room which can be joined by any player');
 
 await createUser('Dummy', 'Testovich', 'AAAAAAAA', '1234', 1, 1, 6284);
 await createUser('Dummy', 'Testovich', 'TETRISTE', '1234', 1, 1, 6272);
