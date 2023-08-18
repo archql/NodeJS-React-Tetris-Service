@@ -21,12 +21,22 @@ export class RoomEntry extends React.Component {
                 <div className={"time"}>
                     {room.room_description}
                 </div>
-                <button
-                    className="btn"
-                    onClick={() => this.props.joinRoom(room.room_id)}
-                >
-                    Join
-                </button>
+                {room.room_joined && (<p>joined</p>)}
+                {room.room_joined ? (
+                    <button
+                        className="btn"
+                        onClick={() => this.props.leaveRoom(room.room_id)}
+                    >
+                        Leave
+                    </button>
+                ) : (
+                    <button
+                        className="btn"
+                        onClick={() => this.props.joinRoom(room.room_id)}
+                    >
+                        Join
+                    </button>
+                )}
             </div>
         )
     }

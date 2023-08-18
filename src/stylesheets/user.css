@@ -371,6 +371,24 @@ records
     margin-bottom: 10px;
 }
 
+.floating_menu {
+    position: fixed;
+    right: 0; /* Initial position, hidden */
+    top: 50%;
+    transform: translateY(-50%) translateX(calc(100% - 50px));
+    width: auto;
+    background-color: var(--card-color-secondary);
+    color: var(--text-color-primary);
+    border: 5px solid var(--btn-color);
+    border-right: none;
+    padding: 50px;
+    transition: transform 0.3s ease;
+    z-index: 20
+}
+.floating_menu:hover {
+    transform: translateY(-50%) translateX(0);
+}
+
 /*input[type="file"] {*/
 /*    display: none;*/
 /*}*/

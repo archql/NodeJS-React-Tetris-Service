@@ -25,8 +25,6 @@ export class Game extends React.Component {
         this.games = [];
         this.leaderboard = null; // TODO move leaderboard logics into GameSessionControl ??
         this.rawLeaderboard = null;
-        // get room info
-        const roomId = props.router?.location?.state?.roomId || 1; // TODO ????
         // Socket IO connection
         this.socket = io(`http://${server_ip}:5555/game`, {
             autoConnect: false,
@@ -38,7 +36,8 @@ export class Game extends React.Component {
         });
         //
         this.state = {
-            loading: true
+            loading: true,
+            roomInfo: null
         }
     }
 
@@ -52,6 +51,10 @@ export class Game extends React.Component {
         this.socket.on('update', this.onUpdate);
         this.socket.on('leaderboard', this.onLeaderboard);
         this.socket.on('game over', this.onServerGameOver);
+        // TODO separate room ctrl
+        this.socket.on('room self', this.onRoomSelf);
+        this.socket.on('room join', this.onRoomJoin);
+        this.socket.on('room leave', this.onRoomLeave);
         //
         if (this.socket.connected) {
             this.socket.emit('leaderboard');
@@ -81,6 +84,10 @@ export class Game extends React.Component {
         this.socket.off('update', this.onUpdate);
         this.socket.off('leaderboard', this.onLeaderboard);
         this.socket.off('game over', this.onServerGameOver);
+        // TODO separate room ctrl
+        this.socket.off('room self', this.onRoomSelf);
+        this.socket.off('room join', this.onRoomJoin);
+        this.socket.off('room leave', this.onRoomLeave);
         //
         this.socket.disconnect();
         //
@@ -147,6 +154,9 @@ export class Game extends React.Component {
         if (!this.renderBuffers && !this.repaint) {
             return;
         }
+        // Remove all render buffers except game related one
+        const validKeys = [ 'game' ];
+        Object.keys(this.renderBuffers).forEach((key) => validKeys.includes(key) || delete this.renderBuffers[key]);
         // render game
         if (data) {
             // add game buffer to map of buffers to be rendered
@@ -154,46 +164,55 @@ export class Game extends React.Component {
             // save state
             localStorage.setItem('game', JSON.stringify(this.game));
         }
-        // TODO separate leaderboard logics
-        if (this.leaderboard) {
-            // add game buffer to map of buffers to be rendered
-            const rblb = new RenderBuffer();
-            this.renderBuffers["leaderboard"] = rblb;
-            rblb.strings.push(
-                {
-                    x: FIELD_W + 8,
-                    y: 1,
-                    text: "--<LEADERBOARD>--",
-                }
-            );
-            this.leaderboard.forEach((e, index) => {
-                rblb.strings.push(
-                    {
-                        x: FIELD_W + 8,
-                        y: 2 + index,
-                        text: `#${e.appended ? '#' : (index + 1).toString(16).toUpperCase()} ${e.user_nickname}${String(e.user_max_score).padStart(6, ' ')}`,
-                        color: e.self ? 'yellow' : 'white'
+        // TODO menus logics
+        switch (this.menuId) {
+            case 1: {
+                // TODO separate OGV logics
+                const sz = Object.keys(this.games).length;
+                if (sz > 0) {
+                    console.log()
+                    const rectSz = Math.ceil(Math.sqrt(sz));
+                    const scaleF = 1 / rectSz;
+                    let i = 0;
+                    for (const [name, game] of Object.entries(this.games)) {
+                        const grb = new Tetris(null, game).render(); // TODO expensive!!!!
+                        //
+                        grb.scale = scaleF;
+                        grb.x = 22 + (i % rectSz) * (FIELD_W + 1) * scaleF;
+                        grb.y = Math.floor(i / rectSz) * (FIELD_H + 1) * scaleF;
+                        //
+                        this.renderBuffers[name] = grb;
+                        console.log(this.renderBuffers);
+                        //
+                        i++;
                     }
-                );
-            });
-        }
-        const sz = Object.keys(this.games).length;
-        if (sz > 0) {
-            console.log()
-            const rectSz = Math.ceil(Math.sqrt(sz));
-            const scaleF = 1 / rectSz;
-            let i = 0;
-            for (const [name, game] of Object.entries(this.games)) {
-                const grb = new Tetris(null, game).render(); // TODO expensive!!!!
-                //
-                grb.scale = scaleF;
-                grb.x = 22 + (i % rectSz) * (FIELD_W + 1) * scaleF;
-                grb.y = Math.floor(i / rectSz) * (FIELD_H + 1) * scaleF;
-                //
-                this.renderBuffers[name] = grb;
-                console.log(this.renderBuffers);
-                //
-                i++;
+                }
+                break;
+            }
+            default: {
+                // TODO separate leaderboard logics
+                if (this.leaderboard) {
+                    // add game buffer to map of buffers to be rendered
+                    const rblb = new RenderBuffer();
+                    this.renderBuffers["leaderboard"] = rblb;
+                    rblb.strings.push(
+                        {
+                            x: FIELD_W + 8,
+                            y: 1,
+                            text: "--<LEADERBOARD>--",
+                        }
+                    );
+                    this.leaderboard.forEach((e, index) => {
+                        rblb.strings.push(
+                            {
+                                x: FIELD_W + 8,
+                                y: 2 + index,
+                                text: `#${e.appended ? '#' : (index + 1).toString(16).toUpperCase()} ${e.user_nickname}${String(e.user_max_score).padStart(6, ' ')}`,
+                                color: e.self ? 'yellow' : 'white'
+                            }
+                        );
+                    });
+                }
             }
         }
         // draw
@@ -209,6 +228,9 @@ export class Game extends React.Component {
         // TODO mk exit based on callback
         // 27 is ESC key code
         if (this.game.playing === false && e.keyCode === 27) {
+            // tell server that we're leaving the room
+            this.socket.emit('room leave');
+            // redirect user to the account
             this.props.router.navigate("/");
         } else {
             this.session.processEvent(e.keyCode);
@@ -264,8 +286,8 @@ export class Game extends React.Component {
     }
     onUpdate = (serverState: GameState) => {
         console.log("onUpdate");
-        console.log(`serverState.state.name === this.state.name ${serverState.state.name} ${this.state.name}`)
-        if (serverState.state.name === this.state.name) { // TODO
+        console.log(`serverState.state.name === this.game.name ${serverState.state.name} ${this.game.name}`)
+        if (serverState.state.name === this.game.name) { // TODO
             // update to session
             this.session.onServerUpdate(serverState);
         } else {
@@ -273,13 +295,68 @@ export class Game extends React.Component {
             this.games[serverState.state.name] = serverState.state;
         }
     }
+
+    onRoomSelf = (userId: number) => {
+        console.log("onRoomSelf")
+        console.log(userId)
+        this.setState({
+            roomUserId: userId
+        })
+    }
+
+    onRoomJoin = (roomInfo: any) => {
+        this.setState({
+            roomInfo: roomInfo
+        })
+    }
+
+    onRoomLeave = (user_id: number) => {
+        console.log("onRoomLeave")
+        this.state.roomInfo.room_users = this.state.roomInfo.room_users.filter(function( ru ) {
+            return ru.ru_user_id !== user_id;
+        });
+        this.setState({
+            roomInfo: {...this.state.roomInfo}
+        })
+    }
+
+    menuSelection (e: MouseEvent, menuId: number) {
+        e.preventDefault();
+
+        this.menuId = menuId;
+        this.onGameStateChanged(null); // prevents game from updating
+    }
+
     render() {
+        const roomInfo = this.state.roomInfo;
         return (
             <React.Fragment>
                 {this.state.loading && (<div className="loader"/>)}
                 <GameCanvas
                     set={this.canvasSet}
                 />
+                <div className="floating_menu">
+                    <div style={{fontWeight:"bold"}}>room info</div>
+                    { roomInfo && (
+                        <React.Fragment>
+                            <div>{roomInfo.room_name}</div>
+                            <div style={{fontStyle:"italic"}}>{roomInfo.room_description}</div>
+                            <div style={{fontWeight:"bold"}}>list of room members ({roomInfo.room_users.length}/{roomInfo.room_max_members || "inf"})</div>
+                            {roomInfo.room_users.map((user) => (
+                                <div
+                                    key={user.ru_user_id}
+                                    style={{
+                                    color: user.ru_user_id === roomInfo.room_owner_id ? "red" : (user.ru_user_id === this.state.roomUserId ? "yellow" : "white")
+                                }}>
+                                    {user.ru_user.user_nickname}
+                                </div>
+                            ))}
+                        </React.Fragment>
+                    ) }
+                    <div>display switch</div>
+                    <button onClick={(e) => this.menuSelection(e, 0)}>leaderboard</button>
+                    <button onClick={(e) => this.menuSelection(e, 1)}>players states</button>
+                </div>
             </React.Fragment>
         );
     }

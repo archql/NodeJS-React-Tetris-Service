@@ -68,15 +68,15 @@ export class Chat extends React.Component {
     }
 
     onDeleteMessage = (msgId) => {
-        const messages = [...this.state.messages];
-        const newMessages = messages.filter(function( obj ) {
+        //const messages = [...this.state.messages];
+        const newMessages = this.state.messages.filter(function( obj ) {
             return obj.message_id !== msgId;
         });
         this.setState({messages: newMessages})
     }
     onLikeMessage = (msgId) => {
-        const messages = [...this.state.messages];
-        const newMessages = messages.filter(function( obj ) {
+        //const messages = [...this.state.messages];
+        const newMessages = this.state.filter(function( obj ) {
             return obj.message_id !== msgId;
         });
         this.setState({messages: newMessages})

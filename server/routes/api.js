@@ -250,7 +250,7 @@ const chatHandler = async (socket) => {
                 }
             })
             if (msg === null) {
-                return socket.emit("error", { status: 403, who: "update message", message: "Failed to update message" });
+                return socket.emit("error", { status: 403, who: "edit message", message: "Failed to update message" });
             }
             msg = await msg.update({message_content: content});
             // send success
@@ -265,7 +265,7 @@ const chatHandler = async (socket) => {
             }
         } catch (e) {
             console.log(e);
-            return socket.emit("error", { status: 409, who: "update message", message: "Failed to update message" });
+            return socket.emit("error", { status: 409, who: "edit message", message: "Failed to update message" });
         }
     });
 
@@ -340,29 +340,30 @@ const chatHandler = async (socket) => {
     socket.on('room join', async (room_id) => {
                 // 1st find the room
         const room = await Room.findByPk(room_id);
-        if (!room) return socket.emit("error", {status: 409, who: "create message", message: "Failed to join room"});
+        if (!room) return socket.emit("error", {status: 409, who: "room join", message: "Failed to join room"});
         // TODO check the limit in the DB
         // 2nd check if already joined
-        const ru = await RoomUser.findOne({
+        let ru = await RoomUser.findOne({
             where: {
                 ru_room_id: room.room_id,
                 ru_user_id: user.user_id,
             }
         });
         if (!ru) {
-            await RoomUser.create({
+            ru = await RoomUser.create({
                 ru_user_id: user.user_id,
                 ru_room_id: room.room_id
             });
+            // only if room was joined not rejoined
+            io.of('/chat').emit("room join", ru);
         }
         // join completed
-        //socket.emit("room join");
-        io.of('/chat').emit('room join', room.room_id);
+        // socket.emit("room join", room.room_id);
     })
 
     socket.on('room leave', async (room_id) => {
         const room = await Room.findByPk(room_id);
-        if (!room) return socket.emit("error", {status: 409, who: "create message", message: "Failed to leave room"});
+        if (!room) return socket.emit("error", {status: 409, who: "room leave", message: "Failed to leave room"});
         // find record and delete it
         const ru = await RoomUser.findOne({
             where: {
@@ -370,13 +371,15 @@ const chatHandler = async (socket) => {
                 ru_user_id: user.user_id,
             }
         });
-        if (!ru) return socket.emit("error", {status: 409, who: "create message", message: "Failed to leave room"});
+        if (!ru) return socket.emit("error", {status: 409, who: "room leave", message: "Failed to leave room"});
         const delRes = await ru.destroy();
         if (!delRes) {
-            return socket.emit("error", {status: 409, who: "create message", message: "Failed to leave room"});
+            return socket.emit("error", {status: 409, who: "room leave", message: "Failed to leave room"});
         } else {
             //return socket.emit("room leave");
-            io.of('/chat').emit('room leave', room.room_id);
+            //socket.emit("room left");
+            //socket.broadcast.emit("room leave", room.room_id);
+            io.of('/chat').emit('room leave', ru);
         }
     })
 }

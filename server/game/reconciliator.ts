@@ -10,6 +10,7 @@ export class ServerGameSessionControl {
     record = null;
     user = null;
     game = null;
+    room: string = null;
     socket;
     io;
 
@@ -34,6 +35,7 @@ export class ServerGameSessionControl {
         this.socket = socket;
         this.user = user;
         this.record = record;
+        this.room = user?.user_rooms[0]?.ru_room_id.toString();
     }
 
     static async getLeaderboard() {
@@ -53,11 +55,12 @@ export class ServerGameSessionControl {
         return await sequelize.query(topRecordsQuery, { type: QueryTypes.SELECT });
     }
 
-    onSync(usr, rcd) {
+    onSync(usr, rcd, room) {
         console.log("on SYNC");
         //
         this.user = usr;
         this.record = rcd;
+        this.room = room;
         //
         this.justResumed = false;
         // init
@@ -91,9 +94,14 @@ export class ServerGameSessionControl {
         this.stateBuffer[bufferIndex] = new GameState(this.currentTick, this.currentEvent,
             this.time - this.timeStarted, this.game.deepCopy());
         // send game state
+        // TODO this is awful
+        const asmBuffer = bufferFromState(this.stateBuffer[bufferIndex]);
         this.socket.emit('sync', this.stateBuffer[bufferIndex]);
-        // TODO
-        this.socket.emit('sncX', bufferFromState(this.stateBuffer[bufferIndex]));
+        this.socket.emit('sncX', asmBuffer);
+        if (this.room) {
+            this.io.to(this.room).emit('update', this.stateBuffer[bufferIndex]);
+            this.socket.to(this.room).emit('updo', asmBuffer);
+        }
     }
 
     onInput(input: GameInput) {
@@ -209,12 +217,17 @@ export class ServerGameSessionControl {
         // update client
         // send the last processed state
         // console.log("send update");
-        // console.log(this.stateBuffer[bufferIndex]);
-        this.io.emit('update', this.stateBuffer[bufferIndex]);
-        // TODO send to ASM
+
+        // TODO this is awful
         const asmBuffer = bufferFromState(this.stateBuffer[bufferIndex]);
-        this.socket.broadcast.emit('updo', asmBuffer);
+        if (this.room) {
+            this.io.to(this.room).emit('update', this.stateBuffer[bufferIndex]);
+            this.socket.to(this.room).emit('updo', asmBuffer);
+        } else {
+            this.socket.emit('update', this.stateBuffer[bufferIndex]);
+        }
         this.socket.emit('updX', asmBuffer);
+
         //this.socket.emit('update', this.stateBuffer[bufferIndex]);
         // TODO
         //this.socket.emit('updX', bufferFromState(this.stateBuffer[bufferIndex]));

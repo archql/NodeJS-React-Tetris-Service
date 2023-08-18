@@ -133,7 +133,9 @@ export class Account extends React.Component {
                         <Route path={"/chat"} element={<ChatRouted
                             user={this.state.user}
                         />} />
-                        <Route path={"/rooms"} element={<RoomsRouted/>} />
+                        <Route path={"/rooms"} element={<RoomsRouted
+                            user={this.state.user}
+                        />} />
                         <Route path={"/help"} element={<HelpRouted/>} />
                     </Routes>
                     {/*<Chat*/}
