@@ -1,5 +1,5 @@
 // EXACT THE SAME CODE AS ON THE CLIENT
-const RANDOM_MAX = 0x7FFFFFFF;
+export const RANDOM_MAX = 0x7FFFFFFF;
 class Random {
 
     seed: number;
@@ -207,6 +207,11 @@ export class Tetris {
         clone.callback = null;
         clone.gameOverCallback = null;
         return clone;
+    }
+
+    initializeFrom(seed: number) {
+        //this.#endGame(); TODO mk it silent or ???
+        this.#initialize(seed);
     }
 
     constructor(renderCallback: (buffer: RenderBuffer) => void, prototype = undefined){
@@ -522,7 +527,7 @@ export class Tetris {
         this.playing = false;
     }
 
-    #initialize() {
+    #initialize(seed: number = null) {
         this.#initField();
         // set game data
         this.score = 0;
@@ -533,7 +538,7 @@ export class Tetris {
         this.placed = 0;
 
         // generate new random seed
-        this.random = new Random(Math.floor(Math.random() * RANDOM_MAX));
+        this.random = new Random(seed || Math.floor(Math.random() * RANDOM_MAX));
         // copy link to random
         random = this.random;
 

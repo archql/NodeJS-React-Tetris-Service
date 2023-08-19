@@ -37,7 +37,9 @@ export class Game extends React.Component {
         //
         this.state = {
             loading: true,
-            roomInfo: null
+            roomInfo: null,
+            readyInfo: {},
+            scoreInfo: {},
         }
     }
 
@@ -55,6 +57,8 @@ export class Game extends React.Component {
         this.socket.on('room self', this.onRoomSelf);
         this.socket.on('room join', this.onRoomJoin);
         this.socket.on('room leave', this.onRoomLeave);
+        this.socket.on('room ready', this.onRoomReady);
+        this.socket.on('room game over', this.onRoomGameOver);
         //
         if (this.socket.connected) {
             this.socket.emit('leaderboard');
@@ -88,6 +92,8 @@ export class Game extends React.Component {
         this.socket.off('room self', this.onRoomSelf);
         this.socket.off('room join', this.onRoomJoin);
         this.socket.off('room leave', this.onRoomLeave);
+        this.socket.off('room ready', this.onRoomReady);
+        this.socket.off('room game over', this.onRoomGameOver);
         //
         this.socket.disconnect();
         //
@@ -258,6 +264,13 @@ export class Game extends React.Component {
     }
     onDisconnect = () => {
         console.log("LOG onDisconnect");
+        // drop room info
+        this.setState({
+            loading: false,
+            roomInfo: null,
+            readyInfo: {},
+        })
+        //
         this.session.onServerDisconnect();
     }
     onError = () => {
@@ -312,12 +325,64 @@ export class Game extends React.Component {
 
     onRoomLeave = (user_id: number) => {
         console.log("onRoomLeave")
-        this.state.roomInfo.room_users = this.state.roomInfo.room_users.filter(function( ru ) {
+        const temp = this.state.roomInfo.room_users.filter(( ru ) => {
             return ru.ru_user_id !== user_id;
         });
         this.setState({
-            roomInfo: {...this.state.roomInfo}
+            roomInfo: {...this.state.roomInfo, room_users: temp}
         })
+    }
+
+    onRoomGameOver = (roomUser: any) => {
+        console.log('onRoomGameOver')
+        const temp = this.state.roomInfo.room_users.map(( ru ) => {
+            if (ru.ru_user_id === roomUser.ru_user_id) {
+                ru.ru_last_score = roomUser.ru_last_score;
+                ru.ru_max_score = roomUser.ru_max_score;
+            }
+            return ru;
+        });
+        this.setState({
+            roomInfo: {...this.state.roomInfo, room_users: temp}
+        })
+    }
+
+    onRoomReady = (info: {user_id: number, state: string, score: number}) => {
+        console.log(`onRoomReady ${info.user_id} ${info.state} ${info.score}`)
+
+        if (info.user_id) {
+            this.setState({
+                readyInfo: {
+                    ...this.state.readyInfo,
+                    [info.user_id]: info.state
+                },
+                scoreInfo: { // TODO temp solution
+                    ...this.state.scoreInfo,
+                    [info.user_id]: Math.max((info.score || 0), (this.state.scoreInfo[info.user_id] || 0))
+                }
+            })
+        } else {
+            const newReadyInfo = {...this.state.readyInfo};
+            Object.keys(this.state.readyInfo).forEach(key => {
+                newReadyInfo[key] = info.state;
+            });
+            this.setState({
+                readyInfo: newReadyInfo
+            })
+        }
+    }
+
+    roomReady = (e) => {
+        //
+        e.preventDefault();
+        // clear focus
+        document.activeElement.blur();
+
+        // TODO duplicated!!!
+        this.setState({
+            readyInfo: {...this.state.readyInfo, [this.state.roomUserId]: "standby"}
+        })
+        this.socket.emit('room ready');
     }
 
     menuSelection (e: MouseEvent, menuId: number) {
@@ -329,6 +394,8 @@ export class Game extends React.Component {
 
     render() {
         const roomInfo = this.state.roomInfo;
+        const readyInfo = this.state.readyInfo;
+        const roomUserId = this.state.roomUserId;
         return (
             <React.Fragment>
                 {this.state.loading && (<div className="loader"/>)}
@@ -337,18 +404,23 @@ export class Game extends React.Component {
                 />
                 <div className="floating_menu">
                     <div style={{fontWeight:"bold"}}>room info</div>
-                    { roomInfo && (
+                    { (roomInfo) && (
                         <React.Fragment>
                             <div>{roomInfo.room_name}</div>
                             <div style={{fontStyle:"italic"}}>{roomInfo.room_description}</div>
                             <div style={{fontWeight:"bold"}}>list of room members ({roomInfo.room_users.length}/{roomInfo.room_max_members || "inf"})</div>
                             {roomInfo.room_users.map((user) => (
                                 <div
+                                    className="room_player_div"
                                     key={user.ru_user_id}
                                     style={{
-                                    color: user.ru_user_id === roomInfo.room_owner_id ? "red" : (user.ru_user_id === this.state.roomUserId ? "yellow" : "white")
+                                    color: user.ru_user_id === roomInfo.room_owner_id ? "red" : (user.ru_user_id === roomUserId ? "yellow" : "white")
                                 }}>
-                                    {user.ru_user.user_nickname}
+                                    <div>{user.ru_user.user_nickname}: {user.ru_last_score || '0'}/{user.ru_max_score || '0'}</div>
+                                    {user.ru_user_id === roomUserId ?
+                                        (<button className={`tri_state_toggle self ${readyInfo[user.ru_user_id] || ''}`} onClick={this.roomReady}/>) :
+                                        (<button className={`tri_state_toggle ${readyInfo[user.ru_user_id] || ''}`}/>)
+                                    }
                                 </div>
                             ))}
                         </React.Fragment>

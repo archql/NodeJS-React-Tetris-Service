@@ -1,7 +1,7 @@
 import {GameInput, GameState} from "./server_client_globals.ts";
 import {BUFFER_SIZE, TPS} from "./server_client_globals.ts";
 import {Tetris} from "./tetris.ts";
-import {Record, sequelize} from "../bin/db.js";
+import {Record, RoomUser, sequelize} from "../bin/db.js";
 import {QueryTypes} from "sequelize";
 import {bufferFromState, leaderboardToBuffer} from "./tetrisAsm.ts";
 
@@ -13,6 +13,11 @@ export class ServerGameSessionControl {
     room: string = null;
     socket;
     io;
+
+    // competition mode does not allow pause or stop
+    competition: boolean = false;
+    onCompetitionViolation: (user: any, room: string) => void;
+    onCompetitionEnd: (user: any, room: string, score: number) => void;
 
     inputQueue: GameInput[] = [];
     stateBuffer: GameState[] = new Array(BUFFER_SIZE);
@@ -55,6 +60,63 @@ export class ServerGameSessionControl {
         return await sequelize.query(topRecordsQuery, { type: QueryTypes.SELECT });
     }
 
+    startCompetition(seed: number,
+                     onCompetitionViolation: (user: any, room: string) => void,
+                     onCompetitionEnd: (user: any, room: string, score: number) => void)
+    {
+        this.game.initializeFrom(seed);
+        this.game.paused = false;
+        // !! set callbacks only after game restart
+        this.competition = true;
+        this.onCompetitionViolation = onCompetitionViolation;
+        this.onCompetitionEnd = onCompetitionEnd;
+        // TODO duplicated - init game
+        this.time = performance.now();
+        this.timeStarted = this.time;
+        this.timeGameStarted = this.time;
+        this.currentTick = 0; // TODO
+        this.currentEvent = 0;
+        this.gameTime = 0;
+        this.gameTick = 0;
+        // create brand-new game
+        this.game = new Tetris(null);
+        this.game.gameOverCallback = (score: number, newRecord: boolean) => this.onGameOver(score, newRecord);
+        this.game.paused = false;
+        // get user nickname
+        if (this.user) {
+            this.game.name = this.user.user_nickname || "@DEFAULT";
+            if (!this.user.error) {
+                this.game.status = "registered";
+                if (this.record) {
+                    this.game.highScore = this.record.record_score;
+                }
+            } else {
+                this.game.status = "rejected";
+            }
+        } else {
+            this.game.name = "@DEFAULT";
+            this.game.status = "connected";
+        }
+        // clear input
+        this.inputQueue.length = 0;
+        // set game state buffer
+        const bufferIndex = this.currentEvent % BUFFER_SIZE;
+        this.stateBuffer[bufferIndex] = new GameState(this.currentTick, this.currentEvent,
+            this.time - this.timeStarted, this.game.deepCopy());
+        //
+        console.log("startCompetition b4")
+        // force sync
+        const asmBuffer = bufferFromState(this.stateBuffer[0]);
+        this.socket.emit('sync', this.stateBuffer[0]);
+        this.socket.emit('sncX', asmBuffer);
+        if (this.room) {
+            this.io.to(this.room).emit('update', this.stateBuffer[0]);
+            this.socket.to(this.room).emit('updo', asmBuffer);
+        }
+        //
+        console.log("startCompetition af")
+    }
+
     onSync(usr, rcd, room) {
         console.log("on SYNC");
         //
@@ -89,6 +151,8 @@ export class ServerGameSessionControl {
             this.game.name = "@DEFAULT";
             this.game.status = "connected";
         }
+        // clear input
+        this.inputQueue.length = 0;
         // set game state buffer
         const bufferIndex = this.currentEvent % BUFFER_SIZE;
         this.stateBuffer[bufferIndex] = new GameState(this.currentTick, this.currentEvent,
@@ -106,6 +170,14 @@ export class ServerGameSessionControl {
 
     onInput(input: GameInput) {
         console.log(`on input evtId=${input.input.id} evtNo=${input.event} evtTime=${input.time}`);
+        //
+        // filter out pause and stop events
+        if (this.competition && this.onCompetitionViolation && [27, 80, 82].includes(input.input.id)) {
+            // drop competition mode
+            this.competition = false;
+            this.onCompetitionViolation(this.user, this.room);
+        }
+        //
         this.inputQueue.push(input);
         // TOO MANY PACKETS
         if (this.inputQueue.length > BUFFER_SIZE) {
@@ -125,9 +197,36 @@ export class ServerGameSessionControl {
     onGameOver(score: number, newRecord: boolean) {
         console.log(`GAME OVER new record? ${newRecord} score ${score}`);
         this.socket.emit('game over');
+        //
+        if (this.competition && this.onCompetitionEnd) {
+            this.competition = false;
+            this.onCompetitionEnd(this.user, this.room, score);
+        }
         // TODO FIX THIS!!!
         const gameTime = this.time - this.timeGameStarted;
         this.timeGameStarted = this.time;
+        if (this.room) {
+            // user is in the room
+            (async () => {
+                const ru = await RoomUser.findOne({
+                    where: {
+                        ru_user_id: this.user.user_id,
+                        ru_room_id: parseInt(this.room)
+                    }
+                })
+                // @ts-ignore
+                ru.ru_last_score = score;
+                // @ts-ignore
+                if (ru.ru_max_score < score) {
+                    // @ts-ignore
+                    ru.ru_max_score = score;
+                }
+                await ru.save();
+                //
+                // TODO send info about score
+                this.io.to(this.room).emit('room game over', ru);
+            })();
+        }
         if (this.user && this.user.user_nickname && newRecord) {
             (async () => {
                 // create new record (TODO mk screenshot)

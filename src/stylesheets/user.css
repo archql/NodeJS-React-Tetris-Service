@@ -388,7 +388,51 @@ records
 .floating_menu:hover {
     transform: translateY(-50%) translateX(0);
 }
+.room_player_div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.tri_state_toggle {
+    display: flex;
+    justify-content: center;
+    border: 1px solid black;
+    border-radius: 50px;
+}
+.tri_state_toggle {
+    height: auto;
+    border-radius: 50%;
+    aspect-ratio : 1 / 1;
+    margin-left: 10px;
 
+    color: var(--text-color-warning);
+    background-color: var(--text-color-warning);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+.tri_state_toggle.standby {
+    color: var(--text-color-standby);
+    background-color: var(--text-color-standby);
+}
+.tri_state_toggle.ready {
+    color: var(--text-color-success);
+    background-color: var(--text-color-success);
+}
+.tri_state_toggle.violation {
+    color: var(--text-color-error);
+    background-color: var(--text-color-error);
+}
+.tri_state_toggle.playing {
+    color: var(--text-color-inaction);
+    background-color: var(--text-color-inaction);
+}
+.tri_state_toggle.end {
+    color: var(--text-color-primary);
+    background-color: var(--text-color-primary);
+}
+.tri_state_toggle.self:hover  {
+    cursor: pointer;
+    box-shadow: inset 0 0 100px 100px rgba(255, 255, 255, 0.5);
+}
 /*input[type="file"] {*/
 /*    display: none;*/
 /*}*/

@@ -7,7 +7,11 @@
     --text-color-primary: #E2E2E2;
     --text-color-secondary: #A1A1A1;
     --text-color-error: #ff3333;
-    --text-color-success: #4BB543;
+    --text-color-success: #56F000;
+    --text-color-standby: #2DCCFF;
+    --text-color-caution: #FCE83A;
+    --text-color-warning: #FFB302;
+    --text-color-inaction: #FF0082;
     --btn-color: #FF0082;
     --btn-color-hovered: #ff73b0;
     --btn-color-clicked: #cc407d;
