@@ -23,6 +23,7 @@
     "webgl-utils": "^1.0.1"
   },
   "scripts": {
+    "deploy": "serve -s build -l 5555",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
