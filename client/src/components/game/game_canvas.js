@@ -172,6 +172,7 @@ export class GameCanvas extends React.PureComponent {
             // Use the combined shader program object
             this.programInfo.load();
             //
+
             gl.drawArrays(gl.POINTS, 0, this.programInfo.count);
             //
             this.programInfo.drawStrings();

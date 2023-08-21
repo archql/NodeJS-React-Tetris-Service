@@ -66,6 +66,12 @@ const LeaderboardStruct = struct`
     ${LeaderboardEntryStruct} lines[16];
 `
 
+const MessageStruct = struct`
+    uint8 nick[8];
+    uint8 empty[2];
+    uint8 text[22];
+`
+
 //; LB LINE STRUCT = [17 bytes Info = {place str - 3}{nick - 8}{score - 6}][ empty (11) ][is cur usr? (0)][4 bytes - prio prd {score - 2}{place - 2}]
 
 /*
@@ -96,6 +102,20 @@ const LeaderboardStruct = struct`
 
     name: string = "@DEFAULT"
  */
+
+export function messageFromBuffer(buffer: Buffer): any {
+    return MessageStruct.read(buffer);
+}
+
+export function bufferFromMessage(message: {nickname: string, text: string}): Buffer {
+    const msg = {
+        nick: Array.from(message.nickname).map((s) => {return s.charCodeAt(0);}),
+        empty: [0, 0],
+        text: Array.from(message.text).map((s) => {return s.charCodeAt(0);}),
+    }
+    return MessageStruct.write(msg);
+}
+
 export function inputFromBuffer(buffer: Buffer): GameInput {
     return GameInputStruct.read(buffer);
 }

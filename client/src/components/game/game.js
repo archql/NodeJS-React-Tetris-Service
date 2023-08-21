@@ -25,6 +25,8 @@ export class Game extends React.Component {
         this.games = [];
         this.leaderboard = null; // TODO move leaderboard logics into GameSessionControl ??
         this.rawLeaderboard = null;
+        this.chat = [];
+        this.myMessage = '';
         // Socket IO connection
         this.socket = io(`http://${server_ip}:5555/game`, {
             autoConnect: false,
@@ -59,6 +61,7 @@ export class Game extends React.Component {
         this.socket.on('room leave', this.onRoomLeave);
         this.socket.on('room ready', this.onRoomReady);
         this.socket.on('room game over', this.onRoomGameOver);
+        this.socket.on('room message', this.onRoomMessage);
         //
         if (this.socket.connected) {
             this.socket.emit('leaderboard');
@@ -94,6 +97,7 @@ export class Game extends React.Component {
         this.socket.off('room leave', this.onRoomLeave);
         this.socket.off('room ready', this.onRoomReady);
         this.socket.off('room game over', this.onRoomGameOver);
+        this.socket.off('room message', this.onRoomMessage);
         //
         this.socket.disconnect();
         //
@@ -195,6 +199,29 @@ export class Game extends React.Component {
                 }
                 break;
             }
+            case 2: {
+                const crb = new RenderBuffer();
+                crb.scale = 0.5;
+                this.renderBuffers["chat"] = crb;
+
+                const max_screen = FIELD_H - 2;
+                const max = Math.min(this.chat.length - 1, FIELD_H - 2);
+                let i = max;
+                for (; i >= 0; i--) {
+                    const line = this.chat[max - i];
+                    crb.strings.push({
+                        x: 2 * (FIELD_W + 2 + 8),
+                        y: 2 * (max_screen - i),
+                        text: `${line.nickname} ${line.text}`,
+                    })
+                }
+                crb.strings.push({
+                    x: 2 * (FIELD_W + 2 + 8),
+                    y: 2 * (FIELD_H - 1),
+                    text: `> ${this.myMessage}`,
+                })
+                break;
+            }
             default: {
                 // TODO separate leaderboard logics
                 if (this.leaderboard) {
@@ -238,6 +265,18 @@ export class Game extends React.Component {
             this.socket.emit('room leave');
             // redirect user to the account
             this.props.router.navigate("/");
+        } else if (this.menuId === 2 && e.keyCode !== 27) {
+            // were in the chat
+            console.log(e);
+            if (e.keyCode >= 32 && e.keyCode <= 126) {
+                this.myMessage += e.key;
+            } else if (e.keyCode === 8) {
+                this.myMessage.slice(0, -1);
+            } else if (e.keyCode === 13) {
+                this.socket.emit('room message', this.myMessage);
+                this.myMessage = '';
+            }
+            this.onGameStateChanged(null);
         } else {
             this.session.processEvent(e.keyCode);
         }
@@ -347,6 +386,11 @@ export class Game extends React.Component {
         })
     }
 
+    onRoomMessage = (msg: {nickname: string, text: string}) => {
+        this.chat.push(msg);
+        this.onGameStateChanged(null);
+    }
+
     onRoomReady = (info: {user_id: number, state: string, score: number}) => {
         console.log(`onRoomReady ${info.user_id} ${info.state} ${info.score}`)
 
@@ -428,6 +472,7 @@ export class Game extends React.Component {
                     <div>display switch</div>
                     <button onClick={(e) => this.menuSelection(e, 0)}>leaderboard</button>
                     <button onClick={(e) => this.menuSelection(e, 1)}>players states</button>
+                    <button onClick={(e) => this.menuSelection(e, 2)}>room chat</button>
                 </div>
             </React.Fragment>
         );

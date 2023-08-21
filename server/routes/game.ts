@@ -3,7 +3,7 @@ import {ServerGameSessionControl} from "../game/reconciliator.ts";
 import {TPS} from "../game/server_client_globals.ts";
 import {Record, Room, RoomUser, sequelize, User} from "../bin/db.js";
 import {io} from "../app.ts";
-import {inputFromBuffer, leaderboardToBuffer} from "../game/tetrisAsm.ts";
+import {bufferFromMessage, inputFromBuffer, leaderboardToBuffer} from "../game/tetrisAsm.ts";
 import {RANDOM_MAX} from "../game/tetris.ts";
 
 type UserGameSessionsType = {
@@ -22,10 +22,11 @@ const gameHandler = async (socket) => {
     //
     const user = socket.request.user;
     const error = socket.request.error;
-    let room = null;
-    let nickname = null;
+    let room: string = null;
+    let nickname: string = null;
     // room disconnect function
     async function roomLeave () {
+        console.log(`ROOM LEAVE ${nickname} ${room}`)
         if (room) {
             // notify everybody
             socket.to(room).emit('room leave', user.user_id);
@@ -37,6 +38,13 @@ const gameHandler = async (socket) => {
                 ru_user_id: user.user_id,
                 ru_room_id: parseInt(room)
             });
+            // TODO
+            const msg = {
+                text:  `${nickname} left the room`,
+                nickname: "@SERVER "
+            };
+            io.of('/game').to(room).emit('room message', msg);
+            io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
             // reset competition if it has one
             if (roomReadyToStartInfos[room]) {
                 const index = roomReadyToStartInfos[room].indexOf(user.user_id);
@@ -61,9 +69,11 @@ const gameHandler = async (socket) => {
                 }
             });
             room = null;
+            console.log(`ROOM LEAVE 2 ${nickname} ${room}`)
         }
     }
     function competitionReadyCheck () {
+        console.log(`competitionReadyCheck ${nickname}`)
         if (roomReadyToStartInfos[room].length
             === io.of("/game").adapter.rooms.get(room)?.size) {
             // notify everybody
@@ -81,14 +91,17 @@ const gameHandler = async (socket) => {
                     onCompetitionEnd,
                 );
             })
+            // TODO notify
+            const msg = {
+                text:  `competition started!`,
+                nickname: "@SERVER "
+            };
+            io.of('/game').to(room).emit('room message', msg);
+            io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
         }
     }
     function onCompetitionViolation (user: any, room: string)  {
-        console.log("onCompetitionViolation");
-        console.log(this);
-        console.log(socket.sid);
-        console.log(user);
-
+        console.log(`onCompetitionViolation ${nickname}`)
         const index = roomReadyToStartInfos[room].indexOf(user.user_id);
         if (index !== -1) {
             roomReadyToStartInfos[room].splice(index, 1);
@@ -97,8 +110,16 @@ const gameHandler = async (socket) => {
             user_id: user.user_id,
             state: 'violation'
         });
+        // TODO notify
+        const msg = {
+            text:  `${user.user_nickname} violated rule`,
+            nickname: "@SERVER "
+        };
+        io.of('/game').to(room).emit('room message', msg);
+        io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
     }
     function onCompetitionEnd (user: any, room: string, score: number)  {
+        console.log(`onCompetitionEnd ${nickname}`)
         const index = roomReadyToStartInfos[room].indexOf(user.user_id);
         if (index !== -1) {
             roomReadyToStartInfos[room].splice(index, 1);
@@ -108,6 +129,13 @@ const gameHandler = async (socket) => {
             state: 'end',
             score: score
         });
+        // TODO notify
+        const msg = {
+            text:  `${user.user_nickname} scored ${score}!`,
+            nickname: "@SERVER "
+        };
+        io.of('/game').to(room).emit('room message', msg);
+        io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
     }
     // create a game instance
     userGameSessions[socket.id] = new ServerGameSessionControl(socket, io.of('/game'), null, null);
@@ -125,6 +153,29 @@ const gameHandler = async (socket) => {
     })
     socket.on('room ready', () => {
         onRoomReady();
+    })
+
+    socket.on('r ms', (textBuffer: Buffer) => {
+        if (room) {
+            const msg = {
+                text:  textBuffer.toString(),
+                nickname: nickname
+            };
+            io.of('/game').to(room).emit('room message', msg);
+            io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
+        }
+    })
+    socket.on('room message', (text: string) => {
+        //
+        console.log(`ROOM MESSAGE is ${text} from ${nickname}`)
+        if (room) {
+            const msg = {
+                text:  text,
+                nickname: nickname
+            };
+            io.of('/game').to(room).emit('room message', msg);
+            io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
+        }
     })
 
     const onRoomReady = () => {
@@ -216,6 +267,13 @@ const gameHandler = async (socket) => {
             socket.join(room);
             socket.emit('room self', usr.user_rooms[0].ru_user_id);
             io.of('game').to(room).emit('room join', usr.user_rooms[0].ru_room)
+            // TODO
+            const msg = {
+                text:  `${nickname} join the room`,
+                nickname: "@SERVER "
+            };
+            io.of('/game').to(room).emit('room message', msg);
+            io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
         }
         // TODO set user status to PLAYING
         // if (usr !== null) {
