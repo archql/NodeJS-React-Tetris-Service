@@ -69,8 +69,8 @@ export class Message extends React.Component {
                     )
                 }
                 {
-                    ((item.message_from_id !== this.props.curUserId) || item.liked) && (
-                        <div className={item.liked ? "float like selected" : "float like"}
+                    ((item.message_from_id !== this.props.curUserId) || item.message_likes?.length !== 0) && (
+                        <div className={item.message_likes?.length ? "float like selected" : "float like"}
                              onClick={() => this.props.likeMessage(item.message_id)}>
                             <FontAwesomeIcon icon={faIcons.faHeart}/>
                         </div>

@@ -74,10 +74,19 @@ export class Chat extends React.Component {
         });
         this.setState({messages: newMessages})
     }
-    onLikeMessage = (msgId) => {
+    onLikeMessage = (like) => {
         //const messages = [...this.state.messages];
-        const newMessages = this.state.filter(function( obj ) {
-            return obj.message_id !== msgId;
+        const newMessages = this.state.messages.map(function( msg ) {
+            if (like.like_message_id === msg.message_id) {
+                if (like.like_revoke) {
+                    msg.message_likes = msg.message_likes.filter((l) =>
+                        l.like_user_id !== like.like_user_id
+                    )
+                } else {
+                    msg.message_likes.push(like);
+                }
+            }
+            return msg;
         });
         this.setState({messages: newMessages})
     }
@@ -102,6 +111,8 @@ export class Chat extends React.Component {
         });
     }
     onMessages = (messages) => {
+        console.log("messages")
+        console.log(messages)
         this.setState({messages: messages})
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "tetris_react_client",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "dependencies": {
     "@fortawesome/fontawesome": "^1.1.8",

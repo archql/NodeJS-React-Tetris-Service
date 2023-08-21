@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import {Attachment, Message, Record, Role, Room, RoomUser, sequelize, Status, User} from "../bin/db.js";
+import {Attachment, Like, Message, Record, Role, Room, RoomUser, sequelize, Status, User} from "../bin/db.js";
 import {Op} from "sequelize";
 import {io} from "../app.ts"
 import { promises as fs } from 'fs';
@@ -225,16 +225,41 @@ const chatHandler = async (socket) => {
 
     socket.on('like message', async (message_id) => {
         try {
-            let msg = await Message.findOne({
+            const msg = await Message.findOne({
                 where: {
                     message_id: message_id,
-                    message_from_id: user.user_id
+                    message_to_id: user.user_id
                 }
             })
             if (!msg) {
-                return socket.emit("error", { status: 403, who: "like message", message: "Failed to like message" });
+                return socket.emit("error", { status: 409, who: "like message", message: "Failed to like message" });
             }
-            // TODO like message logics
+            let like = await Like.findOne({
+                where: {
+                    like_user_id: user.user_id,
+                    like_message_id: message_id
+                }
+            })
+            if (like) {
+                // already exists
+                await like.destroy();
+                //
+                like = {
+                    like_user_id: user.user_id,
+                    like_message_id: message_id,
+                    like_revoke: true
+                }
+            } else {
+                //
+                like = await Like.create({
+                    like_user_id: user.user_id,
+                    like_message_id: message_id
+                })
+            }
+            // TODO
+            const targetSocket = io.of('/chat').sockets.get(userSockets[msg.message_from_id]);
+            targetSocket && targetSocket.emit('like message', like);
+            socket.emit('like message', like);
         } catch (e) {
             console.log(e);
             return socket.emit("error", { status: 409, who: "like message", message: "Failed to like message" });
@@ -308,7 +333,11 @@ const chatHandler = async (socket) => {
                     model: User,
                     as: "user_to"
                 },
-                { model: Attachment }
+                { model: Attachment },
+                {
+                    model: Like,
+                    as: "message_likes"
+                }
             ]
         });
         return socket.emit('messages', messages);

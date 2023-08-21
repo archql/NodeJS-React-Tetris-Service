@@ -383,7 +383,13 @@ Like.belongsTo(User,
     }
 );
 
-Message.hasMany(Like);
+Message.hasMany(Like, {
+    foreignKey: {
+        name: 'like_message_id',
+            allowNull: false,
+    },
+    as: "message_likes"
+});
 Like.belongsTo(Message,
     {
         foreignKey: {
