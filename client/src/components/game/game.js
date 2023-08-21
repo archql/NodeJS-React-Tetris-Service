@@ -269,10 +269,10 @@ export class Game extends React.Component {
         } else if (this.menuId === 2 && e.keyCode !== 27) {
             // were in the chat
             console.log(e);
-            if (e.keyCode >= 32 && e.keyCode <= 126) {
+            if ((e.keyCode >= 32 && e.keyCode <= 126 && ((this.myMessage.length + e.key.length) < 22))) {
                 this.myMessage += e.key;
             } else if (e.keyCode === 8) {
-                this.myMessage.slice(0, -1);
+                this.myMessage = this.myMessage.slice(0, -1);
             } else if (e.keyCode === 13) {
                 this.socket.emit('room message', this.myMessage);
                 this.myMessage = '';
