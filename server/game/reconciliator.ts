@@ -78,25 +78,6 @@ export class ServerGameSessionControl {
         this.currentEvent = 0;
         this.gameTime = 0;
         this.gameTick = 0;
-        // create brand-new game
-        this.game = new Tetris(null);
-        this.game.gameOverCallback = (score: number, newRecord: boolean) => this.onGameOver(score, newRecord);
-        this.game.paused = false;
-        // get user nickname
-        if (this.user) {
-            this.game.name = this.user.user_nickname || "@DEFAULT";
-            if (!this.user.error) {
-                this.game.status = "registered";
-                if (this.record) {
-                    this.game.highScore = this.record.record_score;
-                }
-            } else {
-                this.game.status = "rejected";
-            }
-        } else {
-            this.game.name = "@DEFAULT";
-            this.game.status = "connected";
-        }
         // clear input
         this.inputQueue.length = 0;
         // set game state buffer

@@ -12,7 +12,7 @@ type UserGameSessionsType = {
 const userGameSessions: UserGameSessionsType = {};
 
 type RoomReadyToStartInfoType = {
-    [room_id: string]: number[];
+    [room_id: string]: { started: boolean, members: number[]};
 };
 const roomReadyToStartInfos: RoomReadyToStartInfoType = {};
 
@@ -28,53 +28,55 @@ const gameHandler = async (socket) => {
     async function roomLeave () {
         console.log(`ROOM LEAVE ${nickname} ${room}`)
         if (room) {
+            // immediately set room to null (async)
+            const temp = room;
+            room = null;
             // notify everybody
-            socket.to(room).emit('room leave', user.user_id);
+            socket.to(temp).emit('room leave', user.user_id);
             if (nickname) {
                 // Notify asm clients
-                socket.to(room).emit('r lv', Buffer.from(nickname, 'latin1'));
+                socket.to(temp).emit('r lv', Buffer.from(nickname, 'latin1'));
             }
             io.of('/chat').emit('room leave', {
                 ru_user_id: user.user_id,
-                ru_room_id: parseInt(room)
+                ru_room_id: parseInt(temp)
             });
             // TODO
             const msg = {
                 text:  `${nickname} left the room`,
                 nickname: "@SERVER "
             };
-            io.of('/game').to(room).emit('room message', msg);
-            io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
+            io.of('/game').to(temp).emit('room message', msg);
+            io.of('/game').to(temp).emit('r ms', bufferFromMessage(msg));
             // reset competition if it has one
-            if (roomReadyToStartInfos[room]) {
-                const index = roomReadyToStartInfos[room].indexOf(user.user_id);
+            if (roomReadyToStartInfos[temp]) {
+                const index = roomReadyToStartInfos[temp].members.indexOf(user.user_id);
                 if (index !== -1) {
-                    roomReadyToStartInfos[room].splice(index, 1);
+                    roomReadyToStartInfos[temp].members.splice(index, 1);
                     userGameSessions[socket.id].competition = false;
-                    io.of('/game').to(room).emit('room ready', {
+                    io.of('/game').to(temp).emit('room ready', {
                         user_id: user.user_id,
                         state: ''
                     });
                     // check if we're ready to start
-                    competitionReadyCheck()
+                    competitionReadyCheck(temp)
                 }
             }
             // leave
-            socket.leave(room);
+            socket.leave(temp);
             //
             await RoomUser.destroy({
                 where: {
                     ru_user_id: user.user_id,
-                    ru_room_id: parseInt(room)
+                    ru_room_id: parseInt(temp)
                 }
             });
-            room = null;
-            console.log(`ROOM LEAVE 2 ${nickname} ${room}`)
+            console.log(`ROOM LEAVE 2 ${nickname} ${temp}`)
         }
     }
-    function competitionReadyCheck () {
+    function competitionReadyCheck (room: string) {
         console.log(`competitionReadyCheck ${nickname}`)
-        if (roomReadyToStartInfos[room].length
+        if (roomReadyToStartInfos[room].members.length
             === io.of("/game").adapter.rooms.get(room)?.size) {
             // notify everybody
             io.of("/game").to(room).emit('room ready', {
@@ -100,11 +102,12 @@ const gameHandler = async (socket) => {
             io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
         }
     }
+    // local user needed just because we use these functions from one player's instance
     function onCompetitionViolation (user: any, room: string)  {
-        console.log(`onCompetitionViolation ${nickname}`)
-        const index = roomReadyToStartInfos[room].indexOf(user.user_id);
+        console.log(`onCompetitionViolation ${user.user_nickname}`)
+        const index = roomReadyToStartInfos[room].members.indexOf(user.user_id);
         if (index !== -1) {
-            roomReadyToStartInfos[room].splice(index, 1);
+            roomReadyToStartInfos[room].members.splice(index, 1);
         }
         io.of('/game').to(room).emit('room ready', {
             user_id: user.user_id,
@@ -119,10 +122,10 @@ const gameHandler = async (socket) => {
         io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
     }
     function onCompetitionEnd (user: any, room: string, score: number)  {
-        console.log(`onCompetitionEnd ${nickname}`)
-        const index = roomReadyToStartInfos[room].indexOf(user.user_id);
+        console.log(`onCompetitionEnd ${user.user_nickname}`)
+        const index = roomReadyToStartInfos[room].members.indexOf(user.user_id);
         if (index !== -1) {
-            roomReadyToStartInfos[room].splice(index, 1);
+            roomReadyToStartInfos[room].members.splice(index, 1);
         }
         io.of('/game').to(room).emit('room ready', {
             user_id: user.user_id,
@@ -179,14 +182,17 @@ const gameHandler = async (socket) => {
     })
 
     const onRoomReady = () => {
+        //
+        console.log(`ON ROOM READY ${nickname}`)
+        //
         if (room) {
             if (!roomReadyToStartInfos[room]) {
-                roomReadyToStartInfos[room] = [];
+                roomReadyToStartInfos[room] = { started: false, members: []};
             }
-            const index = roomReadyToStartInfos[room].indexOf(user.user_id);
+            const index = roomReadyToStartInfos[room].members.indexOf(user.user_id);
             if (index === -1) {
                 // does not contain - add
-                roomReadyToStartInfos[room].push(user.user_id);
+                roomReadyToStartInfos[room].members.push(user.user_id);
                 // notify all users
                 io.of('/game').to(room).emit('room ready', {
                     user_id: user.user_id,
@@ -194,7 +200,7 @@ const gameHandler = async (socket) => {
                 });
             } else {
                 // if already contains - drop
-                roomReadyToStartInfos[room].splice(index, 1);
+                roomReadyToStartInfos[room].members.splice(index, 1);
                 // drop competition mode
                 userGameSessions[socket.id].competition = false;
                 // notify all users
@@ -204,7 +210,7 @@ const gameHandler = async (socket) => {
                 });
             }
             // check if we're fully ready to start competition
-            competitionReadyCheck();
+            competitionReadyCheck(room);
         }
     }
 

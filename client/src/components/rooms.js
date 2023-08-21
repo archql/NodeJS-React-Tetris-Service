@@ -55,12 +55,11 @@ class Rooms extends React.Component {
         const rooms = this.state.rooms.map((item) => {
             if (item.room_id === roomUser.ru_room_id) {
                 item.room_users = [...item.room_users, roomUser];
-                item.room_joined = true;
+                // I joined or room was already joined
+                item.room_joined = item.room_joined || (roomUser.ru_user_id === this.props.user.user_id);
             }
             return item;
         });
-        console.log(rooms)
-        console.log(rooms === this.state.rooms)
         this.setState({rooms: rooms})
     }
 
@@ -78,7 +77,7 @@ class Rooms extends React.Component {
                 item.room_users = item.room_users.filter(function( obj ) {
                     return obj.ru_user_id !== roomUser.ru_user_id;
                 });
-                item.room_joined = false;
+                item.room_joined = item.room_joined && (roomUser.ru_user_id !== this.props.user.user_id);
             }
             return item;
         });

@@ -1,11 +1,11 @@
-import { withRouter } from '../../common/with_router.js';
+import {withRouter} from '../../common/with_router.js';
 
 import React from "react";
 
 import Cookies from "js-cookie";
-import { io } from 'socket.io-client';
+import {io} from 'socket.io-client';
 
-import {FIELD_H, FIELD_W, RenderBuffer, Tetris} from "../../game/tetris.ts";
+import {FIELD_H, FIELD_W, RenderBuffer, STATUS_TABLE, Tetris} from "../../game/tetris.ts";
 import {ClientGameSessionControl} from "../../game/reconciliator.ts";
 import type {GameState} from "../../game/server_client_globals.ts";
 import {GameCanvas} from "./game_canvas";
@@ -178,14 +178,14 @@ export class Game extends React.Component {
         switch (this.menuId) {
             case 1: {
                 // TODO separate OGV logics
-                const sz = Object.keys(this.games).length;
+                const sz = Object.keys(this.games).length + 1;
                 if (sz > 0) {
                     console.log()
                     const rectSz = Math.ceil(Math.sqrt(sz));
                     const scaleF = 1 / rectSz;
                     let i = 0;
                     for (const [name, game] of Object.entries(this.games)) {
-                        const grb = new Tetris(null, game).render(); // TODO expensive!!!!
+                        const grb = Tetris.srender(game); // TODO move to another place
                         //
                         grb.scale = scaleF;
                         grb.x = 22 + (i % rectSz) * (FIELD_W + 1) * scaleF;
@@ -205,10 +205,10 @@ export class Game extends React.Component {
                 this.renderBuffers["chat"] = crb;
 
                 const max_screen = FIELD_H - 2;
-                const max = Math.min(this.chat.length - 1, FIELD_H - 2);
-                let i = max;
+                const max_chat = this.chat.length - 1;
+                let i = Math.min(max_screen, max_chat);
                 for (; i >= 0; i--) {
-                    const line = this.chat[max - i];
+                    const line = this.chat[max_chat - i];
                     crb.strings.push({
                         x: 2 * (FIELD_W + 2 + 8),
                         y: 2 * (max_screen - i),
@@ -251,6 +251,7 @@ export class Game extends React.Component {
         // draw
         this.repaint();
     }
+
     // renderBuffers is map of buffers to be rendered
     canvasSet = (renderBuffers, repaint) => {
         this.renderBuffers = renderBuffers;
@@ -345,6 +346,7 @@ export class Game extends React.Component {
         } else {
             // update OGV
             this.games[serverState.state.name] = serverState.state;
+            this.onGameStateChanged(null);
         }
     }
 

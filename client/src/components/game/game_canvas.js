@@ -131,14 +131,6 @@ export class GameCanvas extends React.PureComponent {
 
             console.info('FPS: ', this.fps);
         }
-        this.programInfo.strings.push(
-            {
-                x: FIELD_W + 8,
-                y: 0,
-                text: `FPS ${String(this.fps).padStart(4, ' ')}`,
-                color: 'white'
-            }
-        );
 
         const gl = this.programInfo.gl;
         const ctx = this.programInfo.ctx;
@@ -182,7 +174,7 @@ export class GameCanvas extends React.PureComponent {
         // TODO test fps
         this.programInfo.strings = [
             {
-                x: FIELD_W + 8,
+                x: FIELD_W + 1,
                 y: 0,
                 text: `FPS ${String(this.fps).padStart(4, ' ')}`,
                 color: 'white'

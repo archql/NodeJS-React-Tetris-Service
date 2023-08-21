@@ -26,8 +26,6 @@ class Random {
 
 }
 
-let random = null;
-
 export const FIELD_W = 12;
 export const FIELD_H = 23;
 export const RECT_MODIFIER = 0.95;
@@ -92,13 +90,17 @@ class Figure {
     color: number;
     value: number;
 
-    constructor(id: number, prototype: {} = undefined) {
-        if (prototype) {
+    constructor(id: number, prototype: any = undefined) {
+        if (prototype instanceof Random) {
+            this.id = id;
+            this.toDefaultPos();
+            this.#generateColor(prototype);
+        } else if (prototype) {
             Object.assign(this, prototype);
         } else {
             this.id = id;
             this.toDefaultPos();
-            this.#generateColor();
+            this.#generateColor(new Random(0));
         }
     }
 
@@ -113,7 +115,7 @@ class Figure {
         this.value = Figure.figArr[id || this.id][rotation || this.rotation];
     }
 
-    #generateColor() {
+    #generateColor(random: Random) {
         this.color = random.nextRandInt(3, COLOR_TABLE.length - 3);
     }
 
@@ -133,11 +135,11 @@ class Figure {
     ]
     static figCount = Figure.figArr.length;
 
-    static genSequence() {
+    static genSequence(random: Random) {
         const figCount = Figure.figCount;
         const sequence = [];
         for (let i = 0; i < figCount; i++) {
-            sequence.push(new Figure(i));
+            sequence.push(new Figure(i, random));
         }
         // shuffle array
         for (let i = figCount - 1; i > 0; i--) {
@@ -235,9 +237,8 @@ export class Tetris {
             this.nextFigures[i] = this.nextFigures[i] && new Figure(undefined, this.nextFigures[i]);
         }
         // setup random
+        console.log("construct from prototype")
         this.random = new Random(this.random.seed, this.random.prev);
-        // copy link to random
-        random = this.random;
         // setup callbacks back
         this.callback = callback;
         this.gameOverCallback = gameOverCallback;
@@ -378,6 +379,21 @@ export class Tetris {
         renderBuffer.strings.push({x: FIELD_W + 3, y: FIELD_H - 3, text: "~~~~~~~~", align: "left"});
         return renderBuffer;
     }
+    static srender(tetris: Tetris) {
+        const renderBuffer = new RenderBuffer();
+        Tetris.renderFieldInto(renderBuffer, tetris.field);
+        Tetris.renderFigureInto(renderBuffer, tetris.currentFigure, undefined, tetris.figPreviewY, 2);
+        Tetris.renderFigureInto(renderBuffer, tetris.currentFigure);
+        if (tetris.paused) {
+            renderBuffer.strings.push({x: FIELD_W / 2, y: 3, text: "PAUSED", align: "center"});
+        }
+        if (!tetris.playing) {
+            renderBuffer.strings.push({x: FIELD_W / 2, y: 3, text: "GAME OVER", align: "center"});
+        }
+        renderBuffer.strings.push({x: FIELD_W / 2, y: 2, text: `${tetris.score}`, align: "center"});
+        renderBuffer.strings.push({x: FIELD_W / 2, y: 1, text: tetris.name, align: "center"});
+        return renderBuffer;
+    }
     #renderFigureInto(renderBuffer, fig, xPos: number = undefined, yPos: number = undefined, colorId: number = undefined) {
         const x = (xPos !== undefined) ? xPos : fig.x;
         const y = (yPos !== undefined) ? yPos : fig.y;
@@ -409,12 +425,43 @@ export class Tetris {
         }
     }
 
+    static renderFigureInto(renderBuffer, fig, xPos: number = undefined, yPos: number = undefined, colorId: number = undefined) {
+        const x = (xPos !== undefined) ? xPos : fig.x;
+        const y = (yPos !== undefined) ? yPos : fig.y;
+        let figure = fig.value;
+        const color = (colorId !== undefined) ? colorId : fig.color;
+
+        for (let i = y; i < 4 + y; i++) { // 4 is fig w and h
+            // if (i < 0) {
+            //     continue;
+            // }
+            for (let j = x; j < 4 + x; j++) {
+                if ((figure & 0x8000) !== 0) {
+                    renderBuffer.vertices.push(j, i);
+                    renderBuffer.colors.push(...COLOR_TABLE[color]);
+                    renderBuffer.count++;
+                }
+                figure <<= 1;
+            }
+        }
+    }
+    static renderFieldInto(renderBuffer, field) {
+        for (let i = 0; i < FIELD_H; ++i) {
+            const yPos = i * FIELD_W;
+            for (let j = 0; j < FIELD_W; ++j) {
+                renderBuffer.vertices.push(j, i);
+                renderBuffer.colors.push(...COLOR_TABLE[field[j + yPos] || 0]);
+                renderBuffer.count++;
+            }
+        }
+    }
+
     #nextFigure() {
         this.currentFigure = new Figure(undefined, this.nextFigures[this.nextFigureNumber]);
         this.nextFigureNumber++;
         if (this.nextFigureNumber >= Figure.figCount) {
             this.nextFigureNumber = 0;
-            this.nextFigures = Figure.genSequence();
+            this.nextFigures = Figure.genSequence(this.random);
         }
         this.processEventSilent(0);
     }
@@ -539,11 +586,9 @@ export class Tetris {
 
         // generate new random seed
         this.random = new Random(seed || Math.floor(Math.random() * RANDOM_MAX));
-        // copy link to random
-        random = this.random;
 
         // set fig data
-        this.nextFigures = Figure.genSequence();
+        this.nextFigures = Figure.genSequence(this.random);
         this.nextFigureNumber = 0;
         this.figPreviewY = FIG_START_Y;
         this.#nextFigure();
@@ -553,5 +598,4 @@ export class Tetris {
         this.held = false;
         this.heldFigure = null;
     }
-
 }
