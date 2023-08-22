@@ -14,7 +14,7 @@ class AuthService {
     }
     login(nickname, password) {
         const password_hash = SHA256(password).toString();
-        return fetch('/auth/login', {
+        return fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -26,7 +26,7 @@ class AuthService {
     }
 
     logout() {
-        return fetch('/auth/logout', {
+        return fetch('/api/auth/logout', {
             method: 'GET',
             headers: { ...authService.authHeader() }
         }).then(r => ({status: r.status, body: {}}));
@@ -34,7 +34,7 @@ class AuthService {
 
     register(username, surname, nickname, password) {
         const password_hash = SHA256(password).toString();
-        return fetch('/auth/register', {
+        return fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

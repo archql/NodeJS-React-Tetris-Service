@@ -28,9 +28,6 @@ http {
         location /api {
             proxy_pass http://websocket/api;
         }
-        location /auth {
-            proxy_pass http://websocket/auth;
-        }
         location /images {
             proxy_pass http://websocket/images;
         }

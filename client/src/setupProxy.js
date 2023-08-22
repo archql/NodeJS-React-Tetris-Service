@@ -17,15 +17,6 @@ module.exports = function(app) {
 
     app.use(
         /*'/auth',*/
-        createProxyMiddleware('/auth',{
-            target: target,
-            changeOrigin: true,
-            pathFilter: '/auth',
-        })
-    );
-
-    app.use(
-        /*'/auth',*/
         createProxyMiddleware('/images',{
             target: target,
             changeOrigin: true,

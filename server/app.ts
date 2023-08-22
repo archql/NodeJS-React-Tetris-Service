@@ -43,7 +43,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/attachments', express.static(path.join(__dirname, 'uploads')));
 
-app.use('/auth', authRouter)
+app.use('/api/auth', authRouter)
 
 //io.on("connection", (socket) => {});
 
