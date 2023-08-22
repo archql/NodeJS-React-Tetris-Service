@@ -2,13 +2,11 @@
   "compilerOptions": {
     "module": "es2020",
     "target": "es2020",
-    "sourceMap": true,
     "outDir": "build",
     "esModuleInterop": true,
     "moduleResolution": "node",
     "allowJs": true,
     "baseUrl": ".",
-    "allowImportingTsExtensions": true
   },
   "exclude": [
     "node_modules"

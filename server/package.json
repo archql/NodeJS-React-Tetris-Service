@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node bin/www.js",
-    "start:idea": "ts-node --esm app.ts"
+    "server:start:idea": "npx ts-node --esm app.ts",
+    "server:build": "tsc -p .",
+    "server:start:production": "node build/app.js"
   },
   "dependencies": {
     "cookie": "^0.5.0",
@@ -33,6 +34,6 @@
     "@types/morgan": "^1.9.4",
     "@types/node": "^18.16.3",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.4"
+    "typescript": "^5.1.6"
   }
 }

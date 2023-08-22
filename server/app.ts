@@ -11,9 +11,9 @@ import SocketIOFileUpload from 'socketio-file-upload';
 
 import authRouter from './routes/auth.js'
 import chatSockets from './routes/api.js'
-import gameSockets from './routes/game.ts'
+import gameSockets from './routes/game.js'
 import {isAuthenticated, isAuthenticatedGame} from "./bin/jwt.js";
-import {launchGameLoop} from './routes/game.ts'
+import {launchGameLoop} from './routes/game.js'
 
 const __filename = fileURLToPath(import.meta.url);
 export const __dirname = path.dirname(__filename);

@@ -1,9 +1,9 @@
-import {GameInput, GameState} from "./server_client_globals.ts";
-import {BUFFER_SIZE, TPS} from "./server_client_globals.ts";
-import {Tetris} from "./tetris.ts";
+import {GameInput, GameState} from "./server_client_globals.js";
+import {BUFFER_SIZE, TPS} from "./server_client_globals.js";
+import {Tetris} from "./tetris.js";
 import {Record, RoomUser, sequelize} from "../bin/db.js";
 import {QueryTypes} from "sequelize";
-import {bufferFromState, leaderboardToBuffer} from "./tetrisAsm.ts";
+import {bufferFromState, leaderboardToBuffer} from "./tetrisAsm.js";
 
 export class ServerGameSessionControl {
     // Database user

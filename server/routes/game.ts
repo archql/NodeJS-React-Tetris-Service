@@ -1,10 +1,10 @@
-import {GameInput} from "../game/server_client_globals.ts";
-import {ServerGameSessionControl} from "../game/reconciliator.ts";
-import {TPS} from "../game/server_client_globals.ts";
+import {GameInput} from "../game/server_client_globals.js";
+import {ServerGameSessionControl} from "../game/reconciliator.js";
+import {TPS} from "../game/server_client_globals.js";
 import {Record, Room, RoomUser, sequelize, User} from "../bin/db.js";
-import {io} from "../app.ts";
-import {bufferFromMessage, inputFromBuffer, leaderboardToBuffer} from "../game/tetrisAsm.ts";
-import {RANDOM_MAX} from "../game/tetris.ts";
+import {io} from "../app.js";
+import {bufferFromMessage, inputFromBuffer, leaderboardToBuffer} from "../game/tetrisAsm.js";
+import {RANDOM_MAX} from "../game/tetris.js";
 
 type UserGameSessionsType = {
     [key: string]: ServerGameSessionControl;

@@ -1,6 +1,6 @@
 import struct from "cstruct";
-import {FIELD_H, FIELD_W, STATUS_TABLE, Tetris} from "./tetris.ts";
-import {GameInput, GameState} from "./server_client_globals.ts";
+import {FIELD_H, FIELD_W, STATUS_TABLE, Tetris} from "./tetris.js";
+import {GameInput, GameState} from "./server_client_globals.js";
 
 const TetrisStruct = struct`
     uint8 nick[8];

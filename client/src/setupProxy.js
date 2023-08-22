@@ -1,10 +1,15 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
+const proxy_ip = process.env.REACT_APP_PROXY_IP || 'localhost';
+const proxy_port = process.env.REACT_APP_PROXY_PORT || '3000';
+const target = `http://${proxy_ip}:${proxy_port}`
+const target_ws = `ws://${proxy_ip}:${proxy_port}`
+
 module.exports = function(app) {
     app.use(
         /*'/api',*/
         createProxyMiddleware('/api',{
-            target: 'http://localhost:3000',
+            target: target,
             changeOrigin: true,
             pathFilter: '/api',
         })
@@ -13,7 +18,7 @@ module.exports = function(app) {
     app.use(
         /*'/auth',*/
         createProxyMiddleware('/auth',{
-            target: 'http://localhost:3000',
+            target: target,
             changeOrigin: true,
             pathFilter: '/auth',
         })
@@ -22,7 +27,7 @@ module.exports = function(app) {
     app.use(
         /*'/auth',*/
         createProxyMiddleware('/images',{
-            target: 'http://localhost:3000',
+            target: target,
             changeOrigin: true,
             pathFilter: '/images',
         })
@@ -31,7 +36,7 @@ module.exports = function(app) {
     app.use(
         /*'/auth',*/
         createProxyMiddleware('/attachments',{
-            target: 'http://localhost:3000',
+            target: target,
             changeOrigin: true,
             pathFilter: '/attachments',
         })
@@ -39,7 +44,7 @@ module.exports = function(app) {
     app.use(
         /*'/socket.io',*/
         createProxyMiddleware('/socket-io',{
-            target: 'ws://localhost:3000',
+            target: target_ws,
             ws: true,
             pathFilter: '/socket-io',
             changeOrigin: true,

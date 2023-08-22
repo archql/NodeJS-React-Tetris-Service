@@ -1,10 +1,10 @@
 import crypto from "crypto";
 import {Attachment, Like, Message, Record, Role, Room, RoomUser, sequelize, Status, User} from "../bin/db.js";
 import {Op} from "sequelize";
-import {io} from "../app.ts"
+import {io} from "../app.js"
 import { promises as fs } from 'fs';
 import path from "path";
-import {__dirname} from "../app.ts";
+import {__dirname} from "../app.js";
 
 const userSockets = [];
 
