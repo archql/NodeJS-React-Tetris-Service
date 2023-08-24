@@ -13,10 +13,7 @@ import {HelpRouted} from "./help";
 import {PersonalRouted} from "./personal";
 import {RoomsRouted} from "./rooms";
 
-const server_ip = process.env.REACT_APP_SERVER_IP || 'localhost';
-const server_port = process.env.REACT_APP_SERVER_PORT || '5555';
-
-export const socket = io(`http://${server_ip}:${server_port}/chat`, {
+export const socket = io('/chat', {
     autoConnect: false,
     auth: {
         token: Cookies.get('jwt')

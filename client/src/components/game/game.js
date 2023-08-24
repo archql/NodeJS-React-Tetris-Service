@@ -10,9 +10,6 @@ import {ClientGameSessionControl} from "../../game/reconciliator.ts";
 import type {GameState} from "../../game/server_client_globals.ts";
 import {GameCanvas} from "./game_canvas";
 
-const server_ip = process.env.REACT_APP_SERVER_IP || 'localhost';
-const server_port = process.env.REACT_APP_SERVER_PORT || '5555';
-
 export class Game extends React.Component {
 
     constructor(props) {
@@ -29,7 +26,7 @@ export class Game extends React.Component {
         this.chat = [];
         this.myMessage = '';
         // Socket IO connection
-        this.socket = io(`http://${server_ip}:${server_port}/game`, {
+        this.socket = io(`/game`, {
             autoConnect: false,
             auth: {
                 token: Cookies.get('jwt')

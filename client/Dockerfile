@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 FROM node:18.16.0-alpine AS base
-ENV REACT_APP_SERVER_PORT=80 \
-    REACT_APP_SERVER_IP=localhost
+
+ARG REACT_APP_PROXY_IP=localhost
+ENV REACT_APP_PROXY_IP=$REACT_APP_PROXY_IP
 
 WORKDIR /usr/src/client
 
@@ -17,7 +18,10 @@ RUN npm run client:build
 FROM nginx:stable-alpine as production
 ENV NODE_ENV=production \
     NODE_PATH=./build
-ENV REACT_APP_PROXY_IP=tetris-server
+ARG REACT_APP_PROXY_IP=localhost
+ENV REACT_APP_PROXY_IP=$REACT_APP_PROXY_IP
+ARG SERVER_NAME='""'
+ENV SERVER_NAME=$SERVER_NAME
 
 WORKDIR /usr/share/nginx/html
 
@@ -28,4 +32,4 @@ COPY --from=base /usr/src/client/build .
 
 # above is only preparation
 # this is the main command on the container
-CMD ["sh", "-c", "envsubst '$$REACT_APP_PROXY_IP' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "envsubst '$$REACT_APP_PROXY_IP $$SERVER_NAME' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'"]
