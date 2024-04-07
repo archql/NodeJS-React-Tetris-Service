@@ -1,0 +1,5 @@
+{
+    "watch": ["bin", "game", "routes"],
+    "ext": "ts,js",
+    "exec": "tsx app.ts"
+}

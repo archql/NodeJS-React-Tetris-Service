@@ -8,7 +8,10 @@
     "allowJs": true,
     "baseUrl": ".",
     "allowImportingTsExtensions": true,
-    "moduleResolution":"node"
+    "moduleResolution":"node",
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noEmit": true,
   },
   "exclude": [
     "node_modules"

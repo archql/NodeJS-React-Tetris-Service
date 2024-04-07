@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "server:start:idea": "npx ts-node --esm app.ts",
-    "server:build": "tsc -p .",
-    "server:start:production": "node build/app.js"
+    "server:start:idea": "tsx app.ts",
+    "server:start:debug": "npx nodemon",
+    "server:start:production": "tsx app.ts"
   },
   "dependencies": {
     "cookie": "^0.5.0",
@@ -26,14 +26,16 @@
     "socket.io": "^4.6.1",
     "socket.io-cookie-parser": "^1.0.0",
     "socketio-file-upload": "^0.7.3",
-    "sqlite3": "^5.1.4"
+    "sqlite3": "^5.1.4",
+    "tsx": "^4.7.2"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.3",
     "@types/express": "^4.17.17",
     "@types/morgan": "^1.9.4",
     "@types/node": "^18.16.3",
+    "nodemon": "^3.1.0",
     "ts-node": "^10.9.1",
-    "typescript": "^5.1.6"
+    "typescript": "^5.4.4"
   }
 }
