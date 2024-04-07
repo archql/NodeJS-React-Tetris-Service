@@ -65,6 +65,18 @@ export class SortableTable extends Component {
 
     // if object - looks into: fetcher -> [attribute]
     // sorter  looks into: sorter ->  fetcher -> [attribute]
+    /*
+
+    {
+        name: '#', - display name
+        attribute: 'room_id', - accessed attribute
+        nonSortable: true, - if do not want sort
+        // TODO button name
+        sorter - lambda - evaluates sortable value of obj
+        fetcher - lambda - evaluates name of obj
+    },
+
+     */
     render() {
         const { data, sortField, sortDirection } = this.state;
         const { headers, onClick } = this.props;
@@ -75,15 +87,24 @@ export class SortableTable extends Component {
                 <tr>
                     {headers.map((header) => {
                         const {name, fetcher} = this.fetchHeader(header)
-                        return (
-                        <th key={name} onClick={() => this.handleSort(name, fetcher)}>
-                            {name}{' '}
-                            {sortField === name && <span color={sortDirection === 'asc' ? 'green' : 'red'}>
-                                {sortDirection === 'asc' ? '▲' : '▼'}
-                            </span>}
-                            {sortField !== name && <span>{'◆'}</span>}
-                        </th>
-                    )})}
+                        if (header.nonSortable) {
+                            return (
+                                <th>
+                                    {name}
+                                </th>
+                            )
+                        } else {
+                            return (
+                                <th key={name} onClick={() => this.handleSort(name, fetcher)}>
+                                    {name}{' '}
+                                    {sortField === name && <span color={sortDirection === 'asc' ? 'green' : 'red'}>
+                                        {sortDirection === 'asc' ? '▲' : '▼'}
+                                    </span>}
+                                    {sortField !== name && <span>{'◆'}</span>}
+                                </th>
+                            )
+                        }
+                    })}
                     {onClick && <th>
                         {'join'}
                     </th>}

@@ -123,8 +123,9 @@ class Rooms extends React.Component {
         // sorter  looks into: sorter ->  fetcher -> [attribute]
         const headers = [
             {
-                name: 'ID',
-                attribute: 'room_id'
+                name: '#',
+                attribute: 'room_id',
+                nonSortable: true
             },
             {
                 name: 'name',
