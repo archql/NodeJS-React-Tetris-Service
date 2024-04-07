@@ -1,6 +1,7 @@
 import {withRouter} from "../common/with_router";
 import {Chat} from "./chat";
 import React from "react";
+import {SortableTable} from "./table.js"
 import {RoomEntry} from "./room_entry";
 import {socket} from "./account";
 
@@ -93,27 +94,72 @@ class Rooms extends React.Component {
     roomLeave = (roomId) => {
         socket.emit('room leave', roomId)
     }
+    //
+    // render() {
+    //     return (
+    //         <div className="card flex_scroll">
+    //             {this.state.rooms ?
+    //                 (this.state.rooms.map((item) => (
+    //                 <RoomEntry
+    //                     key={item.room_id}
+    //                     item={item}
+    //                     joinRoom={this.roomJoin}
+    //                     leaveRoom={this.roomLeave}
+    //                 />
+    //                 )))
+    //                 :
+    //                 (<div className="box record" style={{padding:"25px", color:"red"}}>
+    //                         No rooms available at the moment :(
+    //                 </div>
+    //                 )
+    //             }
+    //         </div>
+    //     );
+    // }
+
 
     render() {
+        // if object - looks into: fetcher -> [attribute]
+        // sorter  looks into: sorter ->  fetcher -> [attribute]
+        const headers = [
+            {
+                name: 'ID',
+                attribute: 'room_id'
+            },
+            {
+                name: 'name',
+                attribute: 'room_name'
+            },
+            {
+                name: 'members',
+                attribute: 'room_room_users',
+                fetcher: (e) => {
+                    if (e.room_max_members) {
+                        return `${e.room_users.length} / ${e.room_max_members}`
+                    } else {
+                        return `${e.room_users.length}`
+                    }
+                },
+                sorter: (e) => {
+                    return e.room_users.length
+                }
+            }
+        ];
         return (
             <div className="card flex_scroll">
-                {this.state.rooms ?
-                    (this.state.rooms.map((item) => (
-                    <RoomEntry
-                        key={item.room_id}
-                        item={item}
-                        joinRoom={this.roomJoin}
-                        leaveRoom={this.roomLeave}
+                {this.state.rooms ? (
+                    <SortableTable
+                        data={this.state.rooms}
+                        headers={headers}
+                        onClick={(e) => {console.log(e)}}
                     />
-                    )))
-                    :
-                    (<div className="box record" style={{padding:"25px", color:"red"}}>
+                ) : (
+                    <div className="box record" style={{padding:"25px", color:"red"}}>
                             No rooms available at the moment :(
                     </div>
-                    )
-                }
+                )}
             </div>
-        );
+        )
     }
 }
 

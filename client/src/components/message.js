@@ -76,6 +76,16 @@ export class Message extends React.Component {
                         </div>
                     )
                 }
+                {
+                    (
+                        <div
+                            className={this.props.selected ? "float reply selected" : "float reply"}
+                            onClick={() => this.props.replyMessage(item)}
+                        >
+                        <FontAwesomeIcon icon={faIcons.faReply}/>
+                        </div>
+                    )
+                }
             </div>
         );
     }

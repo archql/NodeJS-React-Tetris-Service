@@ -175,6 +175,11 @@ export class Chat extends React.Component {
     likeMessage(msgId) {
         socket.emit('like message', msgId );
     }
+    replyMessage(msg) {
+        // TODO
+        // this.setState({messageReplied: 1})
+        console.log("TODO REPLY MESSAGE")
+    }
     doEditMessage(e) {
         e.preventDefault();
 
@@ -186,6 +191,11 @@ export class Chat extends React.Component {
         if (userSelected && messageEdited && iContent && iForm && iAttachments && iContent.value !== '') {
             socket.emit('edit message', messageEdited.message_id, iContent.value );
         }
+    }
+    findUser(e) {
+        e.preventDefault();
+
+
     }
 
     render() {
@@ -204,6 +214,10 @@ export class Chat extends React.Component {
                     Messages
                 </div>
                 <div className="cell user_list">
+                    <textarea
+                        placeholder="Type nickname"
+                        className="input_field"
+                    />
                     <ListContainer
                         list={this.state.others}
                         callback={e => this.userSelected(e)}
@@ -219,10 +233,16 @@ export class Chat extends React.Component {
                     deleteMessage={id => this.deleteMessage(id)}
                     editMessage={id => this.editMessage(id)}
                     likeMessage={id => this.likeMessage(id)}
+                    replyMessage={id => this.replyMessage(id)}
                     selectedMsgId={this.state.messageEdited ? this.state.messageEdited.message_id : 0}
                 />
                 <div className="cell bottom_left">
-                    <button className="btn btn_add_user bottom_left">Find user to connect</button>
+                    <button 
+                        className="btn btn_add_user bottom_left" 
+                        onClick={e => this.findUser(e)}
+                    >
+                        Find user to connect
+                    </button>
                 </div>
                 <div className="cell bottom_right">
                     {/*TODO separate*/}
