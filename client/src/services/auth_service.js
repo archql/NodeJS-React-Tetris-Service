@@ -24,6 +24,9 @@ class AuthService {
         })
         .then(r =>  r.json().then(data => ({status: r.status, body: data})));
     }
+    hash(password) {
+        return SHA256(password).toString();
+    }
 
     logout() {
         return fetch('/api/auth/logout', {

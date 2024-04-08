@@ -4,6 +4,7 @@ import React from "react";
 import {SortableTable} from "./table.js"
 import {RoomEntry} from "./room_entry";
 import {socket} from "./account";
+import {NavLink} from "react-router-dom";
 
 
 class Rooms extends React.Component {
@@ -157,14 +158,30 @@ class Rooms extends React.Component {
                     return e.room_password_hash ? "yes" : "no"
                 },
             },
+            {
+                name: '',
+                nonSortable: true,
+                fetcher: (e) => {
+                    return e.room_joined ? "leave" : "join"
+                },
+                type: 'button',
+                onClick: (e) => {console.log(e)} // TODO
+            }
         ];
         return (
             <div className="card flex_scroll">
+                <NavLink to={"/account/room_create"}
+                         className="link"
+                         style={{
+                             marginBottom: 10
+                         }}
+                >
+                    Create new room
+                </NavLink>
                 {this.state.rooms ? (
                     <SortableTable
                         data={this.state.rooms}
                         headers={headers}
-                        onClick={(e) => {console.log(e)}}
                     />
                 ) : (
                     <div className="box record" style={{padding:"25px", color:"red"}}>

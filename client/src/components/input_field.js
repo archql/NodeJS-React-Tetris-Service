@@ -18,7 +18,15 @@ export class InputField extends React.Component {
         return (
             <div>
                 <label htmlFor={this.props.id} className="input_field_label">{this.props.children}</label>
-                <input value={this.state.password_repeat} onChange={this.onChange} type={this.props.type} className="input_field" id={this.props.id}></input>
+                <input
+                    value={this.state.password_repeat}
+                    onChange={this.onChange}
+                    type={this.props.type}
+                    className="input_field"
+                    id={this.props.id}
+                    min={this.props.min}
+                    max={this.props.max}>
+                </input>
             </div>
         );
     }

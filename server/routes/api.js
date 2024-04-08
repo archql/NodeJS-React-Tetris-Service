@@ -358,7 +358,7 @@ const chatHandler = async (socket) => {
             //         [Op.not]: user.user_id
             //     }
             // },
-            attributes: ['room_id', 'room_name', 'room_max_members', 'room_description'],
+            attributes: ['room_id', 'room_name', 'room_max_members', 'room_description', 'room_password_hash'],
             include: [{
                 model: RoomUser,
                 as: "room_users",
@@ -369,7 +369,40 @@ const chatHandler = async (socket) => {
                 }
             }, { model: User, as: "room_owner", attributes: ['user_nickname'] }],
         });
+        rooms.forEach((item) => {
+            item.room_password_hash = item.room_password_hash ? 'Y' : null
+        })
         socket.emit('rooms', rooms);
+    })
+
+    socket.on('room create', async (room) => {
+        const temp = await Room.findOne({
+                where: {room_owner_id: user.user_id}
+            });
+        if (temp) return socket.emit("error", {status: 409, who: "room create", message: "Already has a room"});
+        //
+        const r = await Room.create({
+            room_owner_id: usr.user_id,
+            room_name: room.name,
+            room_description: `Room of ${user.user_nickname}`, // TODO undefined
+            room_max_members: room.teams*room.members,
+            room_password_hash: room.password_hash
+        });
+        if (!r) {
+            return socket.emit("error", {status: 409, who: "room create", message: "Unexpected error"});
+        }
+        // join
+        const ru = await RoomUser.create({
+            ru_user_id: user.user_id,
+            ru_room_id: r.room_id
+        });
+        if (!ru) {
+            return socket.emit("error", {status: 409, who: "room create", message: "Created. Join error"});
+        }
+        //
+        socket.emit('room create', r);
+        // only if room was joined not rejoined
+        io.of('/chat').emit("room join", ru);
     })
 
     socket.on('room join', async (room_id) => {

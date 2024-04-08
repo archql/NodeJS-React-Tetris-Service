@@ -81,7 +81,7 @@ export class SortableTable extends Component {
      */
     render() {
         const { data, sortField, sortDirection } = this.state;
-        const { headers, onClick } = this.props;
+        const { headers } = this.props;
 
         return (
             <table>
@@ -107,9 +107,6 @@ export class SortableTable extends Component {
                             )
                         }
                     })}
-                    {onClick && <th>
-                        {'join'}
-                    </th>}
                 </tr>
                 </thead>
                 <tbody>
@@ -117,16 +114,20 @@ export class SortableTable extends Component {
                     <tr key={index}>
                         {headers.map((header, index) => {
                             let cellValue = this.fetchDisplayed(header, item);
-                            return (
-                            <td key={index}>{
-                                cellValue
-                            }</td>
-                        )})}
-                        {onClick && (
-                            <td style={{padding: 0}} key={'button'}>
-                                <button onClick={() => onClick(item)}>&lt;</button>
-                            </td>
-                        )}
+                            if (header.type === 'button') {
+                                return (
+                                    <td style={{padding: 0}} key={'button'}>
+                                        <button className="btn" onClick={() => header.onClick(item)}>{cellValue}</button>
+                                    </td>
+                                )
+                            } else {
+                                return (
+                                    <td key={index}>{
+                                        cellValue
+                                    }</td>
+                                )
+                            }
+                        })}
                     </tr>
                 ))}
                 </tbody>

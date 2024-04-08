@@ -13,6 +13,7 @@ import {HelpRouted} from "./help";
 import {PersonalRouted} from "./personal";
 import {RoomsRouted} from "./rooms";
 import {LeaderboardRouted} from "./leaderboard";
+import {RoomCreateRouted} from "./room_create";
 
 export const socket = io('/chat', {
     autoConnect: false,
@@ -141,6 +142,7 @@ export class Account extends React.Component {
                         />} />
                         <Route path={"/help"} element={<HelpRouted/>} />
                         <Route path={"/leaderboard"} element={<LeaderboardRouted/>} />
+                        <Route path={"/room_create"} element={<RoomCreateRouted/>} />
                     </Routes>
                     {/*<Chat*/}
                     {/*    user={this.state.user}*/}
