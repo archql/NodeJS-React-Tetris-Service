@@ -294,7 +294,9 @@ Room.hasMany(RoomUser, {
         name: 'ru_room_id',
         allowNull: false,
     },
-    as: "room_users"
+    as: "room_users",
+    onDelete: 'CASCADE', // Cascade delete when the Room is deleted
+    hooks: true // Enable hooks for the association
 });
 User.hasMany(RoomUser, {
     foreignKey: {
@@ -315,7 +317,7 @@ RoomUser.belongsTo(Room, {
         name: 'ru_room_id',
         allowNull: false,
     },
-    as: "ru_room"
+    as: "ru_room",
 })
 
 Status.hasMany(User);
@@ -456,12 +458,13 @@ async function createUser(name, surname, nickname, password, role_id, status_id,
     }
 }
 
-async function createRoom(name, owner_nickname, description, max_members = null, password = null) {
+async function createRoom(name, owner_nickname, description, max_members = null, password = null, id = null) {
     const usr = await User.findOne({ where: { user_nickname: owner_nickname } });
     if (usr) {
         const room = await Room.findOne({ where: { room_owner_id: usr.user_id } });
         if (!room) {
             await Room.create({
+                room_id: id,
                 room_owner_id: usr.user_id,
                 room_name: name,
                 room_description: description,
@@ -472,7 +475,7 @@ async function createRoom(name, owner_nickname, description, max_members = null,
     }
 }
 
-await createRoom('Global', '_ARCHQL_', 'room which can be joined by any player');
+await createRoom('Global', '_ARCHQL_', 'room which can be joined by any player', null, null, 1);
 
 await createUser('Dummy', 'Testovich', 'AAAAAAAA', '1234', 1, 1, 6284);
 await createUser('Dummy', 'Testovich', 'TETRISTE', '1234', 1, 1, 6272);

@@ -367,7 +367,7 @@ const chatHandler = async (socket) => {
                     attributes: ['user_nickname'],
                     as: "ru_user",
                 }
-            }, { model: User, as: "room_owner", attributes: ['user_nickname'] }],
+            }, { model: User, as: "room_owner", attributes: ['user_nickname', 'user_id'] }],
         });
         rooms.forEach((item) => {
             item.room_password_hash = item.room_password_hash ? 'Y' : null
@@ -376,10 +376,13 @@ const chatHandler = async (socket) => {
     })
 
     socket.on('room create', async (room) => {
+        const usr = await User.findByPk(user.user_id);
         const temp = await Room.findOne({
                 where: {room_owner_id: user.user_id}
             });
-        if (temp) return socket.emit("error", {status: 409, who: "room create", message: "Already has a room"});
+        if (!usr) return socket.emit("error", {status: 409, who: "room create", message: "You're not exist"});
+        // allow for status 10+
+        if ((usr.user_status_id < 10) && temp) return socket.emit("error", {status: 409, who: "room create", message: "Already has a room"});
         //
         const r = await Room.create({
             room_owner_id: usr.user_id,
@@ -404,6 +407,14 @@ const chatHandler = async (socket) => {
         // only if room was joined not rejoined
         io.of('/chat').emit("room join", ru);
     })
+    socket.on('room delete', async (room_id) => {
+        const temp = await Room.findByPk(room_id);
+        if (!temp) return socket.emit("error", {status: 409, who: "room delete", message: "Nothing to delete"});
+        const delRes = await temp.destroy();
+        if (!delRes) return socket.emit("error", {status: 409, who: "room delete", message: "Failed to delete"});
+        // TODO notify all users room is destroyed
+        socket.emit('room delete', room_id);
+    })
 
     socket.on('room join', async (room_id) => {
                 // 1st find the room
@@ -426,7 +437,7 @@ const chatHandler = async (socket) => {
             io.of('/chat').emit("room join", ru);
         }
         // join completed
-        // socket.emit("room join", room.room_id);
+        socket.emit("room join", room.room_id);
     })
 
     socket.on('room leave', async (room_id) => {
@@ -442,12 +453,12 @@ const chatHandler = async (socket) => {
         if (!ru) return socket.emit("error", {status: 409, who: "room leave", message: "Failed to leave room"});
         const delRes = await ru.destroy();
         if (!delRes) {
-            return socket.emit("error", {status: 409, who: "room leave", message: "Failed to leave room"});
+             return socket.emit("error", {status: 409, who: "room leave", message: "Failed to leave room"});
         } else {
-            //return socket.emit("room leave");
-            //socket.emit("room left");
-            //socket.broadcast.emit("room leave", room.room_id);
-            io.of('/chat').emit('room leave', ru);
+             //return socket.emit("room leave");
+             //socket.emit("room left");
+             //socket.broadcast.emit("room leave", room.room_id);
+             io.of('/chat').emit('room leave', ru);
         }
     })
 }

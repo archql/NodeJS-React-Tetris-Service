@@ -43,6 +43,9 @@ class Rooms extends React.Component {
                 )) {
                     r.room_joined = true;
                 }
+                if (r.room_owner.user_id === this.props.user.user_id) {
+                    r.room_owned = true;
+                }
                 return r;
             }
         )
@@ -88,36 +91,19 @@ class Rooms extends React.Component {
         this.setState({rooms: rooms})
     }
 
-    roomJoin = (roomId) => {
-        socket.emit('room join', roomId)
+    roomDelete = (roomId) => {
+        console.log("room delete")
+        socket.emit('room delete', roomId)
     }
 
-    roomLeave = (roomId) => {
-        socket.emit('room leave', roomId)
+    roomAction = (room) => {
+        console.log("room action")
+        if (room.room_joined) {
+            socket.emit('room leave', room.room_id)
+        } else {
+            socket.emit('room join', room.room_id)
+        }
     }
-    //
-    // render() {
-    //     return (
-    //         <div className="card flex_scroll">
-    //             {this.state.rooms ?
-    //                 (this.state.rooms.map((item) => (
-    //                 <RoomEntry
-    //                     key={item.room_id}
-    //                     item={item}
-    //                     joinRoom={this.roomJoin}
-    //                     leaveRoom={this.roomLeave}
-    //                 />
-    //                 )))
-    //                 :
-    //                 (<div className="box record" style={{padding:"25px", color:"red"}}>
-    //                         No rooms available at the moment :(
-    //                 </div>
-    //                 )
-    //             }
-    //         </div>
-    //     );
-    // }
-
 
     render() {
         // if object - looks into: fetcher -> [attribute]
@@ -165,9 +151,17 @@ class Rooms extends React.Component {
                     return e.room_joined ? "leave" : "join"
                 },
                 type: 'button',
-                onClick: (e) => {console.log(e)} // TODO
+                onClick: (e) => {this.roomAction(e)} // TODO
+            },
+            {
+                name: '',
+                nonSortable: true,
+                type: (e) => e.room_owned ? "button" : "none",
+                fetcher: (e) => e.room_owned ? "maintain" : "",
+                onClick: (e) => {this.roomDelete(e.room_id)} // TODO
             }
         ];
+        console.log("RENDE RRRRR");
         return (
             <div className="card flex_scroll">
                 <NavLink to={"/account/room_create"}

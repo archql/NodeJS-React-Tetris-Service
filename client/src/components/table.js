@@ -4,44 +4,71 @@ export class SortableTable extends Component {
     constructor(props) {
         super(props);
 
+        // this.props.headers
+
         this.state = {
-            data: props.data,
+            data: this.props.data,
             sortField: null,
             sortDirection: 'asc',
         };
     }
 
-    handleSort(field, f) {
-        const { data, sortField, sortDirection } = this.state;
-        const { onSort } = this.props;
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        console.log('update')
+        if (prevProps.data !== this.props.data) {
+            this.setState({data: this.props.data});
+            this.handleSort()
+        }
+    }
 
-        // Check if the clicked field is the same as the current sort field
-        // If it is, toggle the sort direction
-        const direction = field === sortField && sortDirection === 'asc' ? 'desc' : 'asc';
+    handleSort(index) {
+        const { sortField, sortDirection } = this.state;
+        const { onSort, headers } = this.props;
 
-        // Sort the data based on the clicked field and direction
-        const sortedData = [...data].sort((a, b) => {
-            if (f(a) < f(b)) return direction === 'asc' ? -1 : 1;
-            if (f(a) > f(b)) return direction === 'asc' ? 1 : -1;
-            return 0;
-        });
+        let direction = (index === sortField && sortDirection === 'asc') ? 'desc' : 'asc';
+        if (index === sortField) {
+            if (sortDirection === 'asc') direction = 'desc';
+            else if (sortDirection === 'desc') {
+                direction = '';
+                index = null; // clear selection
+            }
+            else direction = 'asc';
+        }
+        let sortedData = this.props.data;
+        if (direction) {
+            index = index ?? sortField
+            const field = headers[index];
+            if (!field) return
+            //
+            const func = field.sorter || field.fetcher ||
+                (field.attribute ? (e) => e[field.attribute] : null) ||
+                (field.name ? (e) => e[field.name] : null) ||
+                (typeof field === 'string' ? (e) => e : null)
+
+            // Sort the data based on the clicked field and direction
+            sortedData = [...this.state.data].sort((a, b) => {
+                if (func(a) < func(b)) return direction === 'asc' ? -1 : 1;
+                if (func(a) > func(b)) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
 
         this.setState(
             {
                 data: sortedData,
-                sortField: field,
+                sortField: index,
                 sortDirection: direction
             },
             () => {
                 // Invoke the onSort callback with the sorted field and direction
                 if (onSort) {
-                    onSort(field, direction);
+                    onSort(index, direction);
                 }
             }
         );
     }
 
-    fetchDisplayed(header, item) {
+    fetchValue(header, item) {
         let cellValue;
         if (typeof header === 'string') cellValue = item[header]
         else if (header.fetcher) cellValue = header.fetcher(item)
@@ -49,20 +76,18 @@ export class SortableTable extends Component {
         return cellValue
     }
     fetchHeader(header) {
-        const res = {
-            name: null,
-            fetcher: null
-        }
         if (typeof header === 'string') {
-            res.name = header;
-            res.fetcher = (e) => e[header]
+            return header;
         } else {
-            res.name = header.name;
-            res.fetcher = header.sorter || header.fetcher ||
-                (header.attribute ? ((e) => e[header.attribute]) : null) ||
-                (header.name ?  ((e) => e[header.name]) : () => 0)
+            return header.name;
         }
-        return res
+    }
+    fetchProperty(item, prop) {
+        if (!prop || typeof prop === 'string') {
+            return prop
+        } else { // lambda
+            return prop(item)
+        }
     }
 
     // if object - looks into: fetcher -> [attribute]
@@ -88,7 +113,7 @@ export class SortableTable extends Component {
                 <thead>
                 <tr>
                     {headers.map((header, index) => {
-                        const {name, fetcher} = this.fetchHeader(header)
+                        const name = this.fetchHeader(header)
                         if (header.nonSortable) {
                             return (
                                 <th key={index} >
@@ -97,7 +122,7 @@ export class SortableTable extends Component {
                             )
                         } else {
                             return (
-                                <th key={index} onClick={() => this.handleSort(index, fetcher)}>
+                                <th key={index} onClick={() => this.handleSort(index)}>
                                     {name}{' '}
                                     {sortField === index && <span style={{color: sortDirection === 'asc' ? 'green' : 'red'}}>
                                         {sortDirection === 'asc' ? '▲' : '▼'}
@@ -113,10 +138,10 @@ export class SortableTable extends Component {
                 {data.map((item, index) => (
                     <tr key={index}>
                         {headers.map((header, index) => {
-                            let cellValue = this.fetchDisplayed(header, item);
-                            if (header.type === 'button') {
+                            let cellValue = this.fetchValue(header, item);
+                            if (this.fetchProperty(item, header.type) === 'button') {
                                 return (
-                                    <td style={{padding: 0}} key={'button'}>
+                                    <td style={{padding: 0}} key={index}>
                                         <button className="btn" onClick={() => header.onClick(item)}>{cellValue}</button>
                                     </td>
                                 )
