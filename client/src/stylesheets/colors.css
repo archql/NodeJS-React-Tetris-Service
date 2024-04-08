@@ -5,6 +5,7 @@
     --card-color-secondary: #2A2A2A;
     --card-color-third: #2d1020;
     --text-color-primary: #E2E2E2;
+    --text-color-white: #fff;
     --text-color-secondary: #A1A1A1;
     --text-color-error: #ff3333;
     --text-color-success: #56F000;
@@ -15,4 +16,13 @@
     --btn-color: #FF0082;
     --btn-color-hovered: #ff73b0;
     --btn-color-clicked: #cc407d;
+
+    --team-color-blue: #84aaff;
+    --team-color-red: #ff8484;
+    --team-color-green: #9fff84;
+    --team-color-yelow: #fff584;
+    --team-color-purple: #b184ff;
+    --team-color-orange: #ffbb84;
+    --team-color-pink: #ef84ff;
+    --team-color-cyan: #84fff1;
 }

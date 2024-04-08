@@ -229,6 +229,7 @@ export class Chat extends React.Component {
                     />
                 </div>
                 <MessageContainer
+                    tgtUserId={this.state.userSelected?.user_id}
                     curUserId={this.props.user.user_id}
                     messages={this.state.messages}
                     deleteMessage={id => this.deleteMessage(id)}

@@ -417,7 +417,16 @@ const chatHandler = async (socket) => {
     })
 
     socket.on('room join', async (room_id) => {
-                // 1st find the room
+        // 0th check if somewhere
+        let ru0 = await RoomUser.findOne({
+            where: {
+                ru_user_id: user.user_id,
+            }
+        });
+        if (ru0) {
+            return socket.emit("error", {status: 409, who: "room join", message: `Already joined room ${ru0.room_name}`});
+        }
+        // 1st find the room
         const room = await Room.findByPk(room_id);
         if (!room) return socket.emit("error", {status: 409, who: "room join", message: "Failed to join room"});
         // TODO check the limit in the DB

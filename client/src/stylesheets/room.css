@@ -1,0 +1,100 @@
+.lobby.table {
+    display: grid;
+    outline: 1px solid var(--btn-color);
+    background-color: var(--btn-color);
+    flex: 1;
+    border-collapse: collapse;
+
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-rows: max-content auto;
+
+    border-radius: 10px;
+    grid-gap: 1px;
+}
+.lobby h2 {
+    margin: 0;
+}
+.lobby .cell.top {
+    box-shadow: unset;
+}
+.lobby .cell {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+
+    box-shadow: inset 2px 2px 20px var(--card-color-primary);
+    margin: 0;
+    isolation: unset;
+}
+
+.team-info, .room-info {
+    padding: 20px;
+}
+
+.team-info h2, .room-info h2 {
+    margin-top: 0;
+}
+.lobby textarea {
+    align-self: flex-end;
+}
+
+.join-btn {
+    color: var(--text-color-white);
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.chat {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.message {
+    max-width: 75%;
+    margin-top: 10px;
+    padding: 5px;
+    position: relative;
+    background-color: transparent;
+}
+.lobby .message_in {
+    margin-right: auto;
+    margin-left: 2px;
+    background-color: transparent;
+}
+.lobby .message_out {
+    margin-left: auto;
+    margin-right: 2px;
+    background-color: transparent;
+}
+
+.sender {
+    font-weight: bold;
+}
+
+.team {
+    margin-left: 10px;
+    font-style: italic;
+}
+
+
+.team.red {
+    color: var(--team-color-red)
+}
+.team.blue {
+    color: var(--team-color-blue)
+}
+.team.green {
+    color: var(--team-color-green)
+}
+.join-btn.red {
+    background-color: var(--team-color-red)
+}
+.join-btn.blue {
+    background-color: var(--team-color-blue)
+}
+.join-btn.green {
+    background-color: var(--team-color-green)
+}
