@@ -58,7 +58,9 @@ export class SortableTable extends Component {
             res.fetcher = (e) => e[header]
         } else {
             res.name = header.name;
-            res.fetcher = header.sorter || header.fetcher || header[header.attribute] || header[header.name]
+            res.fetcher = header.sorter || header.fetcher ||
+                (header.attribute ? ((e) => e[header.attribute]) : null) ||
+                (header.name ?  ((e) => e[header.name]) : () => 0)
         }
         return res
     }
@@ -85,22 +87,22 @@ export class SortableTable extends Component {
             <table>
                 <thead>
                 <tr>
-                    {headers.map((header) => {
+                    {headers.map((header, index) => {
                         const {name, fetcher} = this.fetchHeader(header)
                         if (header.nonSortable) {
                             return (
-                                <th>
+                                <th key={index} >
                                     {name}
                                 </th>
                             )
                         } else {
                             return (
-                                <th key={name} onClick={() => this.handleSort(name, fetcher)}>
+                                <th key={index} onClick={() => this.handleSort(index, fetcher)}>
                                     {name}{' '}
-                                    {sortField === name && <span color={sortDirection === 'asc' ? 'green' : 'red'}>
+                                    {sortField === index && <span style={{color: sortDirection === 'asc' ? 'green' : 'red'}}>
                                         {sortDirection === 'asc' ? '▲' : '▼'}
                                     </span>}
-                                    {sortField !== name && <span>{'◆'}</span>}
+                                    {sortField !== index && <span>{'◆'}</span>}
                                 </th>
                             )
                         }

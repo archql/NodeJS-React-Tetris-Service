@@ -12,6 +12,7 @@ import {ChatRouted} from "./chat";
 import {HelpRouted} from "./help";
 import {PersonalRouted} from "./personal";
 import {RoomsRouted} from "./rooms";
+import {LeaderboardRouted} from "./leaderboard";
 
 export const socket = io('/chat', {
     autoConnect: false,
@@ -115,13 +116,17 @@ export class Account extends React.Component {
                              className={({ isActive }) =>
                                  isActive ? "link active" : "link"
                              }>Rooms</NavLink>
+                    <NavLink to={"/account/leaderboard"}
+                             className={({ isActive }) =>
+                                 isActive ? "link active" : "link"
+                             }>Leaderboard</NavLink>
                     <NavLink to={"/account/help"}
                              className={({ isActive }) =>
                                  isActive ? "link active" : "link"
                              }>Help</NavLink>
-                    <a className="link" href={"#logout"} onClick={e => this.logout(e)} >
-                        Logout
-                    </a>
+                    {/*<a className="link" href={"#logout"} onClick={e => this.logout(e)} >*/}
+                    {/*    Logout*/}
+                    {/*</a>*/}
                 </div>
                 <div className="box card flex_spread">
                     <Routes>
@@ -135,6 +140,7 @@ export class Account extends React.Component {
                             user={this.state.user}
                         />} />
                         <Route path={"/help"} element={<HelpRouted/>} />
+                        <Route path={"/leaderboard"} element={<LeaderboardRouted/>} />
                     </Routes>
                     {/*<Chat*/}
                     {/*    user={this.state.user}*/}

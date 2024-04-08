@@ -12,6 +12,8 @@
     transition-duration: 0.1s;
     text-align: center;
     text-decoration: none;
+    font-family: cursive;
+    font-size: medium;
 }
 .btn:hover {
     color: white;
@@ -26,6 +28,21 @@
     color: var(--text-color-primary);
     border-radius: 5px;
     padding: 2px;
+}
+.nickname_input {
+    width: 100%;
+    border-radius: 25px;
+    font-size: larger;
+    margin-bottom: 10px;
+    border-width: 0;
+    text-transform: uppercase;
+    text-align: center;
+    font-style: italic;
+    font-family: cursive;
+}
+textarea {
+    resize: none;
+    outline: none;
 }
 .input_field:focus  {
     border-color: var(--btn-color-hovered);

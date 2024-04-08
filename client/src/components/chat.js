@@ -215,8 +215,9 @@ export class Chat extends React.Component {
                 </div>
                 <div className="cell user_list">
                     <textarea
-                        placeholder="Type nickname"
-                        className="input_field"
+                        placeholder="Search nickname"
+                        className="input_field nickname_input box"
+                        maxLength={8}
                     />
                     <ListContainer
                         list={this.state.others}

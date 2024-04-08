@@ -5,6 +5,7 @@ import {io} from "../app.ts"
 import { promises as fs } from 'fs';
 import path from "path";
 import {__dirname} from "../app.ts";
+import {ServerGameSessionControl} from "../game/reconciliator.ts";
 
 const userSockets = [];
 
@@ -109,6 +110,11 @@ const chatHandler = async (socket) => {
         });
         userPlain["user_max_score"] = rcd ? rcd.record_score : 0;
         socket.emit("self", userPlain);
+    });
+
+    socket.on('leaderboard', async () => {
+        const leaderboardData = await ServerGameSessionControl.getLeaderboard();
+        socket.emit('leaderboard', leaderboardData);
     });
 
     socket.on('members', async () => {

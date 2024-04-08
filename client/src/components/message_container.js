@@ -29,7 +29,7 @@ export class MessageContainer extends React.Component {
 
     scrollToBottom = () => {
         console.log("scroll")
-        this.messagesEnd.scrollIntoView();
+        this.messagesEnd.scrollIntoView({ behavior: 'smooth' });
     }
 
     render() {

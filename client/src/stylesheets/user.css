@@ -177,7 +177,6 @@ body {
 }
 .message_input_form {
     display: flex;
-    align-items: center;
 }
 
 
@@ -301,56 +300,28 @@ main ul (DUPLICATION)
 /*
 scrollbar
  */
-.messaging::-webkit-scrollbar {
+::-webkit-scrollbar {
     width: 6px;               /* width of the entire scrollbar */
+    height: 6px;
 }
-.messaging::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
     background: var(--background-color);        /* color of the tracking area */
     border-radius: 4px;
 }
-.messaging::-webkit-scrollbar-thumb {
-    background-color: var(--card-color-secondary);    /* color of the scroll thumb */
-    border-radius: 4px;       /* roundness of the scroll thumb */
-}
-.flex_scroll::-webkit-scrollbar {
-    width: 6px;               /* width of the entire scrollbar */
-}
-.flex_scroll::-webkit-scrollbar-track {
+::-webkit-scrollbar-track-piece {
     background: var(--background-color);        /* color of the tracking area */
-    border-radius: 4px;
 }
-.flex_scroll::-webkit-scrollbar-thumb {
-    background-color: var(--card-color-secondary);    /* color of the scroll thumb */
+::-webkit-scrollbar-thumb {
+    background-color: var(--card-color-third);    /* color of the scroll thumb */
     border-radius: 4px;       /* roundness of the scroll thumb */
 }
-.user_list::-webkit-scrollbar {
-    width: 6px;               /* width of the entire scrollbar */
-}
-.user_list::-webkit-scrollbar-track {
-    background: var(--background-color);        /* color of the tracking area */
-    border-radius: 4px;
-}
-.user_list::-webkit-scrollbar-thumb {
-    background-color: var(--card-color-secondary);    /* color of the scroll thumb */
-    border-radius: 4px;       /* roundness of the scroll thumb */
+::-webkit-scrollbar-corner {
+    background: var(--background-color);
 }
 
-#message_content::-webkit-scrollbar {
-    width: 6px;               /* width of the entire scrollbar */
-}
-#message_content::-webkit-scrollbar-track {
-    background: ghostwhite;        /* color of the tracking area */
-}
-#message_content::-webkit-scrollbar-thumb {
-    background-color: gray;    /* color of the scroll thumb */
-    border-radius: 4px;       /* roundness of the scroll thumb */
-    /*border: 3px solid CadetBlue;  /* creates padding around scroll thumb */
-}
 
 .btn-send {
     padding: 15px 32px;
-    display: inline-block;
-    font-size: 16px;
 }
 .btn_add_user {
     width: 100%;

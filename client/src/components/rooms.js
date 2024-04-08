@@ -132,6 +132,12 @@ class Rooms extends React.Component {
                 attribute: 'room_name'
             },
             {
+                name: 'owner',
+                fetcher: (e) => {
+                    return e.room_owner.user_nickname
+                },
+            },
+            {
                 name: 'members',
                 attribute: 'room_room_users',
                 fetcher: (e) => {
@@ -142,9 +148,15 @@ class Rooms extends React.Component {
                     }
                 },
                 sorter: (e) => {
-                    return e.room_users.length
+                    return e.room_max_members ? e.room_max_members - e.room_users.length : 10000 + e.room_users.length
                 }
-            }
+            },
+            {
+                name: 'private?',
+                fetcher: (e) => {
+                    return e.room_password_hash ? "yes" : "no"
+                },
+            },
         ];
         return (
             <div className="card flex_scroll">
