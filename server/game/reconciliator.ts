@@ -35,7 +35,7 @@ export class ServerGameSessionControl {
     // special boolean to show if game was just resumed/paused
     justResumed: boolean = false;
 
-    constructor(socket, io, user, record, room) { // happens on connection
+    constructor(socket, io, user = null, record = null, room = null) { // happens on connection
         this.io = io;
         this.socket = socket;
         this.user = user;

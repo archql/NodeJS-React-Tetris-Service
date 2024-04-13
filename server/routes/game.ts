@@ -1,20 +1,22 @@
 import {GameInput} from "../game/server_client_globals.js";
 import {ServerGameSessionControl} from "../game/reconciliator.js";
 import {TPS} from "../game/server_client_globals.js";
-import {createRoom, Record, Room, RoomUser, sequelize, User} from "../bin/db.js";
+import {Record, Room, RoomUser, sequelize, User} from "../bin/db.js";
 import {io} from "../app.js";
-import {bufferFromMessage, inputFromBuffer, leaderboardToBuffer} from "../game/tetrisAsm.js";
 import {RANDOM_MAX} from "../game/tetris.js";
-import {Op, where} from "sequelize";
 import crypto from "crypto";
+import {RoomSessionControl} from "../game/room_control";
 
 type UserGameSessionsType = {
-    [key: string]: ServerGameSessionControl;
+    [key: string]: {
+        game: ServerGameSessionControl,
+        room: RoomSessionControl
+    };
 };
 const userGameSessions: UserGameSessionsType = {};
 
 type RoomReadyToStartInfoType = {
-    [room_id: string]: { started: boolean, members: number[]};
+    [room_id: string]: { started: boolean, members: number[] };
 };
 const roomReadyToStartInfos: RoomReadyToStartInfoType = {};
 
@@ -22,281 +24,105 @@ const gameHandler = async (socket) => {
     //
     console.log(`Socket connected: ${socket.id}`);
     //
-    const user = socket.request.user;
+    const user_id = socket.request.user?.user_id;
     const error = socket.request.error;
-    let room: string = null;
-    let nickname: string = null;
+    //
     // create a game instance
-    userGameSessions[socket.id] = new ServerGameSessionControl(socket, io.of('/game'), null, null);
+    userGameSessions[socket.id] = {
+        game: new ServerGameSessionControl(socket, io.of('/game')),
+        room: new RoomSessionControl(socket, io.of('/game'))
+    }
+    userGameSessions[socket.id].room.callback = startCompetition;
+    //
+    async function sync_data() {
+        //
+        let user: any = null;
+        let ru: any = null;
+        let room: any = null;
+        // let record: any = null;
+        // assign default user if need
+        if (user_id) {
+            user = await User.findByPk(user_id, {
 
-    // room disconnect function
-    async function roomLeave () {
-        console.log(`ROOM LEAVE ${nickname} ${room}`)
-        if (room) {
-            // immediately set room to null (async)
-            const temp = room;
-            room = null;
-            // notify everybody
-            socket.to(temp).emit('room leave', user.user_id);
-            io.of('/chat').emit('room leave', {
-                ru_user_id: user.user_id,
-                ru_room_id: parseInt(temp)
-            });
-            // TODO
-            const msg = {
-                text:  `${nickname} left the room`,
-                nickname: "@SERVER "
-            };
-            io.of('/game').to(temp).emit('room message', msg);
-            // reset competition if it has one
-            if (roomReadyToStartInfos[temp]) {
-                const index = roomReadyToStartInfos[temp].members.indexOf(user.user_id);
-                if (index !== -1) {
-                    roomReadyToStartInfos[temp].members.splice(index, 1);
-                    userGameSessions[socket.id].competition = false;
-                    io.of('/game').to(temp).emit('room ready', {
-                        user_id: user.user_id,
-                        state: ''
-                    });
-                    // check if we're ready to start
-                    competitionReadyCheck(temp)
-                }
-            }
-            // leave
-            socket.leave(temp);
-            //
-            await RoomUser.destroy({
+            })
+            // record = await Record.findOne({
+            //     where: {
+            //         record_user_id: user.user_id
+            //     },
+            //     order: sequelize.literal('record_score DESC'),
+            // });
+        } else {
+            user = await User.findOne({
                 where: {
-                    ru_user_id: user.user_id,
-                    ru_room_id: parseInt(temp)
-                }
-            });
-            console.log(`ROOM LEAVE 2 ${nickname} ${temp}`)
-        }
-    }
-    function competitionReadyCheck (room: string) {
-        console.log(`competitionReadyCheck ${nickname}`)
-        if (roomReadyToStartInfos[room].members.length
-            === io.of("/game").adapter.rooms.get(room)?.size) {
-            // notify everybody
-            io.of("/game").to(room).emit('room ready', {
-                user_id: null, // for all
-                state: 'playing'
+                    user_role_id: 50
+                },
             })
-            // get seed
-            const seed = Math.floor(Math.random() * RANDOM_MAX);
-            // start competition
-            io.of("/game").adapter.rooms.get(room).forEach((sid) => {
-                userGameSessions[sid].startCompetition(
-                    seed,
-                    onCompetitionViolation,
-                    onCompetitionEnd,
-                );
-            })
-            // TODO notify
-            const msg = {
-                text:  `competition started!`,
-                nickname: "@SERVER "
-            };
-            io.of('/game').to(room).emit('room message', msg);
+            //record = null;
         }
-    }
-    // local user needed just because we use these functions from one player's instance
-    function onCompetitionViolation (user: any, room: string)  {
-        console.log(`onCompetitionViolation ${user.user_nickname}`)
-        const index = roomReadyToStartInfos[room].members.indexOf(user.user_id);
-        if (index !== -1) {
-            roomReadyToStartInfos[room].members.splice(index, 1);
-        }
-        io.of('/game').to(room).emit('room ready', {
-            user_id: user.user_id,
-            state: 'violation'
+        ru = user && await RoomUser.findOne({
+            where: {
+                ru_user_id: user.user_id
+            }
         });
-        // TODO notify
-        const msg = {
-            text:  `${user.user_nickname} violated rule`,
-            nickname: "@SERVER "
-        };
-        io.of('/game').to(room).emit('room message', msg);
-    }
-    function onCompetitionEnd (user: any, room: string, score: number)  {
-        console.log(`onCompetitionEnd ${user.user_nickname}`)
-        const index = roomReadyToStartInfos[room].members.indexOf(user.user_id);
-        if (index !== -1) {
-            roomReadyToStartInfos[room].members.splice(index, 1);
-        }
-        io.of('/game').to(room).emit('room ready', {
-            user_id: user.user_id,
-            state: 'end',
-            score: score
+        room = ru && await Room.findByPk(ru.ru_room_id, {
+            include: [{
+                model: RoomUser,
+                include: [{
+                    model: User,
+                    attributes: ['user_id', 'user_nickname', 'user_rank'],
+                }]
+            }, { model: User, attributes: ['user_id', 'user_nickname'] }],
         });
-        // TODO notify
-        const msg = {
-            text:  `${user.user_nickname} scored ${score}!`,
-            nickname: "@SERVER "
-        };
-        io.of('/game').to(room).emit('room message', msg);
+        // update session data
+        userGameSessions[socket.id].room?.sync(user, room, ru)
     }
+
+    await sync_data()
+
     // Create socket connections
     socket.on('disconnect', async () => {
         console.log('A client disconnected');
-        // notify users in the room
-        await roomLeave();
-        userGameSessions[socket.id].onDisconnect();
+        // call on disconnect
+        userGameSessions[socket.id].game?.onDisconnect();
+        await userGameSessions[socket.id].room?.onDisconnect();
+        // delete
         delete userGameSessions[socket.id];
     });
 
-    socket.on('room ready', () => {
-        onRoomReady();
-    })
-
     socket.on('room message', (text: string) => {
-        //
-        console.log(`ROOM MESSAGE is ${text} from ${nickname}`)
-        if (room) {
-            const msg = {
-                text:  text,
-                nickname: nickname
-            };
-            io.of('/game').to(room).emit('room message', msg);
-        }
+        userGameSessions[socket.id]?.room.message(text)
     })
 
     socket.on('room random', async () => {
-        if (!room) {
-            let r = await Room.findOne({
-                where: {
-                    room_password_hash: null,
-                    room_places: {
-                        [Op.not]: 0
-                    }
-                },
-                order: ['room_places', 'ASC'],
-            })
-            if (!r) {
-                // create new room maintained by server
-                const rng = crypto.randomBytes(6).toString('hex')
-                r = await createRoom(`Duel-${rng}`, '@SYSROOT', 'room which can be joined by any player', 1, 2, null);
-            }
-            // TODO join room
-        }
+        await userGameSessions[socket.id]?.room.join_random_room()
     })
 
-    socket.on('room team join', (team: number) => {
-        if (room) {
-            //
-        }
+    socket.on('room team join', async (team: number) => {
+        await userGameSessions[socket.id]?.room.join_team(team)
     })
-
-    const onRoomReady = () => {
-        //
-        console.log(`ON ROOM READY ${nickname}`)
-        //
-        if (room) {
-            if (!roomReadyToStartInfos[room]) {
-                roomReadyToStartInfos[room] = { started: false, members: []};
-            }
-            const index = roomReadyToStartInfos[room].members.indexOf(user.user_id);
-            if (index === -1) {
-                // does not contain - add
-                roomReadyToStartInfos[room].members.push(user.user_id);
-                // notify all users
-                io.of('/game').to(room).emit('room ready', {
-                    user_id: user.user_id,
-                    state: 'ready'
-                });
-            } else {
-                // if already contains - drop
-                roomReadyToStartInfos[room].members.splice(index, 1);
-                // drop competition mode
-                userGameSessions[socket.id].competition = false;
-                // notify all users
-                io.of('/game').to(room).emit('room ready', {
-                    user_id: user.user_id,
-                    state: ''
-                });
-            }
-            // check if we're fully ready to start competition
-            competitionReadyCheck(room);
-        }
-    }
 
     socket.on('room leave', async () => {
-        await roomLeave();
+        await userGameSessions[socket.id]?.room.leave()
     })
 
     socket.on('input', (input: GameInput) => {
-        userGameSessions[socket.id].onInput(input);
+        userGameSessions[socket.id].game?.onInput(input);
     })
-    // TODO do we need sync on demand?
-    socket.on('leaderboard', async () => {
-        const leaderboardData = await ServerGameSessionControl.getLeaderboard();
-        socket.emit('leaderboard', leaderboardData);
-    });
-    //
-    // send leaderboard
-    const leaderboardData = await ServerGameSessionControl.getLeaderboard();
-    socket.emit('leaderboard', leaderboardData);
 
-    // TODO test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO include records INSIDE
-    let usr = null;
-    let rcd = null;
-    if (user !== null && user.user_id) {
-        // TODO awful query
-        usr = await User.findByPk(user.user_id, {
-            include: [{
-                model: RoomUser,
-                as: "user_rooms",
-                limit: 1, // extract only one room of the user (TODO here a bug lies)
-                include: [{
-                    model: Room,
-                    attributes: ['room_id', 'room_name', 'room_max_members', 'room_teams', 'room_description', 'room_owner_id'],
-                    as: "ru_room",
-                    include: [{
-                        model: RoomUser,
-                        as: "room_users",
-                        include: [{
-                            model: User,
-                            attributes: ['user_id', 'user_nickname'],
-                            as: "ru_user",
-                        }]
-                    }/*, { model: User, as: "room_owner", attributes: ['user_id', 'user_nickname'] }*/],
-                }]
-            }]
-        });
-        // check if user has a room
-        if (usr.user_rooms && usr.user_rooms.length) {
-            // send info about joined room
-            nickname = usr.user_nickname;
-            room = usr.user_rooms[0].ru_room_id.toString();
-            //
-            socket.join(room);
-            socket.emit('room self', usr.user_rooms[0].ru_user_id);
-            io.of('game').to(room).emit('room join', usr.user_rooms[0].ru_room)
+    // room ready
+    function startCompetition(room: string) {
+        // get seed
+        const seed = Math.floor(Math.random() * RANDOM_MAX);
+        // TODO
+        // userGameSessions[socket.id].game?.sync()
+        // start competition
+        io.of("/game").adapter.rooms.get(room).forEach((sid) => {
             // TODO
-            const msg = {
-                text:  `${nickname} join the room`,
-                nickname: "@SERVER "
-            };
-            io.of('/game').to(room).emit('room message', msg);
-        }
-        // TODO set user status to PLAYING
-        // if (usr !== null) {
-        //     usr = await usr.update({user_status_id: 2});
-        // }
-        // find all records which correspond to user
-        rcd = await Record.findOne({
-            where: {
-                record_user_id: user.user_id
-            },
-            order: sequelize.literal('record_score DESC'),
-        });
-    } else if (error) {
-        usr = {error: true}; // TODO
+            // userGameSessions[sid].game.startCompetition(
+            //     seed,
+            // );
+        })
     }
-    //
-    userGameSessions[socket.id].onSync(usr, rcd, room);
 }
 
 export default gameHandler;
@@ -313,7 +139,7 @@ export const launchGameLoop = () => {
         // console.log(`real TPS = ${1 / delta}`)
         // TODO game update loop
         for (const [, session] of Object.entries(userGameSessions)) {
-            session.process();
+            session.game?.process();
         }
         //
         time = now
