@@ -10,14 +10,14 @@ export class ServerGameSessionControl {
     record = null;
     user = null;
     game = null;
-    room: string = null;
+    room = null;
     socket;
     io;
 
     // competition mode does not allow pause or stop
     competition: boolean = false;
-    onCompetitionViolation: (user: any, room: string) => void;
-    onCompetitionEnd: (user: any, room: string, score: number) => void;
+    onCompetitionViolation: (user: any, room: any) => void;
+    onCompetitionEnd: (user: any, room: any, score: number) => void;
 
     inputQueue: GameInput[] = [];
     stateBuffer: GameState[] = new Array(BUFFER_SIZE);
@@ -35,12 +35,12 @@ export class ServerGameSessionControl {
     // special boolean to show if game was just resumed/paused
     justResumed: boolean = false;
 
-    constructor(socket, io, user, record) { // happens on connection
+    constructor(socket, io, user, record, room) { // happens on connection
         this.io = io;
         this.socket = socket;
         this.user = user;
         this.record = record;
-        this.room = user?.user_rooms[0]?.ru_room_id.toString();
+        this.room = room;
     }
 
     static async getLeaderboard() {
@@ -61,8 +61,8 @@ export class ServerGameSessionControl {
     }
 
     startCompetition(seed: number,
-                     onCompetitionViolation: (user: any, room: string) => void,
-                     onCompetitionEnd: (user: any, room: string, score: number) => void)
+                     onCompetitionViolation: (user: any, room: any) => void,
+                     onCompetitionEnd: (user: any, room: any, score: number) => void)
     {
         this.game.initializeFrom(seed);
         this.game.paused = false;
@@ -87,12 +87,9 @@ export class ServerGameSessionControl {
         //
         console.log("startCompetition b4")
         // force sync
-        const asmBuffer = bufferFromState(this.stateBuffer[0]);
         this.socket.emit('sync', this.stateBuffer[0]);
-        this.socket.emit('sncX', asmBuffer);
         if (this.room) {
-            this.io.to(this.room).emit('update', this.stateBuffer[0]);
-            this.socket.to(this.room).emit('updo', asmBuffer);
+            this.io.to(this.room.room_id.toString()).emit('update', this.stateBuffer[0]);
         }
         //
         console.log("startCompetition af")
@@ -140,12 +137,9 @@ export class ServerGameSessionControl {
             this.time - this.timeStarted, this.game.deepCopy());
         // send game state
         // TODO this is awful
-        const asmBuffer = bufferFromState(this.stateBuffer[bufferIndex]);
         this.socket.emit('sync', this.stateBuffer[bufferIndex]);
-        this.socket.emit('sncX', asmBuffer);
         if (this.room) {
-            this.io.to(this.room).emit('update', this.stateBuffer[bufferIndex]);
-            this.socket.to(this.room).emit('updo', asmBuffer);
+            this.io.to(this.room.room_id.toString()).emit('update', this.stateBuffer[bufferIndex]);
         }
     }
 
@@ -227,20 +221,18 @@ export class ServerGameSessionControl {
                     // send leaderboard update (TODO deep compare)
                     const leaderboard = await ServerGameSessionControl.getLeaderboard();
                     this.io.emit('leaderboard', leaderboard);
-                    // TODO
-                    this.io.emit('lbXX', leaderboardToBuffer(leaderboard));
                 }
             })();
         }
     }
 
     process() {
+        // game is null - so there is nothing to be processed
         if (!this.game) {
-            // game is null - so there is nothing to be processed
             return;
         }
+        // there are no pending messages - ignore
         if (this.inputQueue.length === 0) {
-            // there are no pending messages - ignore
             return;
         }
         console.log(`process`);
@@ -299,14 +291,11 @@ export class ServerGameSessionControl {
         // console.log("send update");
 
         // TODO this is awful
-        const asmBuffer = bufferFromState(this.stateBuffer[bufferIndex]);
         if (this.room) {
             this.io.to(this.room).emit('update', this.stateBuffer[bufferIndex]);
-            this.socket.to(this.room).emit('updo', asmBuffer);
         } else {
             this.socket.emit('update', this.stateBuffer[bufferIndex]);
         }
-        this.socket.emit('updX', asmBuffer);
 
         //this.socket.emit('update', this.stateBuffer[bufferIndex]);
         // TODO

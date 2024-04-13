@@ -152,7 +152,7 @@ class Rooms extends React.Component {
                     return res
                 },
                 sorter: (e) => {
-                    return (e.room_max_members && e.room_teams) ? e.room_teams * e.room_max_members - e.room_users.length : 10000 + e.room_users.length
+                    return e.room_places
                 }
             },
             {
@@ -163,19 +163,23 @@ class Rooms extends React.Component {
             },
             {
                 name: '',
-                nonSortable: true,
                 fetcher: (e) => {
                     return e.room_joined ? "leave" : "join"
                 },
                 type: 'button',
-                onClick: (e) => {this.roomAction(e)} // TODO
+                onClick: (e) => {this.roomAction(e)},
+                sorter: (e) => {
+                    return e.room_joined ? 0 : 1
+                }
             },
             {
                 name: '',
-                nonSortable: true,
                 type: (e) => e.room_owned ? "button" : "none",
                 fetcher: (e) => e.room_owned ? "maintain" : "",
-                onClick: (e) => {this.roomDelete(e.room_id)} // TODO
+                onClick: (e) => {this.roomDelete(e.room_id)},
+                sorter: (e) => {
+                    return e.room_owned ? 0 : 1
+                }
             }
         ];
         return (

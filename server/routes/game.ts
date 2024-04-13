@@ -1,10 +1,12 @@
 import {GameInput} from "../game/server_client_globals.js";
 import {ServerGameSessionControl} from "../game/reconciliator.js";
 import {TPS} from "../game/server_client_globals.js";
-import {Record, Room, RoomUser, sequelize, User} from "../bin/db.js";
+import {createRoom, Record, Room, RoomUser, sequelize, User} from "../bin/db.js";
 import {io} from "../app.js";
 import {bufferFromMessage, inputFromBuffer, leaderboardToBuffer} from "../game/tetrisAsm.js";
 import {RANDOM_MAX} from "../game/tetris.js";
+import {Op, where} from "sequelize";
+import crypto from "crypto";
 
 type UserGameSessionsType = {
     [key: string]: ServerGameSessionControl;
@@ -157,7 +159,32 @@ const gameHandler = async (socket) => {
                 nickname: nickname
             };
             io.of('/game').to(room).emit('room message', msg);
-            io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
+        }
+    })
+
+    socket.on('room random', async () => {
+        if (!room) {
+            let r = await Room.findOne({
+                where: {
+                    room_password_hash: null,
+                    room_places: {
+                        [Op.not]: 0
+                    }
+                },
+                order: ['room_places', 'ASC'],
+            })
+            if (!r) {
+                // create new room maintained by server
+                const rng = crypto.randomBytes(6).toString('hex')
+                r = await createRoom(`Duel-${rng}`, '@SYSROOT', 'room which can be joined by any player', 1, 2, null);
+            }
+            // TODO join room
+        }
+    })
+
+    socket.on('room team join', (team: number) => {
+        if (room) {
+            //
         }
     })
 
@@ -221,10 +248,10 @@ const gameHandler = async (socket) => {
             include: [{
                 model: RoomUser,
                 as: "user_rooms",
-                //limit: 1, // extract only one room of the user (TODO here a bug lies)
+                limit: 1, // extract only one room of the user (TODO here a bug lies)
                 include: [{
                     model: Room,
-                    attributes: ['room_id', 'room_name', 'room_max_members', 'room_description', 'room_owner_id'],
+                    attributes: ['room_id', 'room_name', 'room_max_members', 'room_teams', 'room_description', 'room_owner_id'],
                     as: "ru_room",
                     include: [{
                         model: RoomUser,

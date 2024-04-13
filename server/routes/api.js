@@ -24,7 +24,6 @@ async function saveFile(file) {
     if (!MIME_TYPE_MAP.includes(file.type) || !EXTENSION_MAP.includes(extension)) {
         return null;
     }
-    console.log("Includes");
     // generate filename
     const timestamp = Date.now();
     const randomString = crypto.randomBytes(6).toString('hex');
@@ -122,6 +121,9 @@ const chatHandler = async (socket) => {
             where: {
                 user_id: {
                     [Op.not]: user.user_id
+                },
+                user_role_id: {
+                    [Op.lte]: 20
                 }
             },
             include: [
@@ -382,7 +384,7 @@ const chatHandler = async (socket) => {
             });
         if (!usr) return socket.emit("error", {status: 409, who: "room create", message: "You're not exist"});
         // allow for status 10+
-        if ((usr.user_status_id < 10) && temp) return socket.emit("error", {status: 409, who: "room create", message: "Already has a room"});
+        if ((usr.user_role_id < 10) && temp) return socket.emit("error", {status: 409, who: "room create", message: "Already has a room"});
         //
         const r = await Room.create({
             room_owner_id: usr.user_id,

@@ -1,11 +1,10 @@
-import { Sequelize, Model, DataTypes } from 'sequelize';
+import {Sequelize, Model, DataTypes, where} from 'sequelize';
 import sqlite3 from 'sqlite3';
 import crypto from "crypto";
 import exp from "constants";
 
 export const sequelize = new Sequelize('sqlite:database/database.db', {
-    //logging: (...msg) => console.log(msg), // Displays all log function call parameters
-    logging: console.log,
+    logging: console.log, // Displays all log function call parameters
     dialect: 'sqlite',
     dialectOptions: {
         mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_FULLMUTEX,
@@ -51,8 +50,18 @@ export const User = sequelize.define("user", {
     },
     user_nickname: {
         type: DataTypes.CHAR(8),
-        allowNull: true,
+        allowNull: false,
         defaultValue: null
+    },
+    user_points: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+    user_rank: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
     },
     user_last_online: DataTypes.DATE
 }, {
@@ -263,6 +272,10 @@ export const Room = sequelize.define("room", {
         type: DataTypes.STRING(64),
         allowNull: true
     },
+    room_places: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    }
 }, {
     timestamps: true,
     createdAt: "room_created",
@@ -302,10 +315,117 @@ export const RoomUser = sequelize.define("ru", {
     createdAt: "ru_joined",
     updatedAt: false
 });
+export const Skill = sequelize.define("skill", {
+    skill_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true,
+        autoIncrement: true,
+    },
+    skill_rule: {
+        type: DataTypes.TEXT("medium"),
+        allowNull: false
+    },
+    skill_name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    skill_description: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+}, {
+    timestamps: true,
+    createdAt: "skill_created",
+    updatedAt: false
+});
+export const Achievement = sequelize.define("achievement", {
+    ach_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true,
+        autoIncrement: true,
+    },
+    ach_rule: {
+        type: DataTypes.TEXT("medium"),
+        allowNull: false
+    },
+    ach_name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    ach_description: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    ach_obtained_cnt: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    }
+}, {
+    timestamps: true,
+    createdAt: "ach_created",
+    updatedAt: false
+});
+export const UserSkill = sequelize.define("us", {
+    us_user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true
+    },
+    us_skill_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true
+    },
+    us_level: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+    us_max_level: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    }
+}, {
+    timestamps: true,
+    createdAt: "us_created",
+    updatedAt: false
+});
+export const UserAchievement = sequelize.define("ua", {
+    ua_user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true
+    },
+    ua_ach_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true
+    },
+    ua_level: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+    ua_max_level: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    }
+}, {
+    timestamps: true,
+    createdAt: "ua_created",
+    updatedAt: false
+});
 
 
-
-//User.hasMany(Room);
+// User.hasMany(Room, {
+//     foreignKey: {
+//         name: 'room_owner_id',
+//         allowNull: false,
+//     },
+//     as: "user_owns"
+// });
 Room.belongsTo(User, {
     foreignKey: {
         name: 'room_owner_id',
@@ -343,6 +463,64 @@ RoomUser.belongsTo(Room, {
         allowNull: false,
     },
     as: "ru_room",
+})
+
+Skill.hasMany(UserSkill, {
+    foreignKey: {
+        name: 'us_skill_id',
+        allowNull: false,
+    },
+    as: "skill_users"
+})
+User.hasMany(UserSkill, {
+    foreignKey: {
+        name: 'us_user_id',
+        allowNull: false,
+    },
+    as: "user_skills"
+})
+UserSkill.belongsTo(Skill, {
+    foreignKey: {
+        name: 'us_skill_id',
+        allowNull: false,
+    },
+    as: "us_skill"
+})
+UserSkill.belongsTo(User, {
+    foreignKey: {
+        name: 'us_user_id',
+        allowNull: false,
+    },
+    as: "us_user"
+})
+
+Achievement.hasMany(UserAchievement, {
+    foreignKey: {
+        name: 'ua_ach_id',
+        allowNull: false,
+    },
+    as: "ach_users"
+})
+User.hasMany(UserAchievement, {
+    foreignKey: {
+        name: 'ua_user_id',
+        allowNull: false,
+    },
+    as: "user_achievements"
+})
+UserAchievement.belongsTo(Achievement, {
+    foreignKey: {
+        name: 'ua_ach_id',
+        allowNull: false,
+    },
+    as: "ua_ach"
+})
+UserAchievement.belongsTo(User, {
+    foreignKey: {
+        name: 'ua_user_id',
+        allowNull: false,
+    },
+    as: "ua_user"
 })
 
 Status.hasMany(User, {
@@ -476,6 +654,43 @@ Connection.belongsTo(ConStatus,
     }
 );
 
+RoomUser.addHook('beforeCreate', 'checkRoomCapacity', async (roomUser, options) => {
+    const room = await Room.findByPk(roomUser.ru_room_id);
+    if (!room) {
+        throw new Error('Room is dead!');
+    }
+    if (room.room_places === 0) {
+        throw new Error('The room is already full. Cannot add more members.');
+    }
+    room.room_places -= 1
+    await room.save()
+});
+RoomUser.addHook('beforeUpdate', 'checkRoomCapacity', async (roomUser, options) => {
+    const room = await Room.findByPk(roomUser.ru_room_id, { include: RoomUser });
+    if (!room) {
+        throw new Error('Room is already dead!');
+    }
+    // determine teams distribution
+    let teams = []
+    room.room_users.forEach((ru => {
+        const v = (ru.ru_team ?? -1) + 1
+        teams[v] = teams[v] ? teams[v] + 1 : 1
+    }))
+    //
+    if (roomUser.ru_team && (teams[roomUser.ru_team + 1] >= room.room_max_members)) {
+        throw new Error('The room team is already full. Cannot add more members.');
+    }
+});
+RoomUser.addHook('beforeDestroy', 'checkRoomCapacity', async (roomUser, options) => {
+    const room = await Room.findByPk(roomUser.ru_room_id);
+    if (!room) {
+        throw new Error('Room is already dead!');
+    }
+    //
+    room.room_places += 1
+    await room.save()
+})
+
 await sequelize.sync();
 
 // const test = await User.findOne({ where: { user_name: 'Test', user_nickname: null } });
@@ -485,7 +700,7 @@ await sequelize.sync();
 //     console.log("NOT FOUND");
 // }
 
-async function createUser(name, surname, nickname, password, role_id, status_id, region, score) {
+async function createUser(name, surname, nickname, password, role_id, status_id, region, email, score) {
     const usr = await User.findOne({ where: { user_nickname: nickname } });
     if (!usr) {
         const newUsr = await User.create({
@@ -495,6 +710,7 @@ async function createUser(name, surname, nickname, password, role_id, status_id,
             user_surname: surname,
             user_nickname: nickname,
             user_region: region,
+            user_email: email,
             user_password_hash: crypto.createHash("sha256").update(password).digest('hex')
         });
         if (!score) return
@@ -506,8 +722,7 @@ async function createUser(name, surname, nickname, password, role_id, status_id,
         });
     }
 }
-
-async function createRoom(name, owner_nickname, description, max_members, teams, password = null, id = null) {
+export async function createRoom(name, owner_nickname, description, max_members, teams, password = null, id = null) {
     const usr = await User.findOne({ where: { user_nickname: owner_nickname } });
     if (usr) {
         const room = await Room.findOne({ where: { room_owner_id: usr.user_id } });
@@ -519,6 +734,7 @@ async function createRoom(name, owner_nickname, description, max_members, teams,
                 room_description: description,
                 room_max_members: max_members,
                 room_teams: teams,
+                room_places: max_members * teams,
                 room_password_hash: password && crypto.createHash("sha256").update(password).digest('hex')
             });
         }
@@ -555,20 +771,26 @@ await createRegion("UKR");
 await createRegion("POL");
 await createRegion("DEU");
 //
+//
 try {
     // await sequelize.getQueryInterface().addColumn('users', 'user_email', {
     //     type: DataTypes.STRING(100),
     //     allowNull: false,
     //     defaultValue: "example@mail.com"
     // });
-    await sequelize.getQueryInterface().addColumn('rus', 'ru_team', {
+    await sequelize.getQueryInterface().addColumn('rooms', 'room_places', {
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
+        defaultValue: 0
     });
+    // await sequelize.getQueryInterface().addColumn('users', 'user_max_score', {
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false,
+    //     defaultValue: 0
+    // });
 } catch (e) {
-    console.log("WARNING. Failed to add column: ``")
+    console.log(`WARNING. Failed to add column: ${e}`)
 }
-await Room.destroy({ where: {room_id: 1} });
 
 // REPOPULATE DB
 await createStatus(1, "offline");
@@ -577,29 +799,31 @@ await createStatus(3, "playing");
 
 await createRole(1, "member", "lightskyblue");
 await createRole(20, "root", "orange");
+await createRole(100, "server", "orange");
 
 await createRoom('Global', '_ARCHQL_', 'room which can be joined by any player', 4, 4, null, 1);
 
-await createUser('Artsiom', 'Drankevich', '_ARCHQL_', '2212', 20, 1, 'BLR', null);
-await createUser('Dummy', 'Testovich', 'AAAAAAAA', '1234', 1, 1, 'BLR', 6284);
-await createUser('Dummy', 'Testovich', 'TETRISTE', '1234', 1, 1, 'BLR', 6272);
-await createUser('Dummy', 'Testovich', '_KJIOYN_', '1234', 1, 1, 'BLR', 4412);
-await createUser('Dummy', 'Testovich', 'GHGGHGHG', '1234', 1, 1, 'BLR', 4400);
-await createUser('Dummy', 'Testovich', 'PUTINLFF', '1234', 1, 1, 'BLR', 3096);
-await createUser('Dummy', 'Testovich', 'ELBARONO', '1234', 1, 1, 'BLR', 2700);
-await createUser('Dummy', 'Testovich', 'ANNASAYU', '1234', 1, 1, 'BLR', 2228);
-await createUser('Dummy', 'Testovich', 'WHISKEYJ', '1234', 1, 1, 'BLR', 1192);
-await createUser('Dummy', 'Testovich', 'GOODIKER', '1234', 1, 1, 'BLR', 1112);
-await createUser('Dummy', 'Testovich', 'AMONG_US', '1234', 1, 1, 'BLR', 1084);
-await createUser('Dummy', 'Testovich', 'KOSTAHKA', '1234', 1, 1, 'BLR', 1076);
-await createUser('Dummy', 'Testovich', '_CMEXOB_', '1234', 1, 1, 'BLR', 968);
-await createUser('Dummy', 'Testovich', 'DAMIORAD', '1234', 1, 1, 'BLR', 672);
-await createUser('Dummy', 'Testovich', 'FILKADFS', '1234', 1, 1, 'BLR', 228);
+await createUser('SERVER', 'ROOT', '@SYSROOT', crypto.randomBytes(64).toString('hex'), 100, 1, 'BLR', 'null',  null);
+await createUser('Artsiom', 'Drankevich', '_ARCHQL_', '2212', 20, 1, 'BLR', 'emxample@mail.com', null);
+await createUser('Dummy', 'Testovich', 'AAAAAAAA', '1234', 1, 1, 'BLR', 'emxample@mail.com', 6284);
+await createUser('Dummy', 'Testovich', 'TETRISTE', '1234', 1, 1, 'BLR', 'emxample@mail.com', 6272);
+await createUser('Dummy', 'Testovich', '_KJIOYN_', '1234', 1, 1, 'BLR', 'emxample@mail.com', 4412);
+await createUser('Dummy', 'Testovich', 'GHGGHGHG', '1234', 1, 1, 'BLR', 'emxample@mail.com', 4400);
+await createUser('Dummy', 'Testovich', 'PUTINLFF', '1234', 1, 1, 'BLR', 'emxample@mail.com', 3096);
+await createUser('Dummy', 'Testovich', 'ELBARONO', '1234', 1, 1, 'BLR', 'emxample@mail.com', 2700);
+await createUser('Dummy', 'Testovich', 'ANNASAYU', '1234', 1, 1, 'BLR', 'emxample@mail.com', 2228);
+await createUser('Dummy', 'Testovich', 'WHISKEYJ', '1234', 1, 1, 'BLR', 'emxample@mail.com', 1192);
+await createUser('Dummy', 'Testovich', 'GOODIKER', '1234', 1, 1, 'BLR', 'emxample@mail.com', 1112);
+await createUser('Dummy', 'Testovich', 'AMONG_US', '1234', 1, 1, 'BLR', 'emxample@mail.com', 1084);
+await createUser('Dummy', 'Testovich', 'KOSTAHKA', '1234', 1, 1, 'BLR', 'emxample@mail.com', 1076);
+await createUser('Dummy', 'Testovich', '_CMEXOB_', '1234', 1, 1, 'BLR', 'emxample@mail.com', 968);
+await createUser('Dummy', 'Testovich', 'DAMIORAD', '1234', 1, 1, 'BLR', 'emxample@mail.com', 672);
+await createUser('Dummy', 'Testovich', 'FILKADFS', '1234', 1, 1, 'BLR', 'emxample@mail.com', 228);
 
 const usr = await User.findOne({ where: { user_nickname: '_ARCHQL_' } });
 if (usr) {
-    const rcd = await Record.findOne({ where: { record_user_id: usr.user_id } });
-    if (rcd) {
+    const rcd = await Record.findOne({ where: { record_user_id: usr.user_id, record_score: 7336   } });
+    if (!rcd) {
         await Record.create({
             record_user_id: usr.user_id,
             record_score: 7336,
