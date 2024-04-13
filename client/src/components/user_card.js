@@ -11,7 +11,8 @@ export class UserCard extends React.Component {
         const user = this.props.user;
         return (
             <div className="box card user_card">
-                <div style={{position: "relative"
+                <div style={{
+                    position: "relative"
                 }}>
                     <div className={user.status.status_name === "offline" ? "user_image offline" : "user_image online"}>
                         <img src="/images/icon_user.png" alt="user_icon"></img>
@@ -19,17 +20,20 @@ export class UserCard extends React.Component {
                     <div className="user_score">
                         {user.user_max_score}
                     </div>
+                    <div className="user_region">
+                        {user.user_region}
+                    </div>
                 </div>
                 <div className="user_info_pane">
                     <div className="user_info tetris-font">
                         <div className="user_name">
                             {user.user_nickname}
                         </div>
-                        <div className="user_role" style={{
-                            backgroundColor: user.role.role_color
-                        }}>
-                            {user.role.role_name}
-                        </div>
+                        {/*<div className="user_role" style={{*/}
+                        {/*    backgroundColor: user.role.role_color*/}
+                        {/*}}>*/}
+                        {/*    {user.role.role_name}*/}
+                        {/*</div>*/}
                         <div>
                             {user.status.status_name}
                         </div>
@@ -43,7 +47,7 @@ export class UserCard extends React.Component {
                         </div>
                     </div>
                     <div className="user_info">
-                        {"\"user bio\""}
+                        {user.user_email}
                     </div>
                 </div>
                 <div className={"logout"} onClick={e => this.props.logout(e)}>

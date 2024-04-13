@@ -29,11 +29,19 @@ export const User = sequelize.define("user", {
         allowNull: false,
         defaultValue: 1
     },
+    user_region: {
+        type: DataTypes.STRING(3),
+        allowNull: false,
+    },
     user_name: {
         type: DataTypes.STRING(100),
         allowNull: false
     },
     user_surname: {
+        type: DataTypes.STRING(100),
+        allowNull: false
+    },
+    user_email: {
         type: DataTypes.STRING(100),
         allowNull: false
     },
@@ -52,6 +60,13 @@ export const User = sequelize.define("user", {
     createdAt: "user_created",
     updatedAt: false,
 });
+export const Region = sequelize.define("region", {
+    region_id: {
+        type: DataTypes.STRING(3),
+        allowNull: false,
+        primaryKey: true
+    }
+}, {timestamps: false})
 export const Role = sequelize.define("role", {
     role_id: {
         type: DataTypes.TINYINT,
@@ -234,7 +249,11 @@ export const Room = sequelize.define("room", {
     },
     room_max_members: {
         type: DataTypes.INTEGER,
-        allowNull: true
+        allowNull: false
+    },
+    room_teams: {
+        type: DataTypes.INTEGER,
+        allowNull: false
     },
     room_description: {
         type: DataTypes.TEXT,
@@ -266,6 +285,10 @@ export const RoomUser = sequelize.define("ru", {
         allowNull: false,
         defaultValue: 1
     },
+    ru_team: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
     ru_last_score: {
         type: DataTypes.INTEGER,
         allowNull: true
@@ -279,6 +302,8 @@ export const RoomUser = sequelize.define("ru", {
     createdAt: "ru_joined",
     updatedAt: false
 });
+
+
 
 //User.hasMany(Room);
 Room.belongsTo(User, {
@@ -296,7 +321,7 @@ Room.hasMany(RoomUser, {
     },
     as: "room_users",
     onDelete: 'CASCADE', // Cascade delete when the Room is deleted
-    hooks: true // Enable hooks for the association
+    hooks: true
 });
 User.hasMany(RoomUser, {
     foreignKey: {
@@ -320,15 +345,37 @@ RoomUser.belongsTo(Room, {
     as: "ru_room",
 })
 
-Status.hasMany(User);
+Status.hasMany(User, {
+    // foreignKey: {
+    //     name: 'status_id',
+    //     allowNull: false
+    // }
+});
 User.belongsTo(Status, {
     foreignKey: {
         name: 'user_status_id',
         allowNull: false
     }
 });
+Region.hasMany(User, {
+    foreignKey: {
+        name: 'user_region',
+        allowNull: false,
+    },
+});
 
-Role.hasMany(User);
+User.belongsTo(Region, {
+    foreignKey: {
+        name: 'user_region',
+        allowNull: false
+    }
+});
+Role.hasMany(User, {
+    // foreignKey: {
+    //     name: 'role_id',
+    //     allowNull: false
+    // }
+});
 User.belongsTo(Role, {
     foreignKey: {
         name: 'user_role_id',
@@ -438,7 +485,7 @@ await sequelize.sync();
 //     console.log("NOT FOUND");
 // }
 
-async function createUser(name, surname, nickname, password, role_id, status_id, score) {
+async function createUser(name, surname, nickname, password, role_id, status_id, region, score) {
     const usr = await User.findOne({ where: { user_nickname: nickname } });
     if (!usr) {
         const newUsr = await User.create({
@@ -447,8 +494,10 @@ async function createUser(name, surname, nickname, password, role_id, status_id,
             user_name: name,
             user_surname: surname,
             user_nickname: nickname,
+            user_region: region,
             user_password_hash: crypto.createHash("sha256").update(password).digest('hex')
         });
+        if (!score) return
         await Record.create({
             record_user_id: newUsr.user_id,
             record_score: score,
@@ -458,7 +507,7 @@ async function createUser(name, surname, nickname, password, role_id, status_id,
     }
 }
 
-async function createRoom(name, owner_nickname, description, max_members = null, password = null, id = null) {
+async function createRoom(name, owner_nickname, description, max_members, teams, password = null, id = null) {
     const usr = await User.findOne({ where: { user_nickname: owner_nickname } });
     if (usr) {
         const room = await Room.findOne({ where: { room_owner_id: usr.user_id } });
@@ -469,114 +518,94 @@ async function createRoom(name, owner_nickname, description, max_members = null,
                 room_name: name,
                 room_description: description,
                 room_max_members: max_members,
+                room_teams: teams,
                 room_password_hash: password && crypto.createHash("sha256").update(password).digest('hex')
             });
         }
     }
 }
-
-await createRoom('Global', '_ARCHQL_', 'room which can be joined by any player', null, null, 1);
-
-await createUser('Dummy', 'Testovich', 'AAAAAAAA', '1234', 1, 1, 6284);
-await createUser('Dummy', 'Testovich', 'TETRISTE', '1234', 1, 1, 6272);
-await createUser('Dummy', 'Testovich', '_KJIOYN_', '1234', 1, 1, 4412);
-await createUser('Dummy', 'Testovich', 'GHGGHGHG', '1234', 1, 1, 4400);
-await createUser('Dummy', 'Testovich', 'PUTINLFF', '1234', 1, 1, 3096);
-await createUser('Dummy', 'Testovich', 'ELBARONO', '1234', 1, 1, 2700);
-await createUser('Dummy', 'Testovich', 'ANNASAYU', '1234', 1, 1, 2228);
-await createUser('Dummy', 'Testovich', 'WHISKEYJ', '1234', 1, 1, 1192);
-await createUser('Dummy', 'Testovich', 'GOODIKER', '1234', 1, 1, 1112);
-await createUser('Dummy', 'Testovich', 'AMONG_US', '1234', 1, 1, 1084);
-await createUser('Dummy', 'Testovich', 'KOSTAHKA', '1234', 1, 1, 1076);
-await createUser('Dummy', 'Testovich', '_CMEXOB_', '1234', 1, 1, 968);
-await createUser('Dummy', 'Testovich', 'DAMIORAD', '1234', 1, 1, 672);
-await createUser('Dummy', 'Testovich', 'FILKADFS', '1234', 1, 1, 228);
-
-// const usr = await User.findOne({ where: { user_nickname: '_ARCHQL_' } });
-// if (usr) {
-//     await Record.create({
-//         record_user_id: usr.user_id,
-//         record_score: 7336,
-//         record_time_elapsed: 1438192,
-//         record_figures_placed: 691,
-//     });
-// }
-
-// await Status.create({
-//     status_id: 1,
-//     status_name: "offline"
-// });
-// await Status.create({
-//     status_id: 2,
-//     status_name: "on-line"
-// });
-// await Status.create({
-//     status_id: 3,
-//     status_name: "playing"
-// });
-// await Role.create({
-//     role_id: 1,
-//     role_name: "member",
-//     role_color: "lightskyblue"
-// });
-// await Role.create({
-//     role_id: 20,
-//     role_name: "root",
-//     role_color: "orange"
-// });
-// await User.create({
-//     user_role_id: 1,
-//     user_status_id: 1,
-//     user_name: 'Test',
-//     user_surname: 'Testovich',
-//     user_password_hash: crypto.createHash("sha256").update("1234").digest('hex')
-// })
-// await User.create({
-//     user_role_id: 20,
-//     user_status_id: 1,
-//     user_name: 'Artiom',
-//     user_surname: 'Drankevich',
-//     user_nickname: "_ARCHQL_",
-//     user_password_hash: crypto.createHash("sha256").update("2212").digest('hex')
-// })
-// await User.create({
-//     user_role_id: 1,
-//     user_status_id: 1,
-//     user_name: 'Test',
-//     user_surname: 'Testovich',
-//     user_nickname: "BBBBBBBB",
-//     user_password_hash: crypto.createHash("sha256").update("1234").digest('hex')
-// })
-// await Message.create({
-//     message_from_id: 2,
-//     message_to_id: 1,
-//     message_content: "Welcome to the Tetris Chat!"
-// })
+async function createStatus(id, name) {
+    const test = await Status.findByPk(id);
+    if (test) return;
+    await Status.create({
+        status_id: id,
+        status_name: name
+    });
+}
+async function createRole(id, name, color) {
+    const test = await Role.findByPk(id);
+    if (test) return;
+    await Role.create({
+        role_id: id,
+        role_name: name,
+        role_color: color
+    });
+}
+async function createRegion(name) {
+    const test = await Region.findByPk(name);
+    if (test) return;
+    await Region.create({
+        region_id: name
+    });
+}
 //
-// const root = await User.findOne({ where: { user_nickname: '_ARCHQL_' } });
-// if (root) {
-//     await Record.create({
-//         record_user_id: root.user_id,
-//         record_score: 1000,
-//         record_time_elapsed: 100000,
-//         record_figures_placed: 240,
-//     });
-//     await Record.create({
-//         record_user_id: root.user_id,
-//         record_score: 2000,
-//         record_time_elapsed: 200000,
-//         record_figures_placed: 480,
-//     });
-// }
-// const abc = await User.findOne({ where: { user_nickname: 'AAAAAAAA' } });
-// if (abc) {
-//     await Record.create({
-//         record_user_id: abc.user_id,
-//         record_score: 500,
-//         record_time_elapsed: 30000,
-//         record_figures_placed: 120,
-//     });
-// }
+await createRegion("BLR");
+await createRegion("RUS");
+await createRegion("UKR");
+await createRegion("POL");
+await createRegion("DEU");
+//
+try {
+    // await sequelize.getQueryInterface().addColumn('users', 'user_email', {
+    //     type: DataTypes.STRING(100),
+    //     allowNull: false,
+    //     defaultValue: "example@mail.com"
+    // });
+    await sequelize.getQueryInterface().addColumn('rus', 'ru_team', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    });
+} catch (e) {
+    console.log("WARNING. Failed to add column: ``")
+}
+await Room.destroy({ where: {room_id: 1} });
 
+// REPOPULATE DB
+await createStatus(1, "offline");
+await createStatus(2, "on-line");
+await createStatus(3, "playing");
 
+await createRole(1, "member", "lightskyblue");
+await createRole(20, "root", "orange");
+
+await createRoom('Global', '_ARCHQL_', 'room which can be joined by any player', 4, 4, null, 1);
+
+await createUser('Artsiom', 'Drankevich', '_ARCHQL_', '2212', 20, 1, 'BLR', null);
+await createUser('Dummy', 'Testovich', 'AAAAAAAA', '1234', 1, 1, 'BLR', 6284);
+await createUser('Dummy', 'Testovich', 'TETRISTE', '1234', 1, 1, 'BLR', 6272);
+await createUser('Dummy', 'Testovich', '_KJIOYN_', '1234', 1, 1, 'BLR', 4412);
+await createUser('Dummy', 'Testovich', 'GHGGHGHG', '1234', 1, 1, 'BLR', 4400);
+await createUser('Dummy', 'Testovich', 'PUTINLFF', '1234', 1, 1, 'BLR', 3096);
+await createUser('Dummy', 'Testovich', 'ELBARONO', '1234', 1, 1, 'BLR', 2700);
+await createUser('Dummy', 'Testovich', 'ANNASAYU', '1234', 1, 1, 'BLR', 2228);
+await createUser('Dummy', 'Testovich', 'WHISKEYJ', '1234', 1, 1, 'BLR', 1192);
+await createUser('Dummy', 'Testovich', 'GOODIKER', '1234', 1, 1, 'BLR', 1112);
+await createUser('Dummy', 'Testovich', 'AMONG_US', '1234', 1, 1, 'BLR', 1084);
+await createUser('Dummy', 'Testovich', 'KOSTAHKA', '1234', 1, 1, 'BLR', 1076);
+await createUser('Dummy', 'Testovich', '_CMEXOB_', '1234', 1, 1, 'BLR', 968);
+await createUser('Dummy', 'Testovich', 'DAMIORAD', '1234', 1, 1, 'BLR', 672);
+await createUser('Dummy', 'Testovich', 'FILKADFS', '1234', 1, 1, 'BLR', 228);
+
+const usr = await User.findOne({ where: { user_nickname: '_ARCHQL_' } });
+if (usr) {
+    const rcd = await Record.findOne({ where: { record_user_id: usr.user_id } });
+    if (rcd) {
+        await Record.create({
+            record_user_id: usr.user_id,
+            record_score: 7336,
+            record_time_elapsed: 1438192,
+            record_figures_placed: 691,
+        });
+    }
+}
 

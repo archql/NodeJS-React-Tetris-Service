@@ -46,7 +46,7 @@ export class ServerGameSessionControl {
     static async getLeaderboard() {
         // TODO send leaderboard
         const topRecordsQuery = `
-            SELECT u.user_nickname, r.user_max_score, u.user_id
+            SELECT u.user_nickname, r.user_max_score, u.user_id, u.user_region
             FROM users u
             INNER JOIN (
                 SELECT record_user_id, MAX(record_score) as user_max_score

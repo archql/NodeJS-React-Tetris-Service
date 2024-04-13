@@ -16,7 +16,7 @@
     font-size: medium;
 }
 .btn:hover {
-    color: white;
+    color: var(--text-color-white);
     background-color: var(--btn-color-hovered);
 }
 .input_field_label {

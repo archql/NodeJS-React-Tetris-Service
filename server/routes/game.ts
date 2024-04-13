@@ -24,6 +24,9 @@ const gameHandler = async (socket) => {
     const error = socket.request.error;
     let room: string = null;
     let nickname: string = null;
+    // create a game instance
+    userGameSessions[socket.id] = new ServerGameSessionControl(socket, io.of('/game'), null, null);
+
     // room disconnect function
     async function roomLeave () {
         console.log(`ROOM LEAVE ${nickname} ${room}`)
@@ -33,10 +36,6 @@ const gameHandler = async (socket) => {
             room = null;
             // notify everybody
             socket.to(temp).emit('room leave', user.user_id);
-            if (nickname) {
-                // Notify asm clients
-                socket.to(temp).emit('r lv', Buffer.from(nickname, 'latin1'));
-            }
             io.of('/chat').emit('room leave', {
                 ru_user_id: user.user_id,
                 ru_room_id: parseInt(temp)
@@ -47,7 +46,6 @@ const gameHandler = async (socket) => {
                 nickname: "@SERVER "
             };
             io.of('/game').to(temp).emit('room message', msg);
-            io.of('/game').to(temp).emit('r ms', bufferFromMessage(msg));
             // reset competition if it has one
             if (roomReadyToStartInfos[temp]) {
                 const index = roomReadyToStartInfos[temp].members.indexOf(user.user_id);
@@ -99,7 +97,6 @@ const gameHandler = async (socket) => {
                 nickname: "@SERVER "
             };
             io.of('/game').to(room).emit('room message', msg);
-            io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
         }
     }
     // local user needed just because we use these functions from one player's instance
@@ -119,7 +116,6 @@ const gameHandler = async (socket) => {
             nickname: "@SERVER "
         };
         io.of('/game').to(room).emit('room message', msg);
-        io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
     }
     function onCompetitionEnd (user: any, room: string, score: number)  {
         console.log(`onCompetitionEnd ${user.user_nickname}`)
@@ -138,10 +134,7 @@ const gameHandler = async (socket) => {
             nickname: "@SERVER "
         };
         io.of('/game').to(room).emit('room message', msg);
-        io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
     }
-    // create a game instance
-    userGameSessions[socket.id] = new ServerGameSessionControl(socket, io.of('/game'), null, null);
     // Create socket connections
     socket.on('disconnect', async () => {
         console.log('A client disconnected');
@@ -151,23 +144,10 @@ const gameHandler = async (socket) => {
         delete userGameSessions[socket.id];
     });
 
-    socket.on('r rd', () => {
-        onRoomReady();
-    })
     socket.on('room ready', () => {
         onRoomReady();
     })
 
-    socket.on('r ms', (textBuffer: Buffer) => {
-        if (room) {
-            const msg = {
-                text:  textBuffer.toString(),
-                nickname: nickname
-            };
-            io.of('/game').to(room).emit('room message', msg);
-            io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
-        }
-    })
     socket.on('room message', (text: string) => {
         //
         console.log(`ROOM MESSAGE is ${text} from ${nickname}`)
@@ -226,16 +206,10 @@ const gameHandler = async (socket) => {
         const leaderboardData = await ServerGameSessionControl.getLeaderboard();
         socket.emit('leaderboard', leaderboardData);
     });
-    // ASM listener
-    socket.on('inpX', (inputBuf: Buffer)=> {
-        const input = inputFromBuffer(inputBuf);
-        userGameSessions[socket.id].onInput(input);
-    });
     //
     // send leaderboard
     const leaderboardData = await ServerGameSessionControl.getLeaderboard();
     socket.emit('leaderboard', leaderboardData);
-    socket.emit('lbXX', leaderboardToBuffer(leaderboardData));
 
     // TODO test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // TODO include records INSIDE
@@ -279,7 +253,6 @@ const gameHandler = async (socket) => {
                 nickname: "@SERVER "
             };
             io.of('/game').to(room).emit('room message', msg);
-            io.of('/game').to(room).emit('r ms', bufferFromMessage(msg));
         }
         // TODO set user status to PLAYING
         // if (usr !== null) {

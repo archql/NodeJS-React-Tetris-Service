@@ -44,9 +44,7 @@ class Leaderboard extends Component {
             },
             {
                 name: 'region',
-                fetcher: (e) => {
-                    return 'BLR'
-                },
+                attribute: 'user_region',
             },
             {
                 name: 'score',

@@ -20,6 +20,7 @@ class RoomCreate extends Component {
             successful: false,
             message: ''
         };
+        this.redirectTimeout = null
     }
     componentDidMount() {
         socket.on('room create', this.onAddRoom)
@@ -29,6 +30,8 @@ class RoomCreate extends Component {
     componentWillUnmount() {
         socket.off('room create', this.onAddRoom)
         socket.off('error', this.onError)
+
+        clearTimeout(this.redirectTimeout);
     }
 
     onChangeName = (e) => {
@@ -98,6 +101,10 @@ class RoomCreate extends Component {
             loading: false,
             successful: true
         });
+        //
+        this.redirectTimeout = setTimeout(() => {
+            this.props.router.navigate("/account/rooms");
+        }, 2000)
     }
     onError = (e) => {
         console.log("on Error")

@@ -125,17 +125,34 @@ class Rooms extends React.Component {
                 },
             },
             {
+                name: 'teams',
+                attribute: 'room_teams',
+                fetcher: (e) => {
+                    return `${e.room_teams} of ${e.room_max_members}`
+                },
+                sorter: (e) => {
+                    return e.room_teams
+                }
+            },
+            {
                 name: 'members',
                 attribute: 'room_room_users',
                 fetcher: (e) => {
-                    if (e.room_max_members) {
-                        return `${e.room_users.length} / ${e.room_max_members}`
-                    } else {
-                        return `${e.room_users.length}`
+                    // determine teams distribution
+                    let teams = []
+                    e.room_users.forEach((ru => {
+                        const v = (ru.ru_team ?? -1) + 1
+                        teams[v] = teams[v] ? teams[v] + 1 : 1
+                    }))
+                    //
+                    let res = `${teams[0] ?? 0}`
+                    for (let i = 0; i < e.room_teams; ++i) {
+                        res += ` / ${teams[i + 1] ?? 0}`
                     }
+                    return res
                 },
                 sorter: (e) => {
-                    return e.room_max_members ? e.room_max_members - e.room_users.length : 10000 + e.room_users.length
+                    return (e.room_max_members && e.room_teams) ? e.room_teams * e.room_max_members - e.room_users.length : 10000 + e.room_users.length
                 }
             },
             {
@@ -161,7 +178,6 @@ class Rooms extends React.Component {
                 onClick: (e) => {this.roomDelete(e.room_id)} // TODO
             }
         ];
-        console.log("RENDE RRRRR");
         return (
             <div className="card flex_scroll">
                 <NavLink to={"/account/room_create"}

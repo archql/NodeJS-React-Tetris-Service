@@ -194,7 +194,7 @@ body {
 }
 .cell.top {
     background: var(--btn-color);
-    color: white;
+    color: var(--text-color-white);
     font-size: large;
     box-shadow: none;
 }
@@ -203,34 +203,6 @@ body {
 /*
 main ul (DUPLICATION)
  */
-.main_nav_ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: CadetBlue;
-    position: sticky;
-}
-
-.main_nav_ul li {
-    float: left;
-}
-
-.main_nav_ul li a {
-    display: block;
-    color: white;
-    text-align: center;
-    padding: 14px 16px;
-    text-decoration: none;
-}
-
-/* Change the link color to #111 (black) on hover */
-.main_nav_ul a:hover {
-    background-color: Teal;
-}
-.main_nav_ul .active {
-    background-color: #04AA6D;
-}
 .user_info {
     display: flex;
     align-items: baseline;
@@ -274,9 +246,14 @@ main ul (DUPLICATION)
     left: 0;
     right: 0;
 }
+.user_region {
+    position: absolute;
+    bottom: 80%;
+    left: 0;
+    right: 0;
+}
 .user_name {
     font-size: xx-large;
-    border-bottom: black;
     font-weight: bold;
 }
 .user_role {
@@ -288,13 +265,13 @@ main ul (DUPLICATION)
     font-size: 50px;
     top: auto;
     right: 0;
-    color: #000;
+    color: var(--text-color-black);
     text-align: center;
     padding: 25px;
     position: absolute;
 }
 .user_card .logout:hover {
-    color:#444;
+    color: var(--text-color-black-secondary);
 }
 
 /*
@@ -370,7 +347,7 @@ records
 .tri_state_toggle {
     display: flex;
     justify-content: center;
-    border: 1px solid black;
+    border: 1px solid var(--text-color-black);
     border-radius: 50px;
 }
 .tri_state_toggle {

@@ -11,17 +11,18 @@ export class MessageContainer extends React.Component {
 
         this.observer = null
         this.lastTargetPos = null
-        this.test = {}
+
+        //this.messageRefs = []
     }
 
     componentDidMount() {
         //console.log("XXX mount!!! ")
         this.observer = new IntersectionObserver(e => {
-            console.log("XXX observer!!! ", this.userAction)
+            //console.log("XXX observer!!! ", this.userAction)
             if (this.userAction) return
             e.forEach((entry) => {
                 if (!entry.isIntersecting) {
-                    console.log('XXX invisible')
+                    //console.log('XXX invisible')
                     this.scrollToBottom();
                 }
             });
@@ -38,47 +39,20 @@ export class MessageContainer extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        console.log("XXX update!!!")
+        //console.log("XXX update!!!")
         //
         if (prevProps.tgtUserId !== this.props.tgtUserId) {
-            // if already has pos
-            console.log(`XXX ?? ${this.props.tgtUserId} ${this.test[this.props.tgtUserId]}`)
-            // if (this.props.tgtUserId && (this.test[this.props.tgtUserId] || this.test[this.props.tgtUserId] === 0)) {
-            //     console.log(`XXX saved ${this.test[this.props.tgtUserId]}`)
-            //     //
-            //     this.userAction = true
-            //     // has pos saved
-            //     setTimeout(() =>
-            //     this.messagesEnd.scrollTo({
-            //         top: this.test[this.props.tgtUserId],
-            //         behavior: 'smooth'
-            //     }), 50)
-            // } else {
-                console.log(`XXX default`)
-                // reset user action
-                this.userAction = false
-                this.lastTargetPos = null
-                // delay to prevent reading old position
-                setTimeout(this.scrollToBottom, 50);
-            //}
+            // reset user action
+            this.userAction = false
+            this.lastTargetPos = null
+            // delay to prevent reading old position
+            setTimeout(this.scrollToBottom, 50);
         }
-        // if (prevProps.tgtUserId !== this.props.tgtUserId) {
-        //     if (this.messagesEnd) {
-        //         this.observer.unobserve(this.messagesEnd);
-        //         this.observer.observe(this.messagesEnd);
-        //     }
-        // }
     }
 
     loadOnScroll = (e) => {
         const currentPosition = e.target.scrollTop;
         //console.log(`XXX currentPosition: ${currentPosition} prev ${this.lastTargetPos}`);
-
-        // keep pos
-        if (this.props.tgtUserId) {
-            this.test[this.props.tgtUserId] = currentPosition
-            console.log(`XXX && ${this.test[this.props.tgtUserId]}`)
-        }
 
         if (currentPosition < this.lastTargetPos) {
             // only user can scroll up
@@ -92,6 +66,7 @@ export class MessageContainer extends React.Component {
 
     scrollToBottom = () => {
         console.log(`XXX scrollToBottom`)
+
         this.messagesEnd.scrollIntoView({ behavior: 'instant' });
     }
 
@@ -105,11 +80,12 @@ export class MessageContainer extends React.Component {
                 >
                     <div style={{ float:"left", clear: "both" }}
                          ref={(el) => { this.messagesStart = el; }}/>
-                    {messages.length ? messages.map((item) => (
+                    {messages.length ? messages.map((item, index) => (
                         <Message
                             key={item.message_id}
                             curUserId={curUserId}
                             item={item}
+                            //ref={(el) => { this.messageRefs.current[index] = el; }}
                             replyMessage={this.props.replyMessage}
                             deleteMessage={this.props.deleteMessage}
                             editMessage={this.props.editMessage}

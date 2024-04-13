@@ -358,7 +358,7 @@ const chatHandler = async (socket) => {
             //         [Op.not]: user.user_id
             //     }
             // },
-            attributes: ['room_id', 'room_name', 'room_max_members', 'room_description', 'room_password_hash'],
+            attributes: ['room_id', 'room_name', 'room_max_members', 'room_description', 'room_password_hash', 'room_teams'],
             include: [{
                 model: RoomUser,
                 as: "room_users",
@@ -388,7 +388,8 @@ const chatHandler = async (socket) => {
             room_owner_id: usr.user_id,
             room_name: room.name,
             room_description: `Room of ${user.user_nickname}`, // TODO undefined
-            room_max_members: room.teams*room.members,
+            room_max_members: room.members,
+            room_teams: room.teams,
             room_password_hash: room.password_hash
         });
         if (!r) {
@@ -397,7 +398,7 @@ const chatHandler = async (socket) => {
         // join
         const ru = await RoomUser.create({
             ru_user_id: user.user_id,
-            ru_room_id: r.room_id
+            ru_room_id: r.room_id,
         });
         if (!ru) {
             return socket.emit("error", {status: 409, who: "room create", message: "Created. Join error"});
