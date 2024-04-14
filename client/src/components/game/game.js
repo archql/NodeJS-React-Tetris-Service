@@ -1,15 +1,114 @@
 import {withRouter} from '../../common/with_router.js';
 
-import React from "react";
+import React, {Fragment, Suspense} from "react";
 
 import Cookies from "js-cookie";
 import {io} from 'socket.io-client';
 
+import * as THREE from 'three';
+
 import {FIELD_H, FIELD_W, RenderBuffer, STATUS_TABLE, Tetris} from "../../game/tetris.ts";
 import {ClientGameSessionControl} from "../../game/reconciliator.ts";
-import type {GameState} from "../../game/server_client_globals.ts";
+// import type {GameState} from "../../game/server_client_globals.ts";
 import {GameCanvas} from "./game_canvas";
+import {GameTitle} from "./game_title";
+import {Canvas} from "@react-three/fiber";
+import {TitlePrompt, TetrisBlock, TetrisFigure, TetrisField} from "./sprites";
 
+export class Game extends React.Component {
+
+    constructor(props) {
+        super(props);
+        // Socket IO connection
+        this.socket = io(`/game`, {
+            autoConnect: false,
+            auth: {
+                token: Cookies.get('jwt')
+            },
+            transports: ['websocket'], upgrade: false,
+            path: '/socket-io'
+        });
+        //
+        this.state = {
+            loading: true,
+        }
+    }
+    componentDidMount() {
+        // open a socket IO connection
+        this.socket.on('connect', this.onConnect);
+        this.socket.on('disconnect', this.onDisconnect);
+        this.socket.on('error', this.onError);
+        this.socket.on('connect_error', this.onConnectError);
+        //
+        //this.init()
+    }
+    componentWillUnmount() {
+        this.socket.off('connect', this.onConnect);
+        this.socket.off('disconnect', this.onDisconnect);
+        this.socket.off('error', this.onError);
+        this.socket.off('connect_error', this.onConnectError);
+        //
+        //this.renderer.dispose()
+    }
+    onConnect = () => {
+        console.log("LOG onConnect");
+        this.session?.onServerConnect();
+        this.setState({
+            loading: false
+        })
+    }
+    onDisconnect = () => {
+        console.log("LOG onDisconnect");
+        // drop room info
+        this.setState({
+            loading: false,
+        })
+        //
+        this.session?.onServerDisconnect();
+    }
+    onError = () => {
+        console.log("LOG onError");
+        this.setState({
+            loading: false
+        })
+    }
+    onConnectError = (e) => {
+        console.log("LOG onConnectError " + e);
+        this.setState({
+            loading: false
+        })
+        this.session?.onServerDisconnect();
+    }
+
+    render() {
+        const blockWidth = window.innerWidth / FIELD_H;
+        return (
+            // <Fragment>
+            //     <canvas ref={this.canvasRef}
+            //             tabIndex="0"
+            //             style={{
+            //                 width: "100%",
+            //                 height: "100%",
+            //                 position: "absolute",
+            //             }}
+            //     />
+            // </Fragment>
+            <Canvas orthographic camera={{zoom: blockWidth}}>
+                <ambientLight/>
+                <spotLight
+                    position={[0, 0, 5]}
+                    intensity={1}
+                    penumbra={1}
+                />
+                <GameTitle
+                    blockSize={blockWidth}
+                />
+            </Canvas>
+        )
+    }
+}
+
+/*
 export class Game extends React.Component {
 
     constructor(props) {
@@ -478,5 +577,5 @@ export class Game extends React.Component {
         );
     }
 }
-
+*/
 export const GameRouted = withRouter(Game);

@@ -13,7 +13,7 @@ export class App extends React.Component {
     render() {
         return (
         <Routes>
-            <Route index element={<Navigate to={"/account"} />} />
+            <Route index element={<Navigate to={"/game"} />} />
             <Route path={"/auth/register"} exact element={<RegisterFormRouted />} />
             <Route path={"/auth/login"} element={<LoginFormRouted />} />
             <Route path={"/account/*"} element={<AccountRouted />} />

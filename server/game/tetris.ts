@@ -1,6 +1,6 @@
 // EXACT THE SAME CODE AS ON THE CLIENT
 export const RANDOM_MAX = 0x7FFFFFFF;
-class Random {
+export class Random {
 
     seed: number;
     prev: number;
@@ -40,10 +40,11 @@ const FIG_START_Y = -1;
 
 const START_TICK_SPEED = 1000;
 
-const COLOR_TABLE = [
+export const COLOR_TABLE = [
     [0.071, 0.071, 0.071],
     [0.271, 0.271, 0.271],
     [0.1, 0.1, 0.1      ],
+    [1.0, 1.0, 1.0      ],
     [1.0, 0.5098, 0.0   ],
     [0.0, 0.0, 1.0      ],
     [0.2549, 0.0, 1.0   ],
@@ -77,7 +78,16 @@ export const STATUS_TABLE = {
     connLost:              '@CNCLOST',
 };
 
-class Figure {
+export const FigureType = Object.freeze({
+    none: '',
+    tnt: 'tnt',
+    ghost: 'ghost',
+    liquid: 'liquid',
+    sand: 'sand',
+});
+export const FigureTypeLength = Object.getOwnPropertyNames(FigureType).length;
+
+export class Figure {
     // defines fig number
     id: number;
     // defines rotation 0..3
@@ -89,6 +99,8 @@ class Figure {
     // defines color
     color: number;
     value: number;
+    //
+    type: string;
 
     constructor(id: number, prototype: any = undefined) {
         if (prototype instanceof Random) {
@@ -116,7 +128,7 @@ class Figure {
     }
 
     #generateColor(random: Random) {
-        this.color = random.nextRandInt(3, COLOR_TABLE.length - 3);
+        this.color = random.nextRandInt(4, COLOR_TABLE.length - 4);
     }
 
     rotate(diff) {
