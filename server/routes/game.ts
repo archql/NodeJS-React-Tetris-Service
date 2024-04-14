@@ -67,14 +67,19 @@ const gameHandler = async (socket) => {
         room = ru && await Room.findByPk(ru.ru_room_id, {
             include: [{
                 model: RoomUser,
+                as: "room_users",
                 include: [{
                     model: User,
+                    as: "ru_user",
                     attributes: ['user_id', 'user_nickname', 'user_rank'],
                 }]
-            }, { model: User, attributes: ['user_id', 'user_nickname'] }],
+            }, { model: User, as: "room_owner", attributes: ['user_id', 'user_nickname'] }],
         });
         // update session data
         userGameSessions[socket.id].room?.sync(user, room, ru)
+
+        // notify user
+        socket.emit('sync', user, room, ru);
     }
 
     await sync_data()

@@ -770,7 +770,7 @@ await createRegion("RUS");
 await createRegion("UKR");
 await createRegion("POL");
 await createRegion("DEU");
-//
+await createRegion("???");
 //
 try {
     // await sequelize.getQueryInterface().addColumn('users', 'user_email', {
@@ -799,12 +799,13 @@ await createStatus(3, "playing");
 
 await createRole(1, "member", "lightskyblue");
 await createRole(20, "root", "orange");
+await createRole(50, "shared", "gray");
 await createRole(100, "server", "orange");
 
 await createRoom('Global', '_ARCHQL_', 'room which can be joined by any player', 4, 4, null, 1);
 
-await createUser('anonymous', 'player', '@DEFAULT', crypto.randomBytes(64).toString('hex'), 50, 1, 'XXX', 'null',  null);
-await createUser('SERVER', 'ROOT', '@SYSROOT', crypto.randomBytes(64).toString('hex'), 100, 1, 'XXX', 'null',  null);
+await createUser('anonymous', 'player', '@DEFAULT', crypto.randomBytes(64).toString('hex'), 50, 1, '???', 'null',  null);
+await createUser('SERVER', 'ROOT', '@SYSROOT', crypto.randomBytes(64).toString('hex'), 100, 1, '???', 'null',  null);
 await createUser('Artsiom', 'Drankevich', '_ARCHQL_', '2212', 20, 1, 'BLR', 'emxample@mail.com', null);
 await createUser('Dummy', 'Testovich', 'AAAAAAAA', '1234', 1, 1, 'BLR', 'emxample@mail.com', 6284);
 await createUser('Dummy', 'Testovich', 'TETRISTE', '1234', 1, 1, 'BLR', 'emxample@mail.com', 6272);

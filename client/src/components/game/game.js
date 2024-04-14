@@ -1,19 +1,14 @@
 import {withRouter} from '../../common/with_router.js';
 
-import React, {Fragment, Suspense} from "react";
+import React, {Fragment} from "react";
 
 import Cookies from "js-cookie";
 import {io} from 'socket.io-client';
 
-import * as THREE from 'three';
-
-import {FIELD_H, FIELD_W, RenderBuffer, STATUS_TABLE, Tetris} from "../../game/tetris.ts";
-import {ClientGameSessionControl} from "../../game/reconciliator.ts";
-// import type {GameState} from "../../game/server_client_globals.ts";
-import {GameCanvas} from "./game_canvas";
+import {FIELD_H} from "../../game/tetris.ts";
 import {GameTitle} from "./game_title";
 import {Canvas} from "@react-three/fiber";
-import {TitlePrompt, TetrisBlock, TetrisFigure, TetrisField} from "./sprites";
+import {NavLink} from "react-router-dom";
 
 export class Game extends React.Component {
 
@@ -31,6 +26,7 @@ export class Game extends React.Component {
         //
         this.state = {
             loading: true,
+            user: null
         }
     }
     componentDidMount() {
@@ -39,23 +35,24 @@ export class Game extends React.Component {
         this.socket.on('disconnect', this.onDisconnect);
         this.socket.on('error', this.onError);
         this.socket.on('connect_error', this.onConnectError);
+        this.socket.on('sync', this.onSync);
         //
-        //this.init()
+        if (this.socket.connected) {
+            //
+        } else {
+            this.socket.connect();
+        }
     }
     componentWillUnmount() {
         this.socket.off('connect', this.onConnect);
         this.socket.off('disconnect', this.onDisconnect);
         this.socket.off('error', this.onError);
         this.socket.off('connect_error', this.onConnectError);
-        //
-        //this.renderer.dispose()
+        this.socket.off('sync', this.onSync);
     }
     onConnect = () => {
         console.log("LOG onConnect");
         this.session?.onServerConnect();
-        this.setState({
-            loading: false
-        })
     }
     onDisconnect = () => {
         console.log("LOG onDisconnect");
@@ -79,32 +76,112 @@ export class Game extends React.Component {
         })
         this.session?.onServerDisconnect();
     }
+    onSync = (user, room, ru) => {
+        //
+        this.setState({
+            loading: false,
+            user: user,
+            room: room,
+            ru: ru
+        })
+    }
+
 
     render() {
-        const blockWidth = window.innerWidth / FIELD_H;
-        return (
-            // <Fragment>
-            //     <canvas ref={this.canvasRef}
-            //             tabIndex="0"
-            //             style={{
-            //                 width: "100%",
-            //                 height: "100%",
-            //                 position: "absolute",
-            //             }}
-            //     />
-            // </Fragment>
-            <Canvas orthographic camera={{zoom: blockWidth}}>
-                <ambientLight/>
-                <spotLight
-                    position={[0, 0, 5]}
-                    intensity={1}
-                    penumbra={1}
-                />
-                <GameTitle
-                    blockSize={blockWidth}
-                />
-            </Canvas>
-        )
+        let {user, game, room} = this.state
+        if (!user) {
+            user = {
+                user_nickname: "........",
+                user_max_score: 0,
+                user_region: "???"
+            }
+        }
+        const blockWidth = window.innerHeight / FIELD_H;
+        if (game) {
+            return (
+                <Fragment>
+                    {this.state.loading && (<div className="loader"/>)}
+                </Fragment>
+            )
+        } else if (room) {
+            return (
+                <Fragment>
+                    {this.state.loading && (<div className="loader"/>)}
+                </Fragment>
+            )
+        } else {
+            return (
+                // TODO DUPLICATED
+                <Fragment>
+                    {this.state.loading && (<div className="loader"/>)}
+                    <div className="box card navbar absolute">
+                        <div style={{
+                            position: "relative"
+                        }}>
+                            <div
+                                className={"user_image online"}>
+                                <img src="/images/icon_user.png" alt="user_icon"></img>
+                            </div>
+                            <div className="user_score">
+                                {user.user_max_score}
+                            </div>
+                            <div className="user_region">
+                                {user.user_region}
+                            </div>
+                        </div>
+                        <div className="user_info_pane">
+                            <div className="user_info tetris-font">
+                                <div className="user_name">
+                                    {user.user_nickname}
+                                </div>
+                                {/*<div>*/}
+                                {/*    "fdfdfd*/}
+                                {/*</div>*/}
+                            </div>
+                        </div>
+                        <NavLink to={"/account"}
+                                 end
+                                 className={({isActive}) =>
+                                     isActive ? "link active" : "link"
+                                 }
+                        >Account</NavLink>
+                        <NavLink to={"/account/chat"}
+                                 className={({isActive}) =>
+                                     isActive ? "link active" : "link"
+                                 }>Chat</NavLink>
+                        <NavLink to={"/game"}
+                                 className={({isActive}) =>
+                                     isActive ? "link active" : "link"
+                                 }>Game</NavLink>
+                        <NavLink to={"/account/rooms"}
+                                 className={({isActive}) =>
+                                     isActive ? "link active" : "link"
+                                 }>Rooms</NavLink>
+                        <NavLink to={"/account/leaderboard"}
+                                 className={({isActive}) =>
+                                     isActive ? "link active" : "link"
+                                 }>Leaderboard</NavLink>
+                        <NavLink to={"/account/help"}
+                                 className={({isActive}) =>
+                                     isActive ? "link active" : "link"
+                                 }>Help</NavLink>
+                    </div>
+                    <Canvas orthographic camera={{zoom: blockWidth}}>
+                        <ambientLight/>
+                        <spotLight
+                            position={[0, 0, 5]}
+                            intensity={1}
+                            penumbra={1}
+                        />
+                        <GameTitle
+                            blockSize={blockWidth}
+                            fillRate={0.3}
+                            delay={800}
+                        />
+                    </Canvas>
+                </Fragment>
+            )
+        }
     }
 }
 

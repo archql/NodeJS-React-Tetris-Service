@@ -113,7 +113,7 @@ export class Account extends React.Component {
                     <NavLink to={"/game"}
                              className={({ isActive }) =>
                                  isActive ? "link active" : "link"
-                             }>Play</NavLink>
+                             }>Game</NavLink>
                     <NavLink to={"/account/rooms"}
                              className={({ isActive }) =>
                                  isActive ? "link active" : "link"

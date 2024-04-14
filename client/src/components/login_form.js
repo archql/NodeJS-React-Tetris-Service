@@ -44,7 +44,7 @@ export class LoginForm extends React.Component {
                     message: data.body.error_message || ''
                 });
             } else {
-                this.props.router.navigate("/");
+                this.props.router.navigate("/account");
             }
         }).catch(error => {
             console.log(error);

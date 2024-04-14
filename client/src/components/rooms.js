@@ -22,6 +22,7 @@ class Rooms extends React.Component {
         socket.on('room join', this.onRoomJoin);
         socket.on('room joined', this.onRoomJoined);
         socket.on('room leave', this.onRoomLeave);
+        socket.on('room team change', this.onRoomTeamChange);
 
         // get members
         socket.emit('rooms');
@@ -32,12 +33,29 @@ class Rooms extends React.Component {
         socket.off('room join', this.onRoomJoin);
         socket.off('room joined', this.onRoomJoined);
         socket.off('room leave', this.onRoomLeave);
+        socket.off('room team change', this.onRoomTeamChange);
+    }
+
+    onRoomTeamChange = (teamChange) => {
+        const {team_prev, team_new, user_id, room_id} = teamChange;
+
+        const rooms = this.state.rooms.map((r) => {
+            if (r.room_id === room_id) {
+                r.room_users.forEach(ru => {
+                    if (ru.user_id === user_id) {
+                        ru.team = team_new
+                    }
+                })
+            }
+            return r
+        })
+        this.setState({rooms: rooms})
     }
 
     onRooms = (rooms) => {
         console.log("onRooms")
         console.log(rooms)
-        rooms.map((r) => {
+        rooms = rooms.map((r) => {
                 if (r.room_users.find((ru) =>
                     ru.ru_user_id === this.props.user.user_id
                 )) {

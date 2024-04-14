@@ -1,9 +1,10 @@
-import {io} from "../app";
 // @ts-ignore
 import {createRoom, Room, RoomUser} from "../bin/db";
 import {Op} from "sequelize";
 import crypto from "crypto";
 import {RANDOM_MAX} from "./tetris";
+
+import {io} from "../app"
 
 export class RoomSessionControl {
     static user_id_replacement: number = 0
@@ -42,6 +43,8 @@ export class RoomSessionControl {
         this.user_nickname = user?.user_nickname || "@DEFAULT"
         this.user_id = user ? user.user_id :
             ((this.user_id < 0) ? this.user_id : --RoomSessionControl.user_id_replacement)
+
+        if (!this.room_sock) return
         // room exists but ru no - create
         if (!ru) {
             this.ru = {
@@ -52,13 +55,13 @@ export class RoomSessionControl {
         }
         // notify everybody
         this.socket.join(this.room_sock);
-        io.of('game').to(this.room_sock).emit('room join', this.ru)
+        this.io.to(this.room_sock).emit('room join', this.ru)
         // notify everybody
         const msg = {
             text:  `${this.user_nickname} join the room`,
             nickname: "@SYSROOT"
         };
-        io.of('/game').to(this.room_sock).emit('room message', msg);
+        this.io.to(this.room_sock).emit('room message', msg);
     }
 
     async join_random_room() {
@@ -98,7 +101,7 @@ export class RoomSessionControl {
         this.room_sock = null
         // notify everybody
         this.socket.to(this.room_sock).emit('room leave', this.user_id);
-        this.io.of('/chat').emit('room leave', {
+        io.of('/chat').emit('room leave', {
             ru_user_id: this.user.user_id,
             ru_room_id: this.room.room_id
         });
@@ -107,7 +110,7 @@ export class RoomSessionControl {
             text:  `${this.user_nickname} left the room`,
             nickname: "@SYSROOT"
         };
-        io.of('/game').to(temp).emit('room message', msg);
+        this.io.to(temp).emit('room message', msg);
         // leave socket
         this.socket.leave(temp);
         // delete entries from db
@@ -143,11 +146,14 @@ export class RoomSessionControl {
             return 'Impossible to change team'
         }
         //
-        io.of('/game').to(this.room_sock).emit('room team change', {
+        const team_change = {
             team_prev: tmp,
             team_new: this.ru.ru_team,
-            user_id: this.user_id
-        });
+            user_id: this.user_id,
+            room_id: this.room.room_id
+        }
+        this.io.to(this.room_sock).emit('room team change', team_change);
+        io.of('/chat').emit('room team change', team_change);
         // TODO Check if all users have a team right now
         await this.update()
     }
@@ -157,7 +163,7 @@ export class RoomSessionControl {
             text:  text,
             nickname: this.user.user_nickname
         };
-        io.of('/game').to(this.room_sock).emit('room message', msg);
+        this.io.to(this.room_sock).emit('room message', msg);
     }
 
     async update() {
@@ -174,7 +180,7 @@ export class RoomSessionControl {
         })
         // determine if we can start
         if ( this.room.room_places === 0 && teams[0] === 0) {
-            io.of('/game').to(this.room_sock).emit('room ready', {
+            this.io.to(this.room_sock).emit('room ready', {
 
             });
             //
@@ -182,7 +188,7 @@ export class RoomSessionControl {
                 text:  `competition started!`,
                 nickname: "@SYSROOT"
             };
-            io.of('/game').to(this.room_sock).emit('room message', msg);
+            this.io.to(this.room_sock).emit('room message', msg);
             //
             this.callback(this.room_sock)
         }
@@ -195,7 +201,7 @@ export class RoomSessionControl {
     //     if (index !== -1) {
     //         roomReadyToStartInfos[room].members.splice(index, 1);
     //     }
-    //     io.of('/game').to(room).emit('room ready', {
+    //     this.io.to(room).emit('room ready', {
     //         user_id: user.user_id,
     //         state: 'violation'
     //     });
@@ -204,7 +210,7 @@ export class RoomSessionControl {
     //         text:  `${user.user_nickname} violated rule`,
     //         nickname: "@SERVER "
     //     };
-    //     io.of('/game').to(room).emit('room message', msg);
+    //     this.io.to(room).emit('room message', msg);
     // }
     onCompetitionEnd (user: any, room: string, score: number)  {
         // console.log(`onCompetitionEnd ${user.user_nickname}`)
@@ -212,7 +218,7 @@ export class RoomSessionControl {
         // if (index !== -1) {
         //     roomReadyToStartInfos[room].members.splice(index, 1);
         // }
-        // io.of('/game').to(room).emit('room ready', {
+        // io.to(room).emit('room ready', {
         //     user_id: user.user_id,
         //     state: 'end',
         //     score: score
@@ -222,7 +228,7 @@ export class RoomSessionControl {
             text:  `${user.user_nickname} scored ${score}!`,
             nickname: "@SYSROOT"
         };
-        io.of('/game').to(room).emit('room message', msg);
+        this.io.to(room).emit('room message', msg);
     }
 
     async onDisconnect() {
