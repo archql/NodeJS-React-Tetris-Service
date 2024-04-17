@@ -7,7 +7,8 @@ export const WaveShaderMaterial = shaderMaterial(
     {
         uTime: 0,
         uColor: new THREE.Color(0.0, 0.0, 0.0),
-        uTexture: new THREE.Texture()
+        uTexture: new THREE.Texture(),
+        uOpacity: 1.0
     },
     // Vertex Shader
     glsl`
@@ -40,6 +41,7 @@ export const WaveShaderMaterial = shaderMaterial(
     uniform vec3 uColor;
     uniform float uTime;
     uniform sampler2D uTexture;
+    uniform float uOpacity;
 
     varying vec2 vUv;
     varying float vWave;
@@ -47,7 +49,7 @@ export const WaveShaderMaterial = shaderMaterial(
     void main() {
       float wave = vWave * 0.2;
       vec3 texture = uColor * texture2D(uTexture, vUv + wave).rgb;
-      gl_FragColor = vec4(texture, 0.8); 
+      gl_FragColor = vec4(texture, 0.8 * uOpacity); 
     }
   `
 );

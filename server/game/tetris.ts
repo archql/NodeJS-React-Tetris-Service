@@ -71,6 +71,13 @@ export const COLOR_TABLE = [
     [0.0, 0.2549, 1.0   ]
 ];
 
+export function mergeColors(col1: number, col2: number) {
+    if (col1 === 0) return col2;
+    if (col2 === 0) return col1;
+    if (col1 === 3 || col2 === 3) return 3
+    return Math.floor(((col1 - 4) + (col2 - 4)) / 2) + 4
+}
+
 export const STATUS_TABLE = Object.freeze({
     offline:               '@OFFLINE',
     connected:             '@ON-LINE',
@@ -86,15 +93,16 @@ export const FigureType = Object.freeze({
     ghost: 'ghost',
     liquid: 'liquid',
     sand: 'sand',
+    border: 'border',
     at(id: number) {
         if (id === null || id === undefined) return id
-        return Object.keys(FigureType)[id];
+        return FigureType[Object.keys(FigureType)[id]];
     },
     from(item: string) {
         return Object.keys(FigureType).indexOf(item)
     }
 });
-export const FigureTypeLength = Object.getOwnPropertyNames(FigureType).length;
+export const FigureTypeLength = Object.keys(FigureType).length - 3;
 export const FigureGhostId = FigureType.from('ghost')
 
 type BlockType = {
@@ -122,6 +130,7 @@ export class Figure {
             this.id = id;
             this.toDefaultPos();
             this.#generateColor(prototype);
+            this.#generateType(prototype);
         } else if (prototype) {
             Object.assign(this, prototype);
         } else {
@@ -140,6 +149,10 @@ export class Figure {
 
     from(id: number = undefined, rotation: number = undefined) {
         this.value = Figure.figArr[id || this.id][rotation || this.rotation];
+    }
+
+    #generateType(random: Random) {
+        this.type = random.nextRandInt(0, FigureTypeLength - 1);
     }
 
     #generateColor(random: Random) {
@@ -305,7 +318,7 @@ export class Tetris {
             this.paused = !this.paused;
             return;
         }
-        if (key ===  15) { // shift up
+        if (key === 15) { // shift up
             this.softDrop = false;
             return;
         }
@@ -351,14 +364,17 @@ export class Tetris {
         }
         if (key === 7) { // update event
             fig.y++;
+            this.#processFieldEffects();
         }
         // save old Y
         let yPos = fig.y;
         // go down loop
-        while (!this.#collideFigure(fig)) {
-            fig.y++;
+        if (!(this.softDrop && fig.type === FigureGhostId)) {
+            while (!this.#collideFigure(fig)) {
+                fig.y++;
+            }
+            fig.y--;
         }
-        fig.y--;
         // collided
         if (key !== 0 && (key === 32 || fig.y < yPos)) // collision hard
         {
@@ -499,14 +515,14 @@ export class Tetris {
         for (let i = 0; i < FIELD_H - 1; ++i) {
             let posY = i * FIELD_W;
             const lastPosY = posY + FIELD_W - 1;
-            this.field[posY] = {color: 1, type: 0};
-            this.field[lastPosY]= {color: 1, type: 0};
+            this.field[posY] = {color: 1, type: FigureType.from('border')};
+            this.field[lastPosY]= {color: 1, type: FigureType.from('border')};
             for (let j = posY + 1; j < lastPosY; ++j) {
                 this.field[j] = {color: 0, type: 0};
             }
         }
         for (let j = (FIELD_H - 1) * FIELD_W; j < FIELD_H * FIELD_W; ++j) {
-            this.field[j] = {color: 1, type: 0};
+            this.field[j] = {color: 1, type: FigureType.from('border')};
         }
     }
 
@@ -542,11 +558,11 @@ export class Tetris {
             const yPos = i * FIELD_W;
             for (let j = x; j < 4 + x; j++) {
                 if ((figure & 0x8000) !== 0) {
-                    this.field[yPos + j] = {
+                    this.#mergeBlock({
                         color: color,
                         type: type
-                    };
-                    // TODO process types
+                        // TODO process types
+                    }, this.field[yPos + j])
                 }
                 figure <<= 1;
             }
@@ -564,7 +580,7 @@ export class Tetris {
             }
             const yPos = i * FIELD_W;
             for (let j = x; j < 4 + x; j++) {
-                if ((figure & 0x8000) !== 0 && this.field[yPos + j].color !== 0)
+                if ((figure & 0x8000) !== 0 && this.#checkBlockCollide(this.field[yPos + j], fig.type))
                     return true;
                 figure <<= 1;
             }
@@ -637,5 +653,150 @@ export class Tetris {
         // reset hold feature
         this.held = false;
         this.heldFigure = null;
+    }
+
+    #processFieldEffects() {
+        let changes = false
+        for (let y = FIELD_H - 1; y >= 0; --y) {
+            let posY = y * FIELD_W;
+            for (let x = FIELD_W - 1; x >= 0;--x) {
+                const block = this.field[posY + x]
+                switch (FigureType.at(block.type)) {
+                    case 'liquid': {
+                        // check left-right-down neighbours
+                        if (y >= FIELD_H - 1) {
+                            this.#killBlock(block)
+                        } else {
+                            // first check down
+                            let tmp = this.field[posY + x + FIELD_W]
+                            if (!this.#moveBlock(block, tmp)) {
+                                // check left right
+                                let rng = this.random.nextRandInt(0, 1);
+                                let l = (x > 1) ? this.field[posY + x + FIELD_W - 1] : null
+                                let r = (x < FIELD_W - 1) ? this.field[posY + x + FIELD_W + 1] : null
+                                if (r && l) {
+                                    if (rng) {
+                                        if (this.#moveBlock(block, r)) {
+                                            changes = true;
+                                            break
+                                        }
+                                    } else {
+                                        if (this.#moveBlock(block, l)) {
+                                            changes = true;
+                                            break
+                                        } else {
+                                            l = null
+                                        }
+                                    }
+                                }
+                                if (l) {
+                                    changes = this.#moveBlock(block, l)
+                                } else if (r) {
+                                    changes = this.#moveBlock(block, r)
+                                }
+                            } else {
+                                changes = true
+                            }
+                        }
+
+                    } break;
+                    case 'sand': {
+                        if (y >= FIELD_H - 1) {
+                            this.#killBlock(block)
+                        } else {
+                            changes = this.#moveBlock(block, this.field[posY + x + FIELD_W])
+                        }
+                    } break;
+                    case 'tnt': {
+                        changes = true;
+                        // explode
+                        this.#explodeBlock(this.field[posY + x], true)
+                        this.#explodeBlock(this.field[posY + x + 1])
+                        this.#explodeBlock(this.field[posY + x - 1])
+                        this.#explodeBlock(this.field[posY + x - FIELD_W])
+                        this.#explodeBlock(this.field[posY + x + FIELD_W])
+                    } break;
+                    // case '': {
+                    //     if (block.color < 3) break;
+                    //     //console.log("#moveBlock ", block.color )
+                    //     if (y >= FIELD_H - 1) {
+                    //         this.#killBlock(block)
+                    //     } else {
+                    //         //console.log("#moveBlock")
+                    //         this.#moveBlock(block, this.field[posY + x + FIELD_W])
+                    //     }
+                    // } break;
+                }
+            }
+        }
+        if (!changes) {
+            this.#checkOnLine()
+        }
+    }
+
+    #checkBlockCollide(block: BlockType, type: number) {
+         return (block.type !== FigureGhostId && type !== FigureGhostId && block.color !== 0) || block.type === FigureType.from('border');
+    }
+
+    #canMoveBlock(from: BlockType, to: BlockType) {
+
+    }
+
+    #moveBlock(from: BlockType, to: BlockType) {
+        if (!to.color) {
+            Object.assign(to, from)
+            this.#nullifyBlock(from)
+            return true;
+        }
+        else if (to.type === FigureGhostId) {
+            // TODO merge
+            to.color = mergeColors(to.color, from.color)
+            to.type = from.type !== FigureGhostId ? from.type : 0
+            this.#nullifyBlock(from)
+            return true
+        }
+        else if (from.type === FigureGhostId) {
+            // TODO merge
+            to.color = mergeColors(to.color, from.color)
+            this.#nullifyBlock(from)
+            return true
+        }
+        else if (to.type === FigureType.from('liquid') && from.type !== FigureType.from('liquid')) {
+            console.log("exchange")
+            // exchange
+            const temp = Object.assign({}, to);
+            Object.assign(to, from)
+            Object.assign(from, temp)
+            return true
+        }
+        return false
+    }
+
+    #mergeBlock(from: BlockType, to: BlockType) {
+        // to.color defines if it keeps ghost prop
+        from.color = mergeColors(to.color, from.color)
+        if (from.type === FigureGhostId /* && to.color */) {
+            // TODO merge score
+            from.type = to.type !== FigureGhostId ? to.type : 0
+        }
+        // TODO merge score
+        Object.assign(to, from)
+    }
+
+    #nullifyBlock(block: BlockType) {
+        if (!block) return
+        block.color = 0
+        block.type = 0
+    }
+
+    #explodeBlock (block: BlockType, self: boolean = false) {
+        if (!block || block.type === FigureType.from('border') || (block.type === FigureType.from('tnt') && !self)) return
+        // TODO score
+        this.#nullifyBlock(block)
+    }
+
+    #killBlock(block: BlockType) {
+        // TODO kill score
+        this.#nullifyBlock(block)
     }
 }

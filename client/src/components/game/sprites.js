@@ -36,8 +36,8 @@ export function GameDisplay({game /* : Tetris */}) {
             <TetrisFigure
                 figure={game.currentFigure}
                 yPos={game.figPreviewY}
-                typeId={FigureGhostId}
                 zPos={1}
+                opacity={0.4}
             />
             <TetrisField
                 field={game.field}
@@ -54,7 +54,7 @@ export function Platform() {
     )
 }
 
-export function TetrisFigure({ figure, colorId, zPos, xPos, yPos, typeId }) {
+export function TetrisFigure({ figure, colorId, zPos, xPos, yPos, typeId, opacity }) {
     const components = []
     const x = xPos ?? figure.x;
     const y = yPos ?? figure.y;
@@ -75,6 +75,7 @@ export function TetrisFigure({ figure, colorId, zPos, xPos, yPos, typeId }) {
                         position={[j, i, 0]}
                         type={type}
                         clr={color}
+                        opacity={opacity}
                     />
                 );
             }
@@ -111,7 +112,7 @@ export function TetrisField({field}) {
     )
 }
 
-export function TetrisBlock ({ position, type, clr }) {
+export function TetrisBlock ({ position, type, clr, opacity }) {
     const particleCount = 100;
     const texture = useTexture('/block_simple.png'); // Replace with the path to your texture image
     texture.wrapS = THREE.ClampToEdgeWrapping;
@@ -135,13 +136,14 @@ export function TetrisBlock ({ position, type, clr }) {
     const tmp = COLOR_TABLE[clr];
     const c = toColor(tmp[0], tmp[1], tmp[2])
     const t = FigureType.at(type);
+    const o = opacity ?? 1.0
 
     const col = Math.floor((Math.sin(6*time) * 0.5 + 0.7) * 255);
     switch (t) {
         case 'liquid': return (
             <mesh position={position}>
                 <boxGeometry args={[1, 1, 1, 8, 8, 2]}/>
-                <waveShaderMaterial uColor={c} uTexture={texture} uTime={time} transparent={true}/>
+                <waveShaderMaterial uColor={c} uTexture={texture} uTime={time} transparent={true} uOpacity={o}/>
             </mesh>
         )
         case 'ghost': return (
@@ -150,7 +152,7 @@ export function TetrisBlock ({ position, type, clr }) {
                 <meshBasicMaterial
                     map={texture}
                     transparent={true}
-                    opacity={Math.sin(6*time) * 0.1 + 0.5}
+                    opacity={(Math.sin(6*time) * 0.1 + 0.5) * o}
                     color={c}
                 />
             </mesh>
@@ -162,6 +164,7 @@ export function TetrisBlock ({ position, type, clr }) {
                     map={texture}
                     transparent={true}
                     color={`rgba(255, ${col}, ${col}, 1)`}
+                    opacity={o}
                 />
             </mesh>
         )
@@ -180,6 +183,8 @@ export function TetrisBlock ({ position, type, clr }) {
                     <pointsMaterial
                         color={"yellow"}
                         size={3}
+                        transparent={true}
+                        opacity={o}
                     />
                 </points>
                 <mesh position={position}>
@@ -188,6 +193,7 @@ export function TetrisBlock ({ position, type, clr }) {
                         map={texture}
                         transparent={true}
                         color={c}
+                        opacity={o}
                     />
                 </mesh>
             </Fragment>
@@ -200,6 +206,7 @@ export function TetrisBlock ({ position, type, clr }) {
                         map={texture}
                         transparent={true}
                         color={c}
+                        opacity={o}
                     />
                 </mesh>
             )
