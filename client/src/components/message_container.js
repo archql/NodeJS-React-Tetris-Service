@@ -1,5 +1,7 @@
 import React from "react";
 import {Message} from "./message";
+import * as faIcons from "@fortawesome/fontawesome-free-solid";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
 export class MessageContainer extends React.Component {
     constructor(props) {

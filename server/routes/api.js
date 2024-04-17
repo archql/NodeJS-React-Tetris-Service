@@ -392,7 +392,8 @@ const chatHandler = async (socket) => {
             room_description: `Room of ${user.user_nickname}`, // TODO undefined
             room_max_members: room.members,
             room_teams: room.teams,
-            room_password_hash: room.password_hash
+            room_places: room.members * room.teams,
+            room_password_hash: room.password_hash,
         });
         if (!r) {
             return socket.emit("error", {status: 409, who: "room create", message: "Unexpected error"});

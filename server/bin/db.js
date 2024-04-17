@@ -656,6 +656,7 @@ Connection.belongsTo(ConStatus,
 
 RoomUser.addHook('beforeCreate', 'checkRoomCapacity', async (roomUser, options) => {
     const room = await Room.findByPk(roomUser.ru_room_id);
+    console.log(room)
     if (!room) {
         throw new Error('Room is dead!');
     }
@@ -665,6 +666,7 @@ RoomUser.addHook('beforeCreate', 'checkRoomCapacity', async (roomUser, options) 
     room.room_places -= 1
     await room.save()
 });
+
 RoomUser.addHook('beforeUpdate', 'checkRoomCapacity', async (roomUser, options) => {
     const room = await Room.findByPk(roomUser.ru_room_id, { include: RoomUser });
     if (!room) {
@@ -724,21 +726,21 @@ async function createUser(name, surname, nickname, password, role_id, status_id,
 }
 export async function createRoom(name, owner_nickname, description, max_members, teams, password = null, id = null) {
     const usr = await User.findOne({ where: { user_nickname: owner_nickname } });
-    if (usr) {
-        const room = await Room.findOne({ where: { room_owner_id: usr.user_id } });
-        if (!room) {
-            await Room.create({
-                room_id: id,
-                room_owner_id: usr.user_id,
-                room_name: name,
-                room_description: description,
-                room_max_members: max_members,
-                room_teams: teams,
-                room_places: max_members * teams,
-                room_password_hash: password && crypto.createHash("sha256").update(password).digest('hex')
-            });
-        }
+    if (!usr) return null
+    let room = await Room.findOne({ where: { room_owner_id: usr.user_id } });
+    if (!room) {
+        room = await Room.create({
+            room_id: id,
+            room_owner_id: usr.user_id,
+            room_name: name,
+            room_description: description,
+            room_max_members: max_members,
+            room_teams: teams,
+            room_places: max_members * teams,
+            room_password_hash: password && crypto.createHash("sha256").update(password).digest('hex')
+        });
     }
+    return room
 }
 async function createStatus(id, name) {
     const test = await Status.findByPk(id);
@@ -802,6 +804,7 @@ await createRole(20, "root", "orange");
 await createRole(50, "shared", "gray");
 await createRole(100, "server", "orange");
 
+// await Room.truncate();
 await createRoom('Global', '_ARCHQL_', 'room which can be joined by any player', 4, 4, null, 1);
 
 await createUser('anonymous', 'player', '@DEFAULT', crypto.randomBytes(64).toString('hex'), 50, 1, '???', 'null',  null);

@@ -57,12 +57,16 @@ const gameHandler = async (socket) => {
                     user_role_id: 50
                 },
             })
-            //record = null;
         }
         ru = user && await RoomUser.findOne({
             where: {
                 ru_user_id: user.user_id
-            }
+            },
+            include: [{
+                model: User,
+                as: "ru_user",
+                attributes: ['user_id', 'user_nickname', 'user_rank'],
+            }]
         });
         room = ru && await Room.findByPk(ru.ru_room_id, {
             include: [{
@@ -77,9 +81,6 @@ const gameHandler = async (socket) => {
         });
         // update session data
         userGameSessions[socket.id].room?.sync(user, room, ru)
-
-        // notify user
-        socket.emit('sync', user, room, ru);
     }
 
     await sync_data()
@@ -99,11 +100,13 @@ const gameHandler = async (socket) => {
     })
 
     socket.on('room random', async () => {
-        await userGameSessions[socket.id]?.room.join_random_room()
+        const res = await userGameSessions[socket.id]?.room.join_random_room()
+        console.log('room random ', res)
     })
 
-    socket.on('room team join', async (team: number) => {
-        await userGameSessions[socket.id]?.room.join_team(team)
+    socket.on('room team change', async (team: number) => {
+        const res = await userGameSessions[socket.id]?.room.join_team(team)
+        console.log("room team change ", res)
     })
 
     socket.on('room leave', async () => {

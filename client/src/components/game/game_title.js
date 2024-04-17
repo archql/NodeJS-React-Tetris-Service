@@ -54,7 +54,7 @@ export class GameTitle extends Component {
     }
 
     // componentDidUpdate(prevProps, prevState, snapshot) {
-    //  TODO
+    //  TODO problem on width height update
     // }
 
     componentDidMount() {
@@ -86,7 +86,8 @@ export class GameTitle extends Component {
             <Fragment>
                 <TitlePrompt
                     text="PLAY"
-                    onCLick={() => console.log("TEST")}
+                    fontSize={3}
+                    onCLick={this.props.onClick}
                 />
                 <Suspense fallback={null}>
                     <mesh position={[-this.fieldWidth / 2, FIELD_H / 2, 0]} scale={[1, -1, 1]}>

@@ -9,6 +9,8 @@ import {FIELD_H} from "../../game/tetris.ts";
 import {GameTitle} from "./game_title";
 import {Canvas} from "@react-three/fiber";
 import {NavLink} from "react-router-dom";
+import {RoomLobby} from "../room_lobby";
+import {GameCanvas} from "./game_canvas";
 
 export class Game extends React.Component {
 
@@ -36,6 +38,7 @@ export class Game extends React.Component {
         this.socket.on('error', this.onError);
         this.socket.on('connect_error', this.onConnectError);
         this.socket.on('sync', this.onSync);
+        this.socket.on('room ready', this.onRoomReady);
         //
         if (this.socket.connected) {
             //
@@ -44,11 +47,13 @@ export class Game extends React.Component {
         }
     }
     componentWillUnmount() {
+        if (!this.socket) return
         this.socket.off('connect', this.onConnect);
         this.socket.off('disconnect', this.onDisconnect);
         this.socket.off('error', this.onError);
         this.socket.off('connect_error', this.onConnectError);
         this.socket.off('sync', this.onSync);
+        this.socket.off('room ready', this.onRoomReady);
     }
     onConnect = () => {
         console.log("LOG onConnect");
@@ -85,10 +90,18 @@ export class Game extends React.Component {
             ru: ru
         })
     }
+    onRoomReady = () => {
+
+    }
+
+    play(e) {
+        // looks like random room
+        this.socket.emit('room random')
+    }
 
 
     render() {
-        let {user, game, room} = this.state
+        let {user, game, room, ru} = this.state
         if (!user) {
             user = {
                 user_nickname: "........",
@@ -96,17 +109,30 @@ export class Game extends React.Component {
                 user_region: "???"
             }
         }
-        const blockWidth = window.innerHeight / FIELD_H;
+        const blockSize = window.innerHeight / FIELD_H;
         if (game) {
             return (
                 <Fragment>
                     {this.state.loading && (<div className="loader"/>)}
+                    <GameCanvas
+                        user={user}
+                        room={room}
+                        ru={ru}
+                        socket={this.socket}
+                    />
                 </Fragment>
             )
         } else if (room) {
             return (
                 <Fragment>
                     {this.state.loading && (<div className="loader"/>)}
+                    <RoomLobby
+                        user={user}
+                        room={room}
+                        ru={ru}
+                        socket={this.socket}
+                        blockSize={blockSize}
+                    />
                 </Fragment>
             )
         } else {
@@ -166,7 +192,7 @@ export class Game extends React.Component {
                                      isActive ? "link active" : "link"
                                  }>Help</NavLink>
                     </div>
-                    <Canvas orthographic camera={{zoom: blockWidth}}>
+                    <Canvas orthographic camera={{zoom: blockSize}}>
                         <ambientLight/>
                         <spotLight
                             position={[0, 0, 5]}
@@ -174,9 +200,10 @@ export class Game extends React.Component {
                             penumbra={1}
                         />
                         <GameTitle
-                            blockSize={blockWidth}
+                            blockSize={blockSize}
                             fillRate={0.3}
                             delay={800}
+                            onClick={(e) => this.play(e)}
                         />
                     </Canvas>
                 </Fragment>

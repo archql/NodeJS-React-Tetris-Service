@@ -1,5 +1,5 @@
 // @ts-ignore
-import {createRoom, Room, RoomUser} from "../bin/db";
+import {createRoom, Room, RoomUser, sequelize, User} from "../bin/db";
 import {Op} from "sequelize";
 import crypto from "crypto";
 import {RANDOM_MAX} from "./tetris";
@@ -44,24 +44,33 @@ export class RoomSessionControl {
         this.user_id = user ? user.user_id :
             ((this.user_id < 0) ? this.user_id : --RoomSessionControl.user_id_replacement)
 
-        if (!this.room_sock) return
-        // room exists but ru no - create
-        if (!ru) {
-            this.ru = {
-                ru_user_id: this.user_id,
-                ru_team: null,
-                ru_room_id: this.room.room_id
+        if (this.room_sock) {
+            // room exists but ru no - create
+            if (!ru) {
+                this.ru = {
+                    ru_user_id: this.user_id,
+                    ru_team: null,
+                    ru_room_id: this.room.room_id,
+                    ru_user: {
+                        user_nickname: this.user_nickname,
+                        user_rank: 0,
+                    }
+                }
             }
+            // TODO duplicated notifications
+            // notify everybody
+            this.socket.join(this.room_sock);
+            this.io.to(this.room_sock).emit('room join', this.ru)
+            // notify everybody
+            const msg = {
+                text: `${this.user_nickname} joined the room`,
+                nickname: "@SYSROOT"
+            };
+            this.io.to(this.room_sock).emit('room message', msg);
         }
-        // notify everybody
-        this.socket.join(this.room_sock);
-        this.io.to(this.room_sock).emit('room join', this.ru)
-        // notify everybody
-        const msg = {
-            text:  `${this.user_nickname} join the room`,
-            nickname: "@SYSROOT"
-        };
-        this.io.to(this.room_sock).emit('room message', msg);
+        // notify user
+        console.log("EMIT SYNC")
+        this.socket.emit('sync', user, room, ru);
     }
 
     async join_random_room() {
@@ -74,18 +83,35 @@ export class RoomSessionControl {
                     [Op.not]: 0
                 }
             },
-            order: ['room_places', 'ASC'],
+            order: sequelize.col('room_places'),
         })
         // if no - create
         if (!r) {
+            console.log("create new room maintained by server")
             // create new room maintained by server
             const rng = crypto.randomBytes(6).toString('hex')
             r = await createRoom(`Duel-${rng}`, '@SYSROOT', 'room which can be joined by any player', 1, 2, null);
         }
+        if (!r) return "failed to create"
         // join
         const ru = await RoomUser.create({
             ru_user_id: this.user.user_id,
             ru_room_id: r.room_id,
+        });
+        if (!ru) return 'Failed to join'
+        //
+        io.of('/chat').emit('room join',  ru)
+        // fetch remaining data
+        r = await Room.findByPk(r.room_id, {
+            include: [{
+                model: RoomUser,
+                as: "room_users",
+                include: [{
+                    model: User,
+                    as: "ru_user",
+                    attributes: ['user_id', 'user_nickname', 'user_rank'],
+                }]
+            }, { model: User, as: "room_owner", attributes: ['user_id', 'user_nickname'] }],
         });
         // sync
         this.sync(this.user, r, ru)
@@ -100,7 +126,7 @@ export class RoomSessionControl {
         let temp = this.room_sock
         this.room_sock = null
         // notify everybody
-        this.socket.to(this.room_sock).emit('room leave', this.user_id);
+        this.socket.to(temp).emit('room leave', this.user_id);
         io.of('/chat').emit('room leave', {
             ru_user_id: this.user.user_id,
             ru_room_id: this.room.room_id
@@ -114,12 +140,16 @@ export class RoomSessionControl {
         // leave socket
         this.socket.leave(temp);
         // delete entries from db
-        await RoomUser.destroy({
+        const res = await RoomUser.destroy({
             where: {
                 ru_user_id: this.user_id,
-                ru_room_id: parseInt(temp)
-            }
+                ru_room_id: this.room.room_id
+            },
+            individualHooks: true
         });
+        if (!res) {
+            console.log(`FAILED LEAVE ROOM ${this.user_nickname} ${temp}`)
+        }
         // nullify room data
         this.room = null
         this.ru = null
@@ -134,16 +164,23 @@ export class RoomSessionControl {
     async join_team(team_no: number) {
         if (!this.ru) return 'Null room user';
         // already in that team
-        if (this.ru.ru_team === team_no) return;
+        if (this.ru.ru_team === team_no) return 'Already in that team';
         //
         let tmp = this.ru.ru_team;
         //
         try {
-            await this.ru.update({
+            console.log(this.ru)
+            await RoomUser.update({
                 ru_team: team_no
+            }, {
+                where: {
+                    ru_user_id: this.ru.ru_user_id,
+                    ru_room_id: this.ru.ru_room_id,
+                }
             })
+            await this.ru.reload();
         } catch(e) {
-            return 'Impossible to change team'
+            return `Impossible to change team ${e}`
         }
         //
         const team_change = {
@@ -161,7 +198,9 @@ export class RoomSessionControl {
     message(text: string) {
         const msg = {
             text:  text,
-            nickname: this.user.user_nickname
+            nickname: this.user.user_nickname,
+            team: this.ru.ru_team,
+            user_id: this.user.user_id
         };
         this.io.to(this.room_sock).emit('room message', msg);
     }

@@ -1,5 +1,6 @@
 .lobby.table {
     display: grid;
+
     outline: 1px solid var(--btn-color);
     background-color: var(--btn-color);
     flex: 1;
@@ -10,6 +11,7 @@
 
     border-radius: 10px;
     grid-gap: 1px;
+
 }
 .lobby h2 {
     margin: 0;
@@ -25,21 +27,38 @@
     box-shadow: inset 2px 2px 20px var(--card-color-primary);
     margin: 0;
     isolation: unset;
+
+    align-items: stretch
+}
+.lobby .card {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+.lobby .box {
+    align-items: center;
+}
+.lobby {
+    color: var(--text-color-primary);
 }
 
 .team-info, .room-info {
     padding: 20px;
+    margin-bottom: 10px;
+}
+.lobby span {
+    overflow-wrap: break-word;
 }
 
 .team-info h2, .room-info h2 {
     margin-top: 0;
 }
 .lobby textarea {
-    align-self: flex-end;
+    flex: 1;
 }
 
 .join-btn {
     color: var(--text-color-white);
+    background-color: var(--btn-color);
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
@@ -52,12 +71,15 @@
     border-radius: 8px;
 }
 
-.message {
-    max-width: 75%;
+.lobby .message {
     margin-top: 10px;
+    margin-left: 5px;
+    margin-right: 5px;
     padding: 5px;
     position: relative;
     background-color: transparent;
+    max-width: 100%;
+    min-width: 0;
 }
 .lobby .message_in {
     margin-right: auto;
@@ -68,15 +90,36 @@
     margin-left: auto;
     margin-right: 2px;
     background-color: transparent;
+    text-align: right;
 }
 
 .sender {
     font-weight: bold;
+    margin-right: 10px;
+}
+.send_panel {
+    display: flex;
 }
 
 .team {
     margin-left: 10px;
     font-style: italic;
+}
+
+.lobby .cell.top {
+    font-size: xx-large;
+    text-align: center;
+    padding: 10px;
+}
+.lobby p {
+    margin: 0;
+}
+.lobby .messaging {
+    flex-basis: 0px;
+}
+
+.lobby .room_info {
+    font-size: larger;
 }
 
 
@@ -89,12 +132,18 @@
 .team.green {
     color: var(--team-color-green)
 }
+.team.yellow {
+    color: var(--team-color-yellow)
+}
 .join-btn.red {
-    background-color: var(--team-color-red)
+    background-color: var(--team-bg-red)
 }
 .join-btn.blue {
-    background-color: var(--team-color-blue)
+    background-color: var(--team-bg-blue)
 }
 .join-btn.green {
-    background-color: var(--team-color-green)
+    background-color: var(--team-bg-green)
+}
+.join-btn.yellow {
+    background-color: var(--team-bg-yellow)
 }

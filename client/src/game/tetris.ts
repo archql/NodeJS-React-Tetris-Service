@@ -206,8 +206,8 @@ export class Tetris {
     field: number[] = new Array(FIELD_W * FIELD_H);
 
     // render callback
-    callback: (buffer: RenderBuffer) => void = null;
-    gameOverCallback: (score: number, newRecord: boolean) => void = null;
+    // callback: (buffer: RenderBuffer) => void = null;
+    // gameOverCallback: (score: number, newRecord: boolean) => void = null;
 
     status = "offline"
 
@@ -218,8 +218,8 @@ export class Tetris {
     deepCopy() {
         const clone = JSON.parse(JSON.stringify(this));
         // clear callbacks (they are different)
-        clone.callback = null;
-        clone.gameOverCallback = null;
+        // clone.callback = null;
+        // clone.gameOverCallback = null;
         return clone;
     }
 
@@ -228,18 +228,18 @@ export class Tetris {
         this.#initialize(seed);
     }
 
-    constructor(renderCallback: (buffer: RenderBuffer) => void, prototype = undefined){
+    constructor(/*renderCallback: (buffer: RenderBuffer) => void,*/ prototype = undefined){
         if (prototype) {
             this.constructFromPrototype(prototype);
         } else {
             this.#initialize();
         }
-        this.callback = renderCallback;
+        // this.callback = renderCallback;
     }
     constructFromPrototype(prototype) {
         // preserve callbacks functions
-        const callback = this.callback;
-        const gameOverCallback = this.gameOverCallback;
+        // const callback = this.callback;
+        // const gameOverCallback = this.gameOverCallback;
         //
         Object.assign(this, prototype);
         // convert figures to objects too
@@ -252,8 +252,8 @@ export class Tetris {
         console.log("construct from prototype")
         this.random = new Random(this.random.seed, this.random.prev);
         // setup callbacks back
-        this.callback = callback;
-        this.gameOverCallback = gameOverCallback;
+        // this.callback = callback;
+        // this.gameOverCallback = gameOverCallback;
     }
 
     //############### KEY EVENT ############
@@ -265,7 +265,7 @@ export class Tetris {
     //   - Shift key up              - 15 (undefined in VK table)
     processEvent(key: number) {
         this.processEventSilent(key);
-        this.callback(this.render());
+        // this.callback(this.render());
     }
 
     //############### KEY EVENT ############
@@ -365,7 +365,7 @@ export class Tetris {
             this.figPreviewY = yPos;
         }
     }
-
+/*
     // TODO move out or change render function
     render() {
         const renderBuffer = new RenderBuffer();
@@ -406,67 +406,69 @@ export class Tetris {
         renderBuffer.strings.push({x: FIELD_W / 2, y: 1, text: tetris.name, align: "center"});
         return renderBuffer;
     }
-    #renderFigureInto(renderBuffer, fig, xPos: number = undefined, yPos: number = undefined, colorId: number = undefined) {
-        const x = (xPos !== undefined) ? xPos : fig.x;
-        const y = (yPos !== undefined) ? yPos : fig.y;
-        let figure = fig.value;
-        const color = (colorId !== undefined) ? colorId : fig.color;
 
-        for (let i = y; i < 4 + y; i++) { // 4 is fig w and h
-            // if (i < 0) {
-            //     continue;
-            // }
-            for (let j = x; j < 4 + x; j++) {
-                if ((figure & 0x8000) !== 0) {
-                    renderBuffer.vertices.push(j, i);
-                    renderBuffer.colors.push(...COLOR_TABLE[color]);
-                    renderBuffer.count++;
-                }
-                figure <<= 1;
-            }
-        }
-    }
-    #renderFieldInto(renderBuffer) {
-        for (let i = 0; i < FIELD_H; ++i) {
-            const yPos = i * FIELD_W;
-            for (let j = 0; j < FIELD_W; ++j) {
-                renderBuffer.vertices.push(j, i);
-                renderBuffer.colors.push(...COLOR_TABLE[this.field[j + yPos] || 0]);
-                renderBuffer.count++;
-            }
-        }
-    }
-
-    static renderFigureInto(renderBuffer, fig, xPos: number = undefined, yPos: number = undefined, colorId: number = undefined) {
-        const x = (xPos !== undefined) ? xPos : fig.x;
-        const y = (yPos !== undefined) ? yPos : fig.y;
-        let figure = fig.value;
-        const color = (colorId !== undefined) ? colorId : fig.color;
-
-        for (let i = y; i < 4 + y; i++) { // 4 is fig w and h
-            // if (i < 0) {
-            //     continue;
-            // }
-            for (let j = x; j < 4 + x; j++) {
-                if ((figure & 0x8000) !== 0) {
-                    renderBuffer.vertices.push(j, i);
-                    renderBuffer.colors.push(...COLOR_TABLE[color]);
-                    renderBuffer.count++;
-                }
-                figure <<= 1;
-            }
-        }
-    }
-    static renderFieldInto(renderBuffer, field) {
-        for (let i = 0; i < FIELD_H; ++i) {
-            const yPos = i * FIELD_W;
-            for (let j = 0; j < FIELD_W; ++j) {
-                renderBuffer.vertices.push(j, i);
-                renderBuffer.colors.push(...COLOR_TABLE[field[j + yPos] || 0]);
-                renderBuffer.count++;
-            }
-        }
-    }
+*/
+    // #renderFigureInto(renderBuffer, fig, xPos: number = undefined, yPos: number = undefined, colorId: number = undefined) {
+    //     const x = (xPos !== undefined) ? xPos : fig.x;
+    //     const y = (yPos !== undefined) ? yPos : fig.y;
+    //     let figure = fig.value;
+    //     const color = (colorId !== undefined) ? colorId : fig.color;
+    //
+    //     for (let i = y; i < 4 + y; i++) { // 4 is fig w and h
+    //         // if (i < 0) {
+    //         //     continue;
+    //         // }
+    //         for (let j = x; j < 4 + x; j++) {
+    //             if ((figure & 0x8000) !== 0) {
+    //                 renderBuffer.vertices.push(j, i);
+    //                 renderBuffer.colors.push(...COLOR_TABLE[color]);
+    //                 renderBuffer.count++;
+    //             }
+    //             figure <<= 1;
+    //         }
+    //     }
+    // }
+    // #renderFieldInto(renderBuffer) {
+    //     for (let i = 0; i < FIELD_H; ++i) {
+    //         const yPos = i * FIELD_W;
+    //         for (let j = 0; j < FIELD_W; ++j) {
+    //             renderBuffer.vertices.push(j, i);
+    //             renderBuffer.colors.push(...COLOR_TABLE[this.field[j + yPos] || 0]);
+    //             renderBuffer.count++;
+    //         }
+    //     }
+    // }
+    //
+    // static renderFigureInto(renderBuffer, fig, xPos: number = undefined, yPos: number = undefined, colorId: number = undefined) {
+    //     const x = (xPos !== undefined) ? xPos : fig.x;
+    //     const y = (yPos !== undefined) ? yPos : fig.y;
+    //     let figure = fig.value;
+    //     const color = (colorId !== undefined) ? colorId : fig.color;
+    //
+    //     for (let i = y; i < 4 + y; i++) { // 4 is fig w and h
+    //         // if (i < 0) {
+    //         //     continue;
+    //         // }
+    //         for (let j = x; j < 4 + x; j++) {
+    //             if ((figure & 0x8000) !== 0) {
+    //                 renderBuffer.vertices.push(j, i);
+    //                 renderBuffer.colors.push(...COLOR_TABLE[color]);
+    //                 renderBuffer.count++;
+    //             }
+    //             figure <<= 1;
+    //         }
+    //     }
+    // }
+    // static renderFieldInto(renderBuffer, field) {
+    //     for (let i = 0; i < FIELD_H; ++i) {
+    //         const yPos = i * FIELD_W;
+    //         for (let j = 0; j < FIELD_W; ++j) {
+    //             renderBuffer.vertices.push(j, i);
+    //             renderBuffer.colors.push(...COLOR_TABLE[field[j + yPos] || 0]);
+    //             renderBuffer.count++;
+    //         }
+    //     }
+    // }
 
     #nextFigure() {
         this.currentFigure = new Figure(undefined, this.nextFigures[this.nextFigureNumber]);
@@ -578,7 +580,7 @@ export class Tetris {
 
     #endGame() {
         const newRecord = this.highScore < this.score;
-        this.gameOverCallback && this.gameOverCallback(this.score, newRecord);
+        // this.gameOverCallback && this.gameOverCallback(this.score, newRecord);
         if (newRecord) {
             this.highScore = this.score;
         }

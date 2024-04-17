@@ -22,9 +22,14 @@
     --team-color-blue: #84aaff;
     --team-color-red: #ff8484;
     --team-color-green: #9fff84;
-    --team-color-yelow: #fff584;
+    --team-color-yellow: #fff584;
     --team-color-purple: #b184ff;
     --team-color-orange: #ffbb84;
     --team-color-pink: #ef84ff;
     --team-color-cyan: #84fff1;
+
+    --team-bg-blue: #00277d;
+    --team-bg-red: #7d0000;
+    --team-bg-green: #347d00;
+    --team-bg-yellow: #5e5600;
 }

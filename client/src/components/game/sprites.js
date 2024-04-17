@@ -24,6 +24,20 @@ export function nextRandInt(from, to) {
     return Math.floor(Math.random() * (to - from + 1)) + from;
 }
 
+export function GameDisplay({game /* : Tetris */}) {
+    // TODO
+    return (
+        <Fragment>
+            <TetrisFigure
+                figure={game.currentFigure}
+            />
+            <TetrisField
+                field={game.field}
+            />
+        </Fragment>
+    )
+}
+
 export function Platform() {
 
 
@@ -183,9 +197,9 @@ export function TetrisBlock ({ position, type, clr }) {
                 </mesh>
             )
     }
-};
+}
 
-export function TitlePrompt({text, onCLick}) {
+export function TitlePrompt({text, onCLick, fontSize}) {
     const textRef = useRef();
     const {size} = useThree();
     const [hovered, setHover] = useState(false)
@@ -203,7 +217,7 @@ export function TitlePrompt({text, onCLick}) {
             onPointerOut={(event) => setHover(false)}
             ref={textRef}
             position={[0, 0, 0]}
-            fontSize={hovered ? 2.1 : 2}
+            fontSize={hovered ? fontSize * 1.05 : fontSize}
             color={hovered ? "yellow" : "white"} // default
             anchorX="center" // default
             anchorY="middle" // default

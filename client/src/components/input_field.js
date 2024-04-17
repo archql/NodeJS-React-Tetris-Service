@@ -1,4 +1,6 @@
 import React, {Fragment} from "react";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import * as faIcons from "@fortawesome/fontawesome-free-solid";
 
 export class InputField extends React.Component {
 
@@ -49,10 +51,15 @@ export class TextField extends React.Component {
 
     onEnter = (e) => {
         if (e.key === 'Enter') {
-            e.preventDefault();
-            this.props.onEnter && this.props.onEnter(this.state.value);
-            this.setState({value: ''})
+            this.onClick(e)
         }
+    }
+
+    onClick = (e) => {
+        e.preventDefault();
+        if (this.state.value === '') return
+        this.props.onEnter && this.props.onEnter(this.state.value);
+        this.setState({value: ''})
     }
 
     render() {
@@ -65,6 +72,9 @@ export class TextField extends React.Component {
                     className="input_field"
                     id={this.props.id}>
                 </textarea>
+                <button className="btn btn-send" onClick={this.onClick}>
+                    <FontAwesomeIcon icon={faIcons.faArrowRight}/>
+                </button>
             </Fragment>
         );
     }

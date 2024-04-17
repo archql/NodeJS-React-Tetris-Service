@@ -38,12 +38,12 @@ class Rooms extends React.Component {
 
     onRoomTeamChange = (teamChange) => {
         const {team_prev, team_new, user_id, room_id} = teamChange;
-
+        console.log('onRoomTeamChange ')
         const rooms = this.state.rooms.map((r) => {
             if (r.room_id === room_id) {
                 r.room_users.forEach(ru => {
-                    if (ru.user_id === user_id) {
-                        ru.team = team_new
+                    if (ru.ru_user_id === user_id) {
+                        ru.ru_team = team_new
                     }
                 })
             }
