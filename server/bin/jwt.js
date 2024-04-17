@@ -3,7 +3,7 @@ import crypto from "crypto";
 import {User} from "./db.js";
 
 // generates random secret every time server starts
-const secret = crypto.randomBytes(64).toString('hex')
+const secret = 'my-secret'//crypto.randomBytes(64).toString('hex') // TODO WARNING
 
 export function generateAccessToken(user) {
     return jwt.sign(user, secret, { expiresIn: '1800s' }); // process.env.TOKEN_SECRET

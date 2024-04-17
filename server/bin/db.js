@@ -655,6 +655,7 @@ Connection.belongsTo(ConStatus,
 );
 
 RoomUser.addHook('beforeCreate', 'checkRoomCapacity', async (roomUser, options) => {
+    console.log("RoomUser beforeCreate checkRoomCapacity")
     const room = await Room.findByPk(roomUser.ru_room_id);
     console.log(room)
     if (!room) {
@@ -668,7 +669,14 @@ RoomUser.addHook('beforeCreate', 'checkRoomCapacity', async (roomUser, options) 
 });
 
 RoomUser.addHook('beforeUpdate', 'checkRoomCapacity', async (roomUser, options) => {
-    const room = await Room.findByPk(roomUser.ru_room_id, { include: RoomUser });
+    console.log("RoomUser beforeUpdate checkRoomCapacity")
+    const room = await Room.findByPk(roomUser.ru_room_id,
+        {
+            include: [{
+                model: RoomUser,
+                as: "room_users",
+            }]
+        });
     if (!room) {
         throw new Error('Room is already dead!');
     }
@@ -678,12 +686,17 @@ RoomUser.addHook('beforeUpdate', 'checkRoomCapacity', async (roomUser, options) 
         const v = (ru.ru_team ?? -1) + 1
         teams[v] = teams[v] ? teams[v] + 1 : 1
     }))
+    console.log(teams)
+    console.log(roomUser.ru_team)
+    console.log(room.room_max_members)
+    console.log(teams[roomUser.ru_team + 1] )
     //
-    if (roomUser.ru_team && (teams[roomUser.ru_team + 1] >= room.room_max_members)) {
+    if (roomUser.ru_team !== null && (teams[roomUser.ru_team + 1] >= room.room_max_members)) {
         throw new Error('The room team is already full. Cannot add more members.');
     }
 });
 RoomUser.addHook('beforeDestroy', 'checkRoomCapacity', async (roomUser, options) => {
+    console.log("RoomUser beforeDestroy checkRoomCapacity")
     const room = await Room.findByPk(roomUser.ru_room_id);
     if (!room) {
         throw new Error('Room is already dead!');

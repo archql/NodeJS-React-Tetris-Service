@@ -442,10 +442,14 @@ const chatHandler = async (socket) => {
             }
         });
         if (!ru) {
-            ru = await RoomUser.create({
-                ru_user_id: user.user_id,
-                ru_room_id: room.room_id
-            });
+            try {
+                ru = await RoomUser.create({
+                    ru_user_id: user.user_id,
+                    ru_room_id: room.room_id
+                });
+            } catch (e) {
+                return socket.emit("error", {status: 409, who: "room join", message: e});
+            }
             // only if room was joined not rejoined
             io.of('/chat').emit("room join", ru);
         }

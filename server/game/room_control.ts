@@ -60,7 +60,6 @@ export class RoomSessionControl {
             // TODO duplicated notifications
             // notify everybody
             this.socket.join(this.room_sock);
-            this.io.to(this.room_sock).emit('room join', this.ru)
             // notify everybody
             const msg = {
                 text: `${this.user_nickname} joined the room`,
@@ -94,13 +93,33 @@ export class RoomSessionControl {
         }
         if (!r) return "failed to create"
         // join
-        const ru = await RoomUser.create({
-            ru_user_id: this.user.user_id,
-            ru_room_id: r.room_id,
-        });
+        let ru = null
+        try {
+            ru = await RoomUser.create({
+                ru_user_id: this.user.user_id,
+                ru_room_id: r.room_id,
+            });
+        } catch (e) {
+            return `Failed to join: ${e}`
+        }
         if (!ru) return 'Failed to join'
+        // request additional info
+        ru = await RoomUser.findOne(
+            {
+                where: {
+                    ru_user_id: ru.ru_user_id,
+                    ru_room_id: ru.ru_room_id,
+                },
+                include: [{
+                    model: User,
+                    as: "ru_user",
+                    attributes: ['user_id', 'user_nickname', 'user_rank'],
+                }]
+            }
+        )
         //
         io.of('/chat').emit('room join',  ru)
+        this.io.to(r.room_id.toString()).emit('room join', ru)
         // fetch remaining data
         r = await Room.findByPk(r.room_id, {
             include: [{
@@ -176,7 +195,8 @@ export class RoomSessionControl {
                 where: {
                     ru_user_id: this.ru.ru_user_id,
                     ru_room_id: this.ru.ru_room_id,
-                }
+                },
+                individualHooks: true
             })
             await this.ru.reload();
         } catch(e) {
@@ -218,7 +238,7 @@ export class RoomSessionControl {
             teams[v] = teams[v] ? teams[v] + 1 : 1
         })
         // determine if we can start
-        if ( this.room.room_places === 0 && teams[0] === 0) {
+        if ( this.room.room_places === 0 && !(teams[0])) {
             this.io.to(this.room_sock).emit('room ready', {
 
             });
