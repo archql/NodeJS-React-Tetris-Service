@@ -13,7 +13,7 @@ import { extend } from "@react-three/fiber";
 import {Fragment, useMemo, useRef, useState} from "react";
 import {SandShaderMaterial, WaveShaderMaterial} from "./shaders";
 import {BufferAttribute} from "three";
-import {COLOR_TABLE, FIELD_H, FIELD_W} from "../../game/tetris";
+import {COLOR_TABLE, FIELD_H, FIELD_W, FigureGhostId, FigureType} from "../../game/tetris";
 
 extend({WaveShaderMaterial})
 
@@ -26,10 +26,18 @@ export function nextRandInt(from, to) {
 
 export function GameDisplay({game /* : Tetris */}) {
     // TODO
+    console.log(game)
     return (
         <Fragment>
             <TetrisFigure
                 figure={game.currentFigure}
+                zPos={2}
+            />
+            <TetrisFigure
+                figure={game.currentFigure}
+                yPos={game.figPreviewY}
+                typeId={FigureGhostId}
+                zPos={1}
             />
             <TetrisField
                 field={game.field}
@@ -46,20 +54,16 @@ export function Platform() {
     )
 }
 
-export function TetrisFigure({ figure, colorId, zPos, xPos, yPos }) {
+export function TetrisFigure({ figure, colorId, zPos, xPos, yPos, typeId }) {
     const components = []
     const x = xPos ?? figure.x;
     const y = yPos ?? figure.y;
     const z = zPos ?? 0;
     const pos = [x, y, z]
     const color = (colorId !== undefined) ? colorId : figure.color;
+    const type = (typeId !== undefined) ? typeId : figure.type;
 
     let fig = figure.value;
-
-    const c = COLOR_TABLE[color];
-    const clr = toColor(c[0], c[1], c[2])
-
-    //console.log("AAAAAAAAAAA ", clr)
 
     for (let i = 0; i < 4; i++) { // 4 is fig w and h
         const yPos = i * FIELD_W;
@@ -68,9 +72,9 @@ export function TetrisFigure({ figure, colorId, zPos, xPos, yPos }) {
                 components.push(
                     <TetrisBlock
                         key={j + yPos}
-                        position={[i, j, 0]}
-                        type={figure.type}
-                        clr={clr}
+                        position={[j, i, 0]}
+                        type={type}
+                        clr={color}
                     />
                 );
             }
@@ -78,9 +82,9 @@ export function TetrisFigure({ figure, colorId, zPos, xPos, yPos }) {
         }
     }
     return (
-        <mesh position={pos}>
+        <group position={pos}>
             {components}
-        </mesh>
+        </group>
     )
 }
 
@@ -90,14 +94,12 @@ export function TetrisField({field}) {
         const yPos = i * FIELD_W;
         for (let j = 0; j < FIELD_W; ++j) {
             const block = field[j + yPos]
-            const c = COLOR_TABLE[block.color];
-            const clr = toColor(c[0], c[1], c[2])
             components.push(
                 <TetrisBlock
                     key={j + yPos}
-                    position={[i, j, 0]}
+                    position={[j, i, 0]}
                     type={block.type}
-                    clr={clr}
+                    clr={block.color}
                 />
             );
         }
@@ -129,12 +131,17 @@ export function TetrisBlock ({ position, type, clr }) {
         }
         return positions;
     }, [particleCount])
+
+    const tmp = COLOR_TABLE[clr];
+    const c = toColor(tmp[0], tmp[1], tmp[2])
+    const t = FigureType.at(type);
+
     const col = Math.floor((Math.sin(6*time) * 0.5 + 0.7) * 255);
-    switch (type) {
+    switch (t) {
         case 'liquid': return (
             <mesh position={position}>
                 <boxGeometry args={[1, 1, 1, 8, 8, 2]}/>
-                <waveShaderMaterial uColor={clr} uTexture={texture} uTime={time} transparent={true}/>
+                <waveShaderMaterial uColor={c} uTexture={texture} uTime={time} transparent={true}/>
             </mesh>
         )
         case 'ghost': return (
@@ -144,7 +151,7 @@ export function TetrisBlock ({ position, type, clr }) {
                     map={texture}
                     transparent={true}
                     opacity={Math.sin(6*time) * 0.1 + 0.5}
-                    color={clr}
+                    color={c}
                 />
             </mesh>
         )
@@ -180,7 +187,7 @@ export function TetrisBlock ({ position, type, clr }) {
                     <meshBasicMaterial
                         map={texture}
                         transparent={true}
-                        color={clr}
+                        color={c}
                     />
                 </mesh>
             </Fragment>
@@ -192,7 +199,7 @@ export function TetrisBlock ({ position, type, clr }) {
                     <meshBasicMaterial
                         map={texture}
                         transparent={true}
-                        color={clr}
+                        color={c}
                     />
                 </mesh>
             )

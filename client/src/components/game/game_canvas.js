@@ -25,8 +25,10 @@ export class GameCanvas extends React.PureComponent {
         // create a game
         const saved = localStorage.getItem('game');
         this.game = saved ? new Tetris(JSON.parse(saved)) : new Tetris();
-        this.session = new ClientGameSessionControl(this.game, this.socket);
+        this.game.callback = () => { this.forceUpdate() };
+        this.session = new ClientGameSessionControl(this.game, this.props.socket);
         // render
+        this.forceUpdate()
         // this.onGameStateChanged(this.game.render());
     }
     componentWillUnmount() {
@@ -82,9 +84,15 @@ export class GameCanvas extends React.PureComponent {
                         intensity={1}
                         penumbra={1}
                     />
-                    <GameDisplay
-                        game={this.game}
-                    />
+                    {
+                        this.game &&
+                        <group position={[-(FIELD_W - 1) / 2, (FIELD_H - 1) / 2, 0]} scale={[1, -1, 1]}>
+                            <GameDisplay
+                                blockSize={this.props.blockSize}
+                                game={this.game}
+                            />
+                        </group>
+                    }
                 </Canvas>
             </Fragment>
         )

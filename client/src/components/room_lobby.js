@@ -186,10 +186,10 @@ export class RoomLobby extends Component {
                                      this.messagesStart = el;
                                  }}/>
                             {
-                                this.state.messages.length ? this.state.messages.map((message) => {
+                                this.state.messages.length ? this.state.messages.map((message, index) => {
                                     const color = (message.team !== null && message.team !== undefined) ? colors[message.team] : "";
                                     return (
-                                        <div className="box message">
+                                        <div className="box message" key={index}>
                                             <span className={`sender team ${color}`}>{message.nickname}</span>
                                             <span className="content">{message.text}</span>
                                         </div>

@@ -48,7 +48,7 @@ export class GameTitle extends Component {
             fig.y = y * 4;
             fig.rotate(nextRandInt(0, 4))
             fig.rotate(1)
-            fig.type = Object.keys(FigureType)[nextRandInt(0, FigureTypeLength - 1)]
+            fig.type = nextRandInt(0, FigureTypeLength - 1) // TODO
             arr.push(fig)
         }
     }

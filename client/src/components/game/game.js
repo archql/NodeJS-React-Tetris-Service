@@ -28,7 +28,8 @@ export class Game extends React.Component {
         //
         this.state = {
             loading: true,
-            user: null
+            user: null,
+            game: true // TODO
         }
     }
     componentDidMount() {
@@ -91,7 +92,9 @@ export class Game extends React.Component {
         })
     }
     onRoomReady = () => {
-
+        this.setState({
+            game: true
+        })
     }
 
     play(e) {
@@ -119,6 +122,7 @@ export class Game extends React.Component {
                         room={room}
                         ru={ru}
                         socket={this.socket}
+                        blockSize={blockSize}
                     />
                 </Fragment>
             )

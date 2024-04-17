@@ -1,4 +1,6 @@
 // EXACT THE SAME CODE AS ON THE CLIENT
+import {nextRandInt} from "../components/game/sprites";
+
 export const RANDOM_MAX = 0x7FFFFFFF;
 export class Random {
 
@@ -69,14 +71,14 @@ export const COLOR_TABLE = [
     [0.0, 0.2549, 1.0   ]
 ];
 
-export const STATUS_TABLE = {
+export const STATUS_TABLE = Object.freeze({
     offline:               '@OFFLINE',
     connected:             '@ON-LINE',
     registered:            '@REGSTRD',
     rejected:              '@REJCTED',
     keyFail:               '@UUIDERR',
     connLost:              '@CNCLOST',
-};
+});
 
 export const FigureType = Object.freeze({
     none: '',
@@ -84,8 +86,21 @@ export const FigureType = Object.freeze({
     ghost: 'ghost',
     liquid: 'liquid',
     sand: 'sand',
+    at(id: number) {
+        if (id === null || id === undefined) return id
+        return Object.keys(FigureType)[id];
+    },
+    from(item: string) {
+        return Object.keys(FigureType).indexOf(item)
+    }
 });
 export const FigureTypeLength = Object.getOwnPropertyNames(FigureType).length;
+export const FigureGhostId = FigureType.from('ghost')
+
+type BlockType = {
+    color: number,
+    type: number | undefined
+};
 
 export class Figure {
     // defines fig number
@@ -100,7 +115,7 @@ export class Figure {
     color: number;
     value: number;
     //
-    type: string;
+    type: number;
 
     constructor(id: number, prototype: any = undefined) {
         if (prototype instanceof Random) {
@@ -203,10 +218,10 @@ export class Tetris {
     placed: number = 0;
     tickSpeed: number = START_TICK_SPEED;
 
-    field: number[] = new Array(FIELD_W * FIELD_H);
+    field: BlockType[] = new Array(FIELD_W * FIELD_H);
 
     // render callback
-    // callback: (buffer: RenderBuffer) => void = null;
+    callback: () => void = null;
     // gameOverCallback: (score: number, newRecord: boolean) => void = null;
 
     status = "offline"
@@ -218,7 +233,7 @@ export class Tetris {
     deepCopy() {
         const clone = JSON.parse(JSON.stringify(this));
         // clear callbacks (they are different)
-        // clone.callback = null;
+        clone.callback = null;
         // clone.gameOverCallback = null;
         return clone;
     }
@@ -238,7 +253,7 @@ export class Tetris {
     }
     constructFromPrototype(prototype) {
         // preserve callbacks functions
-        // const callback = this.callback;
+        const callback = this.callback;
         // const gameOverCallback = this.gameOverCallback;
         //
         Object.assign(this, prototype);
@@ -252,7 +267,7 @@ export class Tetris {
         console.log("construct from prototype")
         this.random = new Random(this.random.seed, this.random.prev);
         // setup callbacks back
-        // this.callback = callback;
+        this.callback = callback;
         // this.gameOverCallback = gameOverCallback;
     }
 
@@ -265,7 +280,7 @@ export class Tetris {
     //   - Shift key up              - 15 (undefined in VK table)
     processEvent(key: number) {
         this.processEventSilent(key);
-        // this.callback(this.render());
+        this.callback();
     }
 
     //############### KEY EVENT ############
@@ -484,14 +499,14 @@ export class Tetris {
         for (let i = 0; i < FIELD_H - 1; ++i) {
             let posY = i * FIELD_W;
             const lastPosY = posY + FIELD_W - 1;
-            this.field[posY] = 1;
-            this.field[lastPosY] = 1;
+            this.field[posY] = {color: 1, type: 0};
+            this.field[lastPosY]= {color: 1, type: 0};
             for (let j = posY + 1; j < lastPosY; ++j) {
-                this.field[j] = 0;
+                this.field[j] = {color: 0, type: 0};
             }
         }
         for (let j = (FIELD_H - 1) * FIELD_W; j < FIELD_H * FIELD_W; ++j) {
-            this.field[j] = 1;
+            this.field[j] = {color: 1, type: 0};
         }
     }
 
@@ -499,7 +514,7 @@ export class Tetris {
         const yPos = TOP_LINE * FIELD_W;
         for (let j = yPos + 1; j < yPos + FIELD_W - 1; j++)
         {
-            if (this.field[j] !== 0) {
+            if (this.field[j].color !== 0) {
                 console.log("checkOnEnd true")
                 return true;
             }
@@ -509,10 +524,16 @@ export class Tetris {
     }
 
     #placeFigure(fig: Figure) {
+        console.log("#placeFigure")
+        console.log(fig)
+
         const x = fig.x;
         const y = fig.y;
         let figure = fig.value;
         const color = fig.color;
+        const type = fig.type;
+
+        console.log(figure)
 
         for (let i = y; i < 4 + y; i++) { // 4 is fig w and h
             if (i < 0) {
@@ -520,8 +541,13 @@ export class Tetris {
             }
             const yPos = i * FIELD_W;
             for (let j = x; j < 4 + x; j++) {
-                if ((figure & 0x8000) !== 0)
-                    this.field[yPos + j] = color;
+                if ((figure & 0x8000) !== 0) {
+                    this.field[yPos + j] = {
+                        color: color,
+                        type: type
+                    };
+                    // TODO process types
+                }
                 figure <<= 1;
             }
         }
@@ -538,7 +564,7 @@ export class Tetris {
             }
             const yPos = i * FIELD_W;
             for (let j = x; j < 4 + x; j++) {
-                if ((figure & 0x8000) !== 0 && this.field[yPos + j] !== 0)
+                if ((figure & 0x8000) !== 0 && this.field[yPos + j].color !== 0)
                     return true;
                 figure <<= 1;
             }
@@ -553,7 +579,7 @@ export class Tetris {
             const yPos = i * FIELD_W;
             let j = yPos + 1;
             while (lineChecked && j < yPos + FIELD_W - 1) {
-                lineChecked = this.field[j] !== 0;
+                lineChecked = this.field[j].color !== 0;
                 j++;
             }
             if (lineChecked) {
