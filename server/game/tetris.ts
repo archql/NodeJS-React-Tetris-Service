@@ -32,7 +32,7 @@ export const FIELD_W = 12;
 export const FIELD_H = 23;
 export const RECT_MODIFIER = 0.95;
 
-const SPEED_MUL = 0.95;
+const SPEED_MUL = 0.90;
 
 const INC_EVERY_FIGS = 15; // 2^N-1
 
@@ -40,7 +40,7 @@ const TOP_LINE = 0;
 
 const FIG_START_Y = -1;
 
-const START_TICK_SPEED = 1000;
+const START_TICK_SPEED = 800;
 
 export const COLOR_TABLE = [
     [0.071, 0.071, 0.071],
@@ -109,6 +109,10 @@ type BlockType = {
     color: number,
     type: number | undefined
 };
+
+type EffectType = {
+    type: number,
+}
 
 export class Figure {
     // defines fig number
@@ -230,8 +234,12 @@ export class Tetris {
     highScore: number = 0;
     placed: number = 0;
     tickSpeed: number = START_TICK_SPEED;
+    //
+    timePlayed: number;
 
     field: BlockType[] = new Array(FIELD_W * FIELD_H);
+
+    effects: EffectType[] = new Array(FIELD_W * FIELD_H);
 
     // render callback
     callback: () => void = null;
@@ -363,6 +371,7 @@ export class Tetris {
             fig.x = xPos;
         }
         if (key === 7) { // update event
+            this.timePlayed += this.tickSpeed;
             fig.y++;
             this.#processFieldEffects();
         }
@@ -396,110 +405,6 @@ export class Tetris {
             this.figPreviewY = yPos;
         }
     }
-/*
-    // TODO move out or change render function
-    render() {
-        const renderBuffer = new RenderBuffer();
-        this.#renderFieldInto(renderBuffer);
-        this.#renderFigureInto(renderBuffer, this.currentFigure, undefined, this.figPreviewY, 2);
-        this.#renderFigureInto(renderBuffer, this.currentFigure);
-        this.#renderFigureInto(renderBuffer, this.nextFigures[this.nextFigureNumber], FIELD_W + 3, 2);
-        if (this.heldFigure) {
-            this.#renderFigureInto(renderBuffer, this.heldFigure, FIELD_W + 3, 2  +  4  +  2);
-        }
-        if (this.paused) {
-            renderBuffer.strings.push({x: FIELD_W / 2, y: 1, text: "PAUSED", align: "center"});
-        }
-        if (!this.playing) {
-            renderBuffer.strings.push({x: FIELD_W / 2, y: 1, text: "GAME OVER", align: "center"});
-        }
-        renderBuffer.strings.push({x: FIELD_W + 4, y: 2  +  4  +  1, text: "HELD FIGURE", align: "center"});
-        renderBuffer.strings.push({x: FIELD_W + 4, y: 1            , text: "NEXT FIGURE", align: "center"});
-        renderBuffer.strings.push({x: FIELD_W + 3, y: 2 + 4 + 6 + 2, text: `${String(this.score).padStart(6, ' ')}`, align: "left"});
-        renderBuffer.strings.push({x: FIELD_W + 3, y: 2 + 4 + 6 + 3, text: `${String(this.highScore).padStart(6, ' ')}`, align: "left"});
-        renderBuffer.strings.push({x: FIELD_W + 3, y: FIELD_H - 1, text: STATUS_TABLE[this.status], align: "left"});
-        renderBuffer.strings.push({x: FIELD_W + 3, y: FIELD_H - 4, text: this.name, align: "left"});
-        renderBuffer.strings.push({x: FIELD_W + 3, y: FIELD_H - 3, text: "~~~~~~~~", align: "left"});
-        return renderBuffer;
-    }
-    static srender(tetris: Tetris) {
-        const renderBuffer = new RenderBuffer();
-        Tetris.renderFieldInto(renderBuffer, tetris.field);
-        Tetris.renderFigureInto(renderBuffer, tetris.currentFigure, undefined, tetris.figPreviewY, 2);
-        Tetris.renderFigureInto(renderBuffer, tetris.currentFigure);
-        if (tetris.paused) {
-            renderBuffer.strings.push({x: FIELD_W / 2, y: 3, text: "PAUSED", align: "center"});
-        }
-        if (!tetris.playing) {
-            renderBuffer.strings.push({x: FIELD_W / 2, y: 3, text: "GAME OVER", align: "center"});
-        }
-        renderBuffer.strings.push({x: FIELD_W / 2, y: 2, text: `${tetris.score}`, align: "center"});
-        renderBuffer.strings.push({x: FIELD_W / 2, y: 1, text: tetris.name, align: "center"});
-        return renderBuffer;
-    }
-
-*/
-    // #renderFigureInto(renderBuffer, fig, xPos: number = undefined, yPos: number = undefined, colorId: number = undefined) {
-    //     const x = (xPos !== undefined) ? xPos : fig.x;
-    //     const y = (yPos !== undefined) ? yPos : fig.y;
-    //     let figure = fig.value;
-    //     const color = (colorId !== undefined) ? colorId : fig.color;
-    //
-    //     for (let i = y; i < 4 + y; i++) { // 4 is fig w and h
-    //         // if (i < 0) {
-    //         //     continue;
-    //         // }
-    //         for (let j = x; j < 4 + x; j++) {
-    //             if ((figure & 0x8000) !== 0) {
-    //                 renderBuffer.vertices.push(j, i);
-    //                 renderBuffer.colors.push(...COLOR_TABLE[color]);
-    //                 renderBuffer.count++;
-    //             }
-    //             figure <<= 1;
-    //         }
-    //     }
-    // }
-    // #renderFieldInto(renderBuffer) {
-    //     for (let i = 0; i < FIELD_H; ++i) {
-    //         const yPos = i * FIELD_W;
-    //         for (let j = 0; j < FIELD_W; ++j) {
-    //             renderBuffer.vertices.push(j, i);
-    //             renderBuffer.colors.push(...COLOR_TABLE[this.field[j + yPos] || 0]);
-    //             renderBuffer.count++;
-    //         }
-    //     }
-    // }
-    //
-    // static renderFigureInto(renderBuffer, fig, xPos: number = undefined, yPos: number = undefined, colorId: number = undefined) {
-    //     const x = (xPos !== undefined) ? xPos : fig.x;
-    //     const y = (yPos !== undefined) ? yPos : fig.y;
-    //     let figure = fig.value;
-    //     const color = (colorId !== undefined) ? colorId : fig.color;
-    //
-    //     for (let i = y; i < 4 + y; i++) { // 4 is fig w and h
-    //         // if (i < 0) {
-    //         //     continue;
-    //         // }
-    //         for (let j = x; j < 4 + x; j++) {
-    //             if ((figure & 0x8000) !== 0) {
-    //                 renderBuffer.vertices.push(j, i);
-    //                 renderBuffer.colors.push(...COLOR_TABLE[color]);
-    //                 renderBuffer.count++;
-    //             }
-    //             figure <<= 1;
-    //         }
-    //     }
-    // }
-    // static renderFieldInto(renderBuffer, field) {
-    //     for (let i = 0; i < FIELD_H; ++i) {
-    //         const yPos = i * FIELD_W;
-    //         for (let j = 0; j < FIELD_W; ++j) {
-    //             renderBuffer.vertices.push(j, i);
-    //             renderBuffer.colors.push(...COLOR_TABLE[field[j + yPos] || 0]);
-    //             renderBuffer.count++;
-    //         }
-    //     }
-    // }
 
     #nextFigure() {
         this.currentFigure = new Figure(undefined, this.nextFigures[this.nextFigureNumber]);
@@ -516,13 +421,17 @@ export class Tetris {
             let posY = i * FIELD_W;
             const lastPosY = posY + FIELD_W - 1;
             this.field[posY] = {color: 1, type: FigureType.from('border')};
+            this.effects[posY] = {type: 0}
             this.field[lastPosY]= {color: 1, type: FigureType.from('border')};
+            this.effects[lastPosY] = {type: 0}
             for (let j = posY + 1; j < lastPosY; ++j) {
                 this.field[j] = {color: 0, type: 0};
+                this.effects[j] = {type: 0}
             }
         }
         for (let j = (FIELD_H - 1) * FIELD_W; j < FIELD_H * FIELD_W; ++j) {
             this.field[j] = {color: 1, type: FigureType.from('border')};
+            this.effects[j] = {type: 0}
         }
     }
 
@@ -611,6 +520,9 @@ export class Tetris {
     }
 
     #removeLine(lineNumber) {
+        for (let j = 1; j < FIELD_W - 1; j++) {
+            this.effects[lineNumber * FIELD_W + j].type = 1 // line clear
+        }
         for (let y = lineNumber; y > 0; y--) {
             const yPos2 = (y - 1) * FIELD_W;
             const yPos1 = y * FIELD_W;
@@ -621,6 +533,7 @@ export class Tetris {
     }
 
     #endGame() {
+        //
         const newRecord = this.highScore < this.score;
         // this.gameOverCallback && this.gameOverCallback(this.score, newRecord);
         if (newRecord) {
@@ -639,7 +552,8 @@ export class Tetris {
         this.paused = true;
         this.softDrop = false;
         this.placed = 0;
-
+        //
+        this.timePlayed = 0;
         // generate new random seed
         this.random = new Random(seed || Math.floor(Math.random() * RANDOM_MAX));
 
@@ -711,6 +625,7 @@ export class Tetris {
                         changes = true;
                         // explode
                         this.#explodeBlock(this.field[posY + x], true)
+                        this.effects[posY + x].type = 2
                         this.#explodeBlock(this.field[posY + x + 1])
                         this.#explodeBlock(this.field[posY + x - 1])
                         this.#explodeBlock(this.field[posY + x - FIELD_W])

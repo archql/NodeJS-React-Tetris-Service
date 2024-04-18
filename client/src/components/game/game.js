@@ -97,9 +97,16 @@ export class Game extends React.Component {
         })
     }
 
-    play(e) {
-        // looks like random room
-        this.socket.emit('room random')
+    play(e, param) {
+        console.log("AAAAAAAAAAA ", param)
+        if (param === 'random') {
+            // looks like random room
+            this.socket.emit('room random')
+        } else if (param === 'single') {
+            this.setState({
+                game: true
+            })
+        }
     }
 
 
@@ -207,7 +214,7 @@ export class Game extends React.Component {
                             blockSize={blockSize}
                             fillRate={0.3}
                             delay={800}
-                            onClick={(e) => this.play(e)}
+                            onClick={(e, param) => this.play(e, param)}
                         />
                     </Canvas>
                 </Fragment>

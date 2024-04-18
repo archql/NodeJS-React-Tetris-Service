@@ -5,8 +5,11 @@ import {FIELD_H, FIELD_W, RECT_MODIFIER, Tetris} from "../../game/tetris.ts";
 import {GameTitle} from "./game_title";
 import {Canvas} from "@react-three/fiber";
 import {ClientGameSessionControl} from "../../game/reconciliator";
-import {GameDisplay} from "./sprites";
+import {GameDisplay, ProgressBar, TetrisFigure, TetrisText} from "./sprites";
 
+import {
+    Text,
+} from "@react-three/drei";
 
 export class GameCanvas extends React.PureComponent {
     constructor(props) {
@@ -31,6 +34,11 @@ export class GameCanvas extends React.PureComponent {
         this.forceUpdate()
         // this.onGameStateChanged(this.game.render());
     }
+    componentDidUpdate() {
+        // TODO
+        localStorage.setItem('game', JSON.stringify(this.game));
+    }
+
     componentWillUnmount() {
         if (!this.props.socket) return
         this.props.socket.off('game sync', this.onGameSync);
@@ -73,8 +81,22 @@ export class GameCanvas extends React.PureComponent {
         // set loading false
     }
 
-    render() {
+    formatTime(milliseconds) {
+        const totalSeconds = Math.floor(milliseconds / 1000);
+        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+        const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+        return `${minutes}:${seconds}`;
+    }
 
+    render() {
+        const {user, room, ru } = this.props;
+        let timeString = "00:00"
+        if (room) {
+            timeString = "00:00"
+        } else if (this.game) {
+            //
+            timeString = this.formatTime(this.game?.timePlayed)
+        }
         return (
             <Fragment>
                 <Canvas orthographic camera={{zoom: this.props.blockSize}}>
@@ -86,11 +108,93 @@ export class GameCanvas extends React.PureComponent {
                     />
                     {
                         this.game &&
-                        <group position={[-(FIELD_W - 1) / 2, (FIELD_H - 1) / 2, 0]} scale={[1, -1, 1]}>
-                            <GameDisplay
-                                blockSize={this.props.blockSize}
-                                game={this.game}
-                            />
+                        <group>
+                            <group position={[-(FIELD_W - 1) / 2, (FIELD_H - 1) / 2, 0]} scale={[1, -1, 1]}>
+                                <GameDisplay
+                                    blockSize={this.props.blockSize}
+                                    game={this.game}
+                                />
+                                <ProgressBar
+                                    pos={[(FIELD_W - 1) / 2, 0.5, 4]}
+                                    width={FIELD_W * 2}
+                                    scoreA={this.game.score}
+                                    scoreB={0}
+                                    scoreMax={3000}
+                                />
+                            </group>
+                            <group position={[-(FIELD_W - 1) / 2, -(FIELD_H - 1) / 2 - 1, 0]}>
+                                {room && <group position={[-FIELD_W, -3, 0]}>
+                                    <TetrisText
+                                        position={[0, FIELD_H, 0]}
+                                        text={`Room ${room.room_name}`}
+                                        fontSize={1.5}
+                                    />
+                                    {
+                                        room.room_users.map((ru) => (
+                                            <group>
+                                                <TetrisText
+                                                    text={ru.ru_user.user_nickname}
+                                                />
+                                            </group>
+                                        ))
+                                    }
+                                </group>
+                                }
+                                <group position={[FIELD_W + 1, -3, 0]}>
+                                    <TetrisText
+                                        position={[0, FIELD_H, 0]}
+                                        text={user.user_nickname ?? "@DEFAULT"}
+                                        fontSize={1.5}
+                                    />
+                                    <TetrisText
+                                        position={[0, FIELD_H - 2, 0]}
+                                        text={"SCORE:"}
+                                    />
+                                    <TetrisText
+                                        position={[8.5, FIELD_H - 2, 0]}
+                                        text={this.game.score.toString()}
+                                        color={"yellow"}
+                                        anchorX={"right"}
+                                    />
+                                    <TetrisText
+                                        position={[0, FIELD_H - 4, 0]}
+                                        text={"NEXT FIGURE"}
+                                    />
+                                    <group scale={[1, -1, 1]} position={[2, FIELD_H - 6, 0]}>
+                                        <TetrisFigure
+                                            figure={this.game.nextFigures[this.game.nextFigureNumber]}
+                                            xPos={0}
+                                            yPos={0}
+                                        />
+                                    </group>
+                                    <TetrisText
+                                        position={[0, FIELD_H - 9, 0]}
+                                        text={"HELD FIGURE"}
+                                    />
+                                    <group scale={[1, -1, 1]} position={[2, FIELD_H - 11, 0]}>
+                                        <TetrisFigure
+                                            figure={this.game.heldFigure}
+                                            xPos={0}
+                                            yPos={0}
+                                        />
+                                    </group>
+                                </group>
+                                <TetrisText
+                                    position={[(FIELD_W - 1) / 2, FIELD_H, 4]}
+                                    anchorX="center" // default
+                                    text={timeString}
+                                    fontSize={1.4}
+                                    outlineWidth={0.2}
+                                />
+                                <TetrisText
+                                    position={[(FIELD_W - 1) / 2, FIELD_H - 3, 4]}
+                                    anchorX="center" // default
+                                    text={this.game.playing ? (this.game.paused ? "PAUSED" : "") : "GAME OVER"}
+                                    outlineWidth={0.4}
+                                    outlineColor={"yellow"}
+                                    color={"black"}
+                                />
+                            </group>
                         </group>
                     }
                 </Canvas>

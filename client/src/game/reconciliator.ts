@@ -62,7 +62,7 @@ export class ClientGameSessionControl {
     lastServerProcessedState: GameState;
 
     //
-    timer: NodeJS.Timer;
+    timer: any;
     timeStarted;
     //
     globalTime;
@@ -132,7 +132,7 @@ export class ClientGameSessionControl {
     onServerConnect() {
         console.log("LOG connected");
         this.game.status = "connected";
-        this.game.callback(this.game.render());
+        this.game.callback();
     }
 
     onServerDisconnect () {
@@ -141,7 +141,7 @@ export class ClientGameSessionControl {
         } else {
             this.game.status = "offline";
         }
-        this.game.callback(this.game.render());
+        this.game.callback();
     }
 
     onServerSynced(serverState: GameState) {
@@ -178,7 +178,7 @@ export class ClientGameSessionControl {
             eventToProcess++;
         }
         // call update with latest state
-        this.game.callback(this.game.render());
+        this.game.callback();
     }
     // Clients update
     processEvent(event: number) {

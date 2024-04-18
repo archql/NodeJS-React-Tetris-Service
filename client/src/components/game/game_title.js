@@ -88,16 +88,31 @@ export class GameTitle extends Component {
                     text="PLAY"
                     fontSize={3}
                     onCLick={this.props.onClick}
+                    interactive={false}
                 />
+                <group position={[0, -3, 0]}>
+                    <TitlePrompt
+                        text="singleplayer"
+                        fontSize={1}
+                        onCLick={(e) => this.props.onClick(e, 'single')}
+                    />
+                </group>
+                <group position={[0, -2, 0]}>
+                    <TitlePrompt
+                        text="quick fight"
+                        fontSize={1}
+                        onCLick={(e) => this.props.onClick(e, 'random')}
+                    />
+                </group>
                 <Suspense fallback={null}>
                     <mesh position={[-this.fieldWidth / 2, FIELD_H / 2, 0]} scale={[1, -1, 1]}>
-                    {this.state.fallingFigures.arr.map((figure, index) => (
-                        <TetrisFigure
-                            key={index}
-                            figure={figure}
-                            zPos={-5}
-                        />
-                    ))}
+                        {this.state.fallingFigures.arr.map((figure, index) => (
+                            <TetrisFigure
+                                key={index}
+                                figure={figure}
+                                zPos={-5}
+                            />
+                        ))}
                     </mesh>
                 </Suspense>
             </Fragment>

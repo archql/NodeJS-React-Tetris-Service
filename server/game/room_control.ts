@@ -237,6 +237,8 @@ export class RoomSessionControl {
             const v = (ru.ru_team ?? -1) + 1
             teams[v] = teams[v] ? teams[v] + 1 : 1
         })
+        console.log(teams)
+        console.log(this.room.room_places)
         // determine if we can start
         if ( this.room.room_places === 0 && !(teams[0])) {
             this.io.to(this.room_sock).emit('room ready', {
