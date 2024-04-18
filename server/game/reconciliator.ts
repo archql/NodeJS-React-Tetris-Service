@@ -87,10 +87,10 @@ export class ServerGameSessionControl {
         //
         console.log("startCompetition b4")
         // force sync
-        this.socket.emit('sync', this.stateBuffer[0]);
-        if (this.room) {
-            this.io.to(this.room.room_id.toString()).emit('update', this.stateBuffer[0]);
-        }
+        this.socket.emit('game sync', this.stateBuffer[0]);
+        // if (this.room) {
+        //     this.io.to(this.room.room_id.toString()).emit('game update', this.stateBuffer[0]);
+        // }
         //
         console.log("startCompetition af")
     }
@@ -137,10 +137,10 @@ export class ServerGameSessionControl {
             this.time - this.timeStarted, this.game.deepCopy());
         // send game state
         // TODO this is awful
-        this.socket.emit('sync', this.stateBuffer[bufferIndex]);
-        if (this.room) {
-            this.io.to(this.room.room_id.toString()).emit('update', this.stateBuffer[bufferIndex]);
-        }
+        this.socket.emit('game sync', this.stateBuffer[bufferIndex]);
+        // if (this.room) {
+        //     this.io.to(this.room.room_id.toString()).emit('game update', this.stateBuffer[bufferIndex]);
+        // }
     }
 
     onInput(input: GameInput) {
@@ -219,8 +219,8 @@ export class ServerGameSessionControl {
                     // send update packet
                     // TODO
                     // send leaderboard update (TODO deep compare)
-                    const leaderboard = await ServerGameSessionControl.getLeaderboard();
-                    this.io.emit('leaderboard', leaderboard);
+                    //const leaderboard = await ServerGameSessionControl.getLeaderboard();
+                    //this.io.emit('leaderboard', leaderboard);
                 }
             })();
         }
@@ -291,11 +291,11 @@ export class ServerGameSessionControl {
         // console.log("send update");
 
         // TODO this is awful
-        if (this.room) {
-            this.io.to(this.room).emit('update', this.stateBuffer[bufferIndex]);
-        } else {
-            this.socket.emit('update', this.stateBuffer[bufferIndex]);
-        }
+        // if (this.room) {
+        //     this.io.to(this.room).emit('game update', this.stateBuffer[bufferIndex]);
+        // } else {
+            this.socket.emit('game update', this.stateBuffer[bufferIndex]);
+        //}
 
         //this.socket.emit('update', this.stateBuffer[bufferIndex]);
         // TODO

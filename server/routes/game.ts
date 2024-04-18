@@ -9,6 +9,11 @@ import {RoomSessionControl} from "../game/room_control";
 
 type UserGameSessionsType = {
     [key: string]: {
+        data: {
+            user: {} | null,
+            room: {} | null,
+            ru: {} | null
+        },
         game: ServerGameSessionControl,
         room: RoomSessionControl
     };
@@ -29,6 +34,7 @@ const gameHandler = async (socket) => {
     //
     // create a game instance
     userGameSessions[socket.id] = {
+        data: {user: null, room: null, ru: null},
         game: new ServerGameSessionControl(socket, io.of('/game')),
         room: new RoomSessionControl(socket, io.of('/game'))
     }
@@ -79,6 +85,8 @@ const gameHandler = async (socket) => {
                 }]
             }, { model: User, as: "room_owner", attributes: ['user_id', 'user_nickname'] }],
         });
+        //
+        userGameSessions[socket.id].data = {user: user, room: room, ru: ru}
         // update session data
         userGameSessions[socket.id].room?.sync(user, room, ru)
     }
@@ -115,6 +123,11 @@ const gameHandler = async (socket) => {
 
     socket.on('input', (input: GameInput) => {
         userGameSessions[socket.id].game?.onInput(input);
+    })
+
+    socket.on('game sync', async () => {
+        const {user, room, ru} = userGameSessions[socket.id].data;
+        userGameSessions[socket.id].game?.onSync(user, room, ru)
     })
 
     // room ready

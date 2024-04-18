@@ -1,5 +1,4 @@
 // EXACT THE SAME CODE AS ON THE CLIENT
-import {nextRandInt} from "../components/game/sprites";
 
 export const RANDOM_MAX = 0x7FFFFFFF;
 export class Random {
@@ -242,8 +241,9 @@ export class Tetris {
     effects: EffectType[] = new Array(FIELD_W * FIELD_H);
 
     // render callback
-    callback: () => void = null;
-    // gameOverCallback: (score: number, newRecord: boolean) => void = null;
+    renderCallback: () => void = null;
+    gameOverCallback: (score: number, newRecord: boolean) => void = null;
+    scoreUpdateCallback: (score: number, delta: number) => void = null;
 
     status = "offline"
 
@@ -254,8 +254,10 @@ export class Tetris {
     deepCopy() {
         const clone = JSON.parse(JSON.stringify(this));
         // clear callbacks (they are different)
-        clone.callback = null;
-        // clone.gameOverCallback = null;
+        clone.renderCallback = null;
+        clone.gameOverCallback = null;
+        clone.scoreUpdateCallback = null;
+        clone.effects = null;
         return clone;
     }
 
@@ -274,8 +276,10 @@ export class Tetris {
     }
     constructFromPrototype(prototype) {
         // preserve callbacks functions
-        const callback = this.callback;
-        // const gameOverCallback = this.gameOverCallback;
+        const callback = this.renderCallback;
+        const gameOverCallback = this.gameOverCallback;
+        const scoreUpdateCallback = this.scoreUpdateCallback;
+        const effects = this.effects;
         //
         Object.assign(this, prototype);
         // convert figures to objects too
@@ -288,8 +292,14 @@ export class Tetris {
         console.log("construct from prototype")
         this.random = new Random(this.random.seed, this.random.prev);
         // setup callbacks back
-        this.callback = callback;
-        // this.gameOverCallback = gameOverCallback;
+        this.renderCallback = callback;
+        this.gameOverCallback = gameOverCallback;
+        this.scoreUpdateCallback = scoreUpdateCallback;
+        this.effects = effects;
+        // safesty check for effects
+        if (this.effects[0] === undefined) {
+            this.#initEffects()
+        }
     }
 
     //############### KEY EVENT ############
@@ -301,7 +311,7 @@ export class Tetris {
     //   - Shift key up              - 15 (undefined in VK table)
     processEvent(key: number) {
         this.processEventSilent(key);
-        this.callback();
+        this.renderCallback && this.renderCallback();
     }
 
     //############### KEY EVENT ############
@@ -421,17 +431,22 @@ export class Tetris {
             let posY = i * FIELD_W;
             const lastPosY = posY + FIELD_W - 1;
             this.field[posY] = {color: 1, type: FigureType.from('border')};
-            this.effects[posY] = {type: 0}
             this.field[lastPosY]= {color: 1, type: FigureType.from('border')};
-            this.effects[lastPosY] = {type: 0}
             for (let j = posY + 1; j < lastPosY; ++j) {
                 this.field[j] = {color: 0, type: 0};
-                this.effects[j] = {type: 0}
             }
         }
         for (let j = (FIELD_H - 1) * FIELD_W; j < FIELD_H * FIELD_W; ++j) {
             this.field[j] = {color: 1, type: FigureType.from('border')};
-            this.effects[j] = {type: 0}
+        }
+    }
+
+    #initEffects () {
+        for (let i = 0; i < FIELD_H; ++i) {
+            let posY = i * FIELD_W;
+            for (let j = 0; j < FIELD_W; ++j) {
+                this.effects[posY + j] = {type: 0}
+            }
         }
     }
 
@@ -516,6 +531,7 @@ export class Tetris {
             scoreBenefit = ((2 << scoreBenefit) - 1) << 2;
             this.score += scoreBenefit;
             // TODO Score updated
+            this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, scoreBenefit)
         }
     }
 
@@ -534,8 +550,9 @@ export class Tetris {
 
     #endGame() {
         //
+        console.log("END GAME #####################")
         const newRecord = this.highScore < this.score;
-        // this.gameOverCallback && this.gameOverCallback(this.score, newRecord);
+        this.gameOverCallback && this.gameOverCallback(this.score, newRecord);
         if (newRecord) {
             this.highScore = this.score;
         }
@@ -545,6 +562,7 @@ export class Tetris {
 
     #initialize(seed: number = null) {
         this.#initField();
+        this.#initEffects();
         // set game data
         this.score = 0;
 

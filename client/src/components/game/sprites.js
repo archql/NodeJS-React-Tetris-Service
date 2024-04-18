@@ -11,8 +11,6 @@ import {SandShaderMaterial, WaveShaderMaterial} from "./shaders";
 import {BufferAttribute} from "three";
 import {COLOR_TABLE, FIELD_H, FIELD_W, FigureGhostId, FigureType} from "../../game/tetris";
 
-import { useSpring, animated, config } from '@react-spring/three'
-
 extend({WaveShaderMaterial})
 
 function toColor(r, g, b, a = 1.0) {

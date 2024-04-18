@@ -29,7 +29,7 @@ export class Game extends React.Component {
         this.state = {
             loading: true,
             user: null,
-            game: true // TODO
+            game: false // TODO
         }
     }
     componentDidMount() {
@@ -95,6 +95,7 @@ export class Game extends React.Component {
         this.setState({
             game: true
         })
+        this.socket.emit('game sync')
     }
 
     play(e, param) {
@@ -103,9 +104,8 @@ export class Game extends React.Component {
             // looks like random room
             this.socket.emit('room random')
         } else if (param === 'single') {
-            this.setState({
-                game: true
-            })
+            // TODO
+            this.onRoomReady();
         }
     }
 

@@ -28,7 +28,12 @@ export class GameCanvas extends React.PureComponent {
         // create a game
         const saved = localStorage.getItem('game');
         this.game = saved ? new Tetris(JSON.parse(saved)) : new Tetris();
-        this.game.callback = () => { this.forceUpdate() };
+        this.game.renderCallback = () => {
+            this.forceUpdate()
+        };
+        this.game.gameOverCallback = (score, newRecord) => {
+            this.onLocalGameOver();
+        }
         this.session = new ClientGameSessionControl(this.game, this.props.socket);
         // render
         this.forceUpdate()
@@ -68,17 +73,22 @@ export class GameCanvas extends React.PureComponent {
         }
     }
     onGameSync = (serverState /*: GameState*/) => {
+        console.log("ON SERVER SYNCED")
+
         // reset game state
         this.session.onServerSynced(serverState);
     }
     onGameUpdate = (serverState /*: GameState*/) => {
+        console.log("ON SERVER UPDATE")
         this.session.onServerUpdate(serverState);
     }
     onLocalGameOver = () => {
         // set loading true
+        console.log("ON LOCAL GAME OVER")
     }
     onServerGameOver = () => {
         // set loading false
+        console.log("ON SERVER GAME OVER")
     }
 
     formatTime(milliseconds) {

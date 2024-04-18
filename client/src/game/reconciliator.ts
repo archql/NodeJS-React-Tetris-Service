@@ -10,7 +10,7 @@ function arrayEquals(a: any[], b: any[]) {
         a.every((val, index) => isDeepEqual(val, b[index]));
 }
 
-function isDeepEqual (object1, object2) {
+function isDeepEqual (object1: any, object2: any) {
 
     const isObjects = isObject(object1) && isObject(object2);
     const isArrays = Array.isArray(object1) && Array.isArray(object2);
@@ -121,9 +121,11 @@ export class ClientGameSessionControl {
         console.log(`server is running ${this.currentEvent - serverState.event} events behind`);
         console.log(this.stateBuffer[this.lastServerProcessedState.event % BUFFER_SIZE]);
         console.log(this.lastServerProcessedState);
+        console.log(this.game)
         // check if server & client are synced
-        if (!isDeepEqual(this.stateBuffer[this.lastServerProcessedState.event % BUFFER_SIZE],
-            this.lastServerProcessedState))
+        const clnt = this.stateBuffer[this.lastServerProcessedState.event % BUFFER_SIZE];
+        const serv = this.lastServerProcessedState
+        if (!isDeepEqual(clnt,serv))
         {
             this.#reconcile();
         }
@@ -132,7 +134,7 @@ export class ClientGameSessionControl {
     onServerConnect() {
         console.log("LOG connected");
         this.game.status = "connected";
-        this.game.callback();
+        this.game.renderCallback && this.game.renderCallback();
     }
 
     onServerDisconnect () {
@@ -141,7 +143,7 @@ export class ClientGameSessionControl {
         } else {
             this.game.status = "offline";
         }
-        this.game.callback();
+        this.game.renderCallback && this.game.renderCallback();
     }
 
     onServerSynced(serverState: GameState) {
@@ -160,6 +162,7 @@ export class ClientGameSessionControl {
 
     #reconcile() {
         console.log("RECONCILIATION");
+        console.log(this.game)
         //
         this.lastProcessedState = this.lastServerProcessedState;
         const serverBufferIndex = this.lastServerProcessedState.event % BUFFER_SIZE;
@@ -177,8 +180,9 @@ export class ClientGameSessionControl {
             //
             eventToProcess++;
         }
+        console.log(this.game)
         // call update with latest state
-        this.game.callback();
+        this.game.renderCallback && this.game.renderCallback();
     }
     // Clients update
     processEvent(event: number) {
