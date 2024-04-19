@@ -11,6 +11,7 @@ export class ServerGameSessionControl {
     user = null;
     game = null;
     room = null;
+    ru = null;
     socket;
     io;
 
@@ -35,12 +36,13 @@ export class ServerGameSessionControl {
     // special boolean to show if game was just resumed/paused
     justResumed: boolean = false;
 
-    constructor(socket, io, user = null, record = null, room = null) { // happens on connection
+    constructor(socket, io, user = null, record = null, room = null, ru = null) { // happens on connection
         this.io = io;
         this.socket = socket;
         this.user = user;
         this.record = record;
         this.room = room;
+        this.ru = ru;
     }
 
     static async getLeaderboard() {
@@ -95,12 +97,13 @@ export class ServerGameSessionControl {
         console.log("startCompetition af")
     }
 
-    onSync(usr, rcd, room) {
+    onSync(usr: any, rcd: any, room: any, ru: any) {
         console.log("on SYNC");
         //
         this.user = usr;
         this.record = rcd;
         this.room = room;
+        this.ru = ru;
         //
         this.justResumed = false;
         // init
@@ -114,6 +117,7 @@ export class ServerGameSessionControl {
         // create brand-new game
         this.game = new Tetris(null);
         this.game.gameOverCallback = (score: number, newRecord: boolean) => this.onGameOver(score, newRecord);
+        this.game.scoreUpdateCallback = (score: number, delta: number) => this.onScoreUpdate(score, delta);
         // get user nickname
         if (this.user) {
             this.game.name = this.user.user_nickname || "@DEFAULT";
@@ -169,6 +173,13 @@ export class ServerGameSessionControl {
         // for now it is just destruction
     }
 
+    onScoreUpdate(score: number, delta: number) {
+        if (this.ru) {
+            this.ru.ru_last_score = score;
+            this.io.to(this.room).emit('game score', this.ru);
+        }
+    }
+
     onGameOver(score: number, newRecord: boolean) {
         console.log(`GAME OVER new record? ${newRecord} score ${score}`);
         this.socket.emit('game over');
@@ -180,26 +191,20 @@ export class ServerGameSessionControl {
         // TODO FIX THIS!!!
         const gameTime = this.time - this.timeGameStarted;
         this.timeGameStarted = this.time;
-        if (this.room) {
+        if (this.room && this.ru) {
             // user is in the room
             (async () => {
-                const ru = await RoomUser.findOne({
-                    where: {
-                        ru_user_id: this.user.user_id,
-                        ru_room_id: parseInt(this.room)
-                    }
-                })
                 // @ts-ignore
-                ru.ru_last_score = score;
+                this.ru.ru_last_score = score;
                 // @ts-ignore
-                if (ru.ru_max_score < score) {
+                if (this.ru.ru_max_score < score) {
                     // @ts-ignore
-                    ru.ru_max_score = score;
+                    this.ru.ru_max_score = score;
                 }
-                await ru.save();
+                await this.ru.save();
                 //
                 // TODO send info about score
-                this.io.to(this.room).emit('room game over', ru);
+                this.io.to(this.room).emit('room game over', this.ru);
             })();
         }
         if (this.user && this.user.user_nickname && newRecord) {

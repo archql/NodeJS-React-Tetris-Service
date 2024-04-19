@@ -12,16 +12,34 @@ import {
 } from "@react-three/drei";
 
 export class GameCanvas extends React.PureComponent {
+    getTeams(room) {
+        if (!room) return
+        // determine teams distribution
+        let teams = []
+        room.room_users?.forEach((ru => {
+            const v = (ru.ru_team ?? -1) + 1
+            teams[v] = teams[v] ? [...teams[v], ru] : [ru]
+        }))
+        return teams
+    }
+
     constructor(props) {
         super(props)
 
-
+        this.state = {
+            user: this.props.user,
+            room: this.props.room,
+            ru: this.props.ru,
+            teams: this.getTeams(this.props.room)
+        }
     }
+
     componentDidMount() {
         if (!this.props.socket) return
         this.props.socket.on('game sync', this.onGameSync);
         this.props.socket.on('game update', this.onGameUpdate);
         this.props.socket.on('game over', this.onServerGameOver);
+        this.props.socket.on('game score', this.onGameScore);
         //
         window.addEventListener('keydown', this.onKeyEvent);
         window.addEventListener('keyup', this.onKeyUpEvent);
@@ -37,7 +55,6 @@ export class GameCanvas extends React.PureComponent {
         this.session = new ClientGameSessionControl(this.game, this.props.socket);
         // render
         this.forceUpdate()
-        // this.onGameStateChanged(this.game.render());
     }
     componentDidUpdate() {
         // TODO
@@ -49,6 +66,7 @@ export class GameCanvas extends React.PureComponent {
         this.props.socket.off('game sync', this.onGameSync);
         this.props.socket.off('game update', this.onGameUpdate);
         this.props.socket.off('game over', this.onServerGameOver);
+        this.props.socket.off('game score', this.onGameScore);
         //
         window.removeEventListener('keydown', this.onKeyEvent);
         window.removeEventListener('keyup', this.onKeyUpEvent);
@@ -84,11 +102,31 @@ export class GameCanvas extends React.PureComponent {
     }
     onLocalGameOver = () => {
         // set loading true
+        if (this.props.socket && this.props.socket.connected) {
+            this.props.triggerLoader(true)
+        }
         console.log("ON LOCAL GAME OVER")
     }
     onServerGameOver = () => {
         // set loading false
+        this.props.triggerLoader(false)
         console.log("ON SERVER GAME OVER")
+    }
+    onGameScore = (room_user) => {
+        if (this.state.teams) {
+            console.log("ON SERVER GAME SCORE")
+            const teams = this.state.teams.map((t) => {
+                t.forEach(ru => {
+                    if (room_user.ru_user_id === ru.ru_user_id) {
+                        room_user.ru_last_score = ru.lastScore;
+                    }
+                })
+                return t;
+            })
+            this.setState({
+                teams: teams
+            })
+        }
     }
 
     formatTime(milliseconds) {
@@ -99,7 +137,7 @@ export class GameCanvas extends React.PureComponent {
     }
 
     render() {
-        const {user, room, ru } = this.props;
+        const {user, room, ru, teams } = this.state;
         let timeString = "00:00"
         if (room) {
             timeString = "00:00"
@@ -140,13 +178,25 @@ export class GameCanvas extends React.PureComponent {
                                         fontSize={1.5}
                                     />
                                     {
-                                        room.room_users.map((ru) => (
-                                            <group>
+                                        teams.map((t, index) => {
+                                            const relPos = FIELD_H - 2 - index * (room.room_max_members + 1)
+                                            return (
+                                            <group key={index}>
                                                 <TetrisText
-                                                    text={ru.ru_user.user_nickname}
+                                                    position={[0, relPos, 0]}
+                                                    text={`Team No ${index + 1}`}
                                                 />
+                                                {
+                                                    t.map((ru, index) => (
+                                                        <TetrisText
+                                                            key={index}
+                                                            position={[1, relPos - index - 1, 0]}
+                                                            text={`${ru.ru_user?.user_nickname}: ${ru.ru_last_score}`}
+                                                        />
+                                                    ))
+                                                }
                                             </group>
-                                        ))
+                                        )})
                                     }
                                 </group>
                                 }

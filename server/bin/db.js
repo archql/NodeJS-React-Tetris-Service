@@ -817,8 +817,8 @@ await createRole(20, "root", "orange");
 await createRole(50, "shared", "gray");
 await createRole(100, "server", "orange");
 
-// await Room.truncate();
-await createRoom('Global', '_ARCHQL_', 'room which can be joined by any player', 4, 4, null, 1);
+//await Room.truncate();
+//await createRoom('Global', '_ARCHQL_', 'room which can be joined by any player', 4, 4, null, 1);
 
 await createUser('anonymous', 'player', '@DEFAULT', crypto.randomBytes(64).toString('hex'), 50, 1, '???', 'null',  null);
 await createUser('SERVER', 'ROOT', '@SYSROOT', crypto.randomBytes(64).toString('hex'), 100, 1, '???', 'null',  null);

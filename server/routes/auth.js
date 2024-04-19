@@ -13,7 +13,7 @@ router.post('/register', async function (req, res, next) {
     if (!name || !password_hash || !surname || !nickname) {
         return res.status(400).json({error_message: "wrong params" });
     }
-    if (name.length < 3 || surname.length < 8 || !nickname.match(/^[_A-Z]{8}$/g)) {
+    if (name.length < 3 || surname.length < 3 || !nickname.match(/^[_A-Z]{8}$/g)) {
         return res.status(409).json({error_message: "wrong input format" });
     }
     // register user
@@ -22,12 +22,19 @@ router.post('/register', async function (req, res, next) {
     if (user) {
         return res.status(409).json({error_message: "user already exists" });
     }
-    const n_user = await User.create({
-        user_name: name,
-        user_surname: surname,
-        user_nickname: nickname,
-        user_password_hash: password_hash
-    });
+    let n_user;
+    try {
+        n_user = await User.create({
+            user_region: "BLR",
+            user_email: "example@test.by",
+            user_name: name,
+            user_surname: surname,
+            user_nickname: nickname,
+            user_password_hash: password_hash
+        });
+    } catch (e) {
+        return res.status(409).json({error_message: JSON.stringify(e) });
+    }
     // return
     if (!n_user) {
         return res.status(500).json({error_message: "internal server error" });

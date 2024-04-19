@@ -174,6 +174,10 @@ class Rooms extends React.Component {
                 }
             },
             {
+                name: "test",
+                attribute: 'room_places'
+            },
+            {
                 name: 'private?',
                 fetcher: (e) => {
                     return e.room_password_hash ? "yes" : "no"

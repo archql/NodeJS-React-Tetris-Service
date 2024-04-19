@@ -360,7 +360,7 @@ const chatHandler = async (socket) => {
             //         [Op.not]: user.user_id
             //     }
             // },
-            attributes: ['room_id', 'room_name', 'room_max_members', 'room_description', 'room_password_hash', 'room_teams'],
+            attributes: ['room_id', 'room_name', 'room_max_members', 'room_description', 'room_password_hash', 'room_teams', 'room_places'],
             include: [{
                 model: RoomUser,
                 as: "room_users",

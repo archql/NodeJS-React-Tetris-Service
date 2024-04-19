@@ -109,6 +109,11 @@ export class Game extends React.Component {
         }
     }
 
+    triggerLoader (flag) {
+        this.setState({
+            loading: flag
+        })
+    }
 
     render() {
         let {user, game, room, ru} = this.state
@@ -130,6 +135,7 @@ export class Game extends React.Component {
                         ru={ru}
                         socket={this.socket}
                         blockSize={blockSize}
+                        triggerLoader={(flag) => {this.triggerLoader(flag)}}
                     />
                 </Fragment>
             )
