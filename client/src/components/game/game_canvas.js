@@ -56,7 +56,16 @@ export class GameCanvas extends React.PureComponent {
         // render
         this.forceUpdate()
     }
-    componentDidUpdate() {
+    componentDidUpdate(prevProps, prevState) {
+        console.log(`componentDidUpdate game canvas ${this.state?.room}`)
+        // console.log(this.props?.room)
+        // console.log(this.state?.room)
+        if (this.state.room && this.prevState?.room && this.state?.room) {
+            this.setState({
+                teams: this.getTeams(this.state.room)
+            })
+        }
+
         // TODO
         localStorage.setItem('game', JSON.stringify(this.game));
     }
@@ -113,16 +122,19 @@ export class GameCanvas extends React.PureComponent {
         console.log("ON SERVER GAME OVER")
     }
     onGameScore = (room_user) => {
-        if (this.state.teams) {
+        if (this.state.room) {
             console.log("ON SERVER GAME SCORE")
+            console.log(room_user)
             const teams = this.state.teams.map((t) => {
                 t.forEach(ru => {
-                    if (room_user.ru_user_id === ru.ru_user_id) {
-                        room_user.ru_last_score = ru.lastScore;
+                    if (ru.ru_user_id === room_user.ru_user_id) {
+                        ru.ru_last_score = room_user.ru_last_score;
                     }
                 })
                 return t;
             })
+            console.log("teams")
+            console.log(teams)
             this.setState({
                 teams: teams
             })
@@ -191,7 +203,7 @@ export class GameCanvas extends React.PureComponent {
                                                         <TetrisText
                                                             key={index}
                                                             position={[1, relPos - index - 1, 0]}
-                                                            text={`${ru.ru_user?.user_nickname}: ${ru.ru_last_score}`}
+                                                            text={`${ru.ru_user?.user_nickname}: ${ru.ru_last_score ?? 0}`}
                                                         />
                                                     ))
                                                 }

@@ -1,23 +1,19 @@
 import {GameInput} from "../game/server_client_globals.js";
 import {ServerGameSessionControl} from "../game/reconciliator.js";
 import {TPS} from "../game/server_client_globals.js";
-import {Record, Room, RoomUser, sequelize, User} from "../bin/db.js";
+import {createRoom, Record, Room, RoomUser, sequelize, User} from "../bin/db.js";
 import {io} from "../app.js";
 import {RANDOM_MAX} from "../game/tetris.js";
 import crypto from "crypto";
 import {RoomSessionControl} from "../game/room_control";
+import {Op} from "sequelize";
+import {PlayerData} from "../game/player_data";
 
 type UserGameSessionsType = {
     [key: string]: {
-        data: {
-            user: any | null,
-            room: any | null,
-            ru: any | null,
-            reload: () => Promise<void>,
-            save: () => Promise<void>
-        },
+        data: PlayerData,
         game: ServerGameSessionControl,
-        room: RoomSessionControl
+        room: RoomSessionControl,
     };
 };
 const userGameSessions: UserGameSessionsType = {};
@@ -36,21 +32,7 @@ const gameHandler = async (socket) => {
     //
     // create a game instance
     userGameSessions[socket.id] = {
-        data: {
-            user: null,
-            room: null,
-            ru: null,
-            reload: async () => {
-                await this.user.reload();
-                await this.room.reload();
-                await this.ru.reload();
-            },
-            save: async() => {
-                await this.user.save();
-                await this.room.save();
-                await this.ru.save();
-            }
-        },
+        data: new PlayerData(),
         game: new ServerGameSessionControl(socket, io.of('/game')),
         room: new RoomSessionControl(socket, io.of('/game'))
     }
@@ -58,54 +40,9 @@ const gameHandler = async (socket) => {
     //
     async function sync_data() {
         //
-        let user: any = null;
-        let ru: any = null;
-        let room: any = null;
-        // let record: any = null;
-        // assign default user if need
-        if (user_id) {
-            user = await User.findByPk(user_id, {
-
-            })
-            // record = await Record.findOne({
-            //     where: {
-            //         record_user_id: user.user_id
-            //     },
-            //     order: sequelize.literal('record_score DESC'),
-            // });
-        } else {
-            user = await User.findOne({
-                where: {
-                    user_role_id: 50
-                },
-            })
-        }
-        ru = user && await RoomUser.findOne({
-            where: {
-                ru_user_id: user.user_id
-            },
-            include: [{
-                model: User,
-                as: "ru_user",
-                attributes: ['user_id', 'user_nickname', 'user_rank'],
-            }]
-        });
-        room = ru && await Room.findByPk(ru.ru_room_id, {
-            include: [{
-                model: RoomUser,
-                as: "room_users",
-                include: [{
-                    model: User,
-                    as: "ru_user",
-                    attributes: ['user_id', 'user_nickname', 'user_rank'],
-                }]
-            }, { model: User, as: "room_owner", attributes: ['user_id', 'user_nickname'] }],
-        });
-
-        //
-        userGameSessions[socket.id].data = {user: user, room: room, ru: ru}
+        const data = await userGameSessions[socket.id].data.queryData(user_id);
         // update session data
-        userGameSessions[socket.id].room?.sync(user, room, ru)
+        userGameSessions[socket.id].room?.sync(data)
     }
 
     await sync_data()
@@ -144,6 +81,7 @@ const gameHandler = async (socket) => {
 
     socket.on('game sync', async () => {
         const data = userGameSessions[socket.id].data;
+        await data.reload()
         userGameSessions[socket.id].game?.onSync(data)
     })
 

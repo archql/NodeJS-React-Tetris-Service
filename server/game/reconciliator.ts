@@ -3,22 +3,19 @@ import {BUFFER_SIZE, TPS} from "./server_client_globals.js";
 import {Tetris} from "./tetris.js";
 import {Record, RoomUser, sequelize} from "../bin/db.js";
 import {QueryTypes} from "sequelize";
-import {bufferFromState, leaderboardToBuffer} from "./tetrisAsm.js";
+import {PlayerData} from "./player_data";
 
 export class ServerGameSessionControl {
     // Database user
-    record = null;
-    user = null;
+    data: PlayerData = null;
     game = null;
-    room = null;
-    ru = null;
     socket;
     io;
 
     // competition mode does not allow pause or stop
     competition: boolean = false;
-    onCompetitionViolation: (user: any, room: any) => void;
-    onCompetitionEnd: (user: any, room: any, score: number) => void;
+    onCompetitionViolation: (data: PlayerData) => void;
+    onCompetitionEnd: (data: PlayerData, score: number) => void;
 
     inputQueue: GameInput[] = [];
     stateBuffer: GameState[] = new Array(BUFFER_SIZE);
@@ -36,13 +33,10 @@ export class ServerGameSessionControl {
     // special boolean to show if game was just resumed/paused
     justResumed: boolean = false;
 
-    constructor(socket, io, user = null, record = null, room = null, ru = null) { // happens on connection
+    constructor(socket, io, data: PlayerData = null) { // happens on connection
         this.io = io;
         this.socket = socket;
-        this.user = user;
-        this.record = record;
-        this.room = room;
-        this.ru = ru;
+        this.data = data;
     }
 
     static async getLeaderboard() {
@@ -63,8 +57,8 @@ export class ServerGameSessionControl {
     }
 
     startCompetition(seed: number,
-                     onCompetitionViolation: (user: any, room: any) => void,
-                     onCompetitionEnd: (user: any, room: any, score: number) => void)
+                     onCompetitionViolation: (data: PlayerData) => void,
+                     onCompetitionEnd: (data: PlayerData, score: number) => void)
     {
         this.game.initializeFrom(seed);
         this.game.paused = false;
@@ -97,13 +91,11 @@ export class ServerGameSessionControl {
         console.log("startCompetition af")
     }
 
-    onSync(usr: any, rcd: any, room: any, ru: any) {
+    onSync(data: PlayerData) {
         console.log("on SYNC");
         //
-        this.user = usr;
-        this.record = rcd;
-        this.room = room;
-        this.ru = ru;
+        // this.record = null; // TODO implement records
+        this.data = data
         //
         this.justResumed = false;
         // init
@@ -119,20 +111,7 @@ export class ServerGameSessionControl {
         this.game.gameOverCallback = (score: number, newRecord: boolean) => this.onGameOver(score, newRecord);
         this.game.scoreUpdateCallback = (score: number, delta: number) => this.onScoreUpdate(score, delta);
         // get user nickname
-        if (this.user) {
-            this.game.name = this.user.user_nickname || "@DEFAULT";
-            if (!this.user.error) {
-                this.game.status = "registered";
-                if (this.record) {
-                    this.game.highScore = this.record.record_score;
-                }
-            } else {
-                this.game.status = "rejected";
-            }
-        } else {
-            this.game.name = "@DEFAULT";
-            this.game.status = "connected";
-        }
+        this.game.status = data?.getStatus()
         // clear input
         this.inputQueue.length = 0;
         // set game state buffer
@@ -154,7 +133,7 @@ export class ServerGameSessionControl {
         if (this.competition && this.onCompetitionViolation && [27, 80, 82].includes(input.input.id)) {
             // drop competition mode
             this.competition = false;
-            this.onCompetitionViolation(this.user, this.room);
+            this.onCompetitionViolation(this.data);
         }
         //
         this.inputQueue.push(input);
@@ -174,9 +153,13 @@ export class ServerGameSessionControl {
     }
 
     onScoreUpdate(score: number, delta: number) {
-        if (this.ru) {
-            this.ru.ru_last_score = score;
-            this.io.to(this.room).emit('game score', this.ru);
+        if (this.data?.ru) {
+            this.data.ru.ru_last_score = score;
+            console.log("onScoreUpdate")
+            this.io.to(this.data?.getRoomId()).emit('game score', {
+                ru_last_score: score,
+                ru_user_id: this.data.ru.ru_user_id
+            } );
         }
     }
 
@@ -186,49 +169,22 @@ export class ServerGameSessionControl {
         //
         if (this.competition && this.onCompetitionEnd) {
             this.competition = false;
-            this.onCompetitionEnd(this.user, this.room, score);
+            this.onCompetitionEnd(this.data, score);
         }
         // TODO FIX THIS!!!
         const gameTime = this.time - this.timeGameStarted;
         this.timeGameStarted = this.time;
-        if (this.room && this.ru) {
-            // user is in the room
-            (async () => {
-                // @ts-ignore
-                this.ru.ru_last_score = score;
-                // @ts-ignore
-                if (this.ru.ru_max_score < score) {
-                    // @ts-ignore
-                    this.ru.ru_max_score = score;
-                }
-                await this.ru.save();
-                //
-                // TODO send info about score
-                this.io.to(this.room).emit('room game over', this.ru);
-            })();
-        }
-        if (this.user && this.user.user_nickname && newRecord) {
-            (async () => {
-                // create new record (TODO mk screenshot)
-                const record = await Record.create({
-                    record_user_id: this.user.user_id,
-                    record_score: this.game.score,
-                    record_time_elapsed: gameTime, // TODO FIX THIS!!!
-                    record_figures_placed: this.game.placed
-                });
-                // set record
-                if (record) {
-                    //
-                    this.record = record;
-                    this.game.highScore = this.record.record_score;
-                    // send update packet
-                    // TODO
-                    // send leaderboard update (TODO deep compare)
-                    //const leaderboard = await ServerGameSessionControl.getLeaderboard();
-                    //this.io.emit('leaderboard', leaderboard);
-                }
-            })();
-        }
+        // user is in the room
+        (async () => {
+            //
+            await this.data.makeGameRecord({
+                record_score: this.game.score,
+                record_time_elapsed: gameTime, // TODO FIX THIS!!!
+                record_figures_placed: this.game.placed,
+                // TODO dump all game data
+            });
+            this.io.to(this.data.getRoomId()).emit('room game over', this.data?.ru);
+        })();
     }
 
     process() {
@@ -244,7 +200,7 @@ export class ServerGameSessionControl {
         // get current time
         this.time = performance.now();
         //
-        let bufferIndex;
+        let bufferIndex: number;
         while (this.inputQueue.length > 0) {
             const input = this.inputQueue.shift();
             bufferIndex = input.event % BUFFER_SIZE;
@@ -271,14 +227,12 @@ export class ServerGameSessionControl {
                     if (!this.justResumed) { // means that we need to process all skipped ticks
                         gameTicksToProcess += gameTicksSkipped - 1;
                     }
-                    //if (gameTicksToProcess !== 0) {
-                        // TODO looks like player is unfair
-                        for (let i = 0; i < gameTicksToProcess; ++i) {
-                            this.gameTick++;
-                            this.game.processEventSilent(7);
-                            console.log(`CHEATING at event no ${input.event}`);
-                        }
-                    //}
+                    // TODO looks like player is unfair
+                    for (let i = 0; i < gameTicksToProcess; ++i) {
+                        this.gameTick++;
+                        this.game.processEventSilent(7);
+                        console.log(`CHEATING at event no ${input.event}`);
+                    }
                     //
                     this.gameTime = input.time;
                 }
@@ -292,20 +246,7 @@ export class ServerGameSessionControl {
             this.justResumed = ( isPaused || this.game.paused ) && !( isPaused && this.game.paused );
         }
         // update client
-        // send the last processed state
-        // console.log("send update");
-
-        // TODO this is awful
-        // if (this.room) {
-        //     this.io.to(this.room).emit('game update', this.stateBuffer[bufferIndex]);
-        // } else {
-            this.socket.emit('game update', this.stateBuffer[bufferIndex]);
-        //}
-
-        //this.socket.emit('update', this.stateBuffer[bufferIndex]);
-        // TODO
-        //this.socket.emit('updX', bufferFromState(this.stateBuffer[bufferIndex]));
-        //console.log(this.stateBuffer[bufferIndex])
+        this.socket.emit('game update', this.stateBuffer[bufferIndex]);
     }
 
 }

@@ -399,7 +399,7 @@ const chatHandler = async (socket) => {
             return socket.emit("error", {status: 409, who: "room create", message: "Unexpected error"});
         }
         // join
-        const ru = await RoomUser.create({
+        let ru = await RoomUser.create({
             ru_user_id: user.user_id,
             ru_room_id: r.room_id,
         });
@@ -407,9 +407,22 @@ const chatHandler = async (socket) => {
             return socket.emit("error", {status: 409, who: "room create", message: "Created. Join error"});
         }
         //
+        ru = await RoomUser.findOne({
+            where: {
+                ru_user_id: ru.ru_user_id,
+                ru_room_id: ru.ru_room_id
+            },
+            include: [{
+                model: User,
+                as: "ru_user",
+                attributes: ['user_id', 'user_nickname', 'user_rank'],
+            }]
+        });
+        //
         socket.emit('room create', r);
         // only if room was joined not rejoined
         io.of('/chat').emit("room join", ru);
+        io.of('/game').to(ru.ru_room_id.toString()).emit("room join", ru);
     })
     socket.on('room delete', async (room_id) => {
         const temp = await Room.findByPk(room_id);
@@ -450,8 +463,21 @@ const chatHandler = async (socket) => {
             } catch (e) {
                 return socket.emit("error", {status: 409, who: "room join", message: e});
             }
+            //
+            ru = await RoomUser.findOne({
+                where: {
+                    ru_user_id: ru.ru_user_id,
+                    ru_room_id: ru.ru_room_id
+                },
+                include: [{
+                    model: User,
+                    as: "ru_user",
+                    attributes: ['user_id', 'user_nickname', 'user_rank'],
+                }]
+            });
             // only if room was joined not rejoined
             io.of('/chat').emit("room join", ru);
+            io.of('/game').to(ru.ru_room_id.toString()).emit("room join", ru);
         }
         // join completed
         socket.emit("room join", room.room_id);
