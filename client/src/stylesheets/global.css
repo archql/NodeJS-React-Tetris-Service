@@ -59,13 +59,16 @@ textarea {
 }
 
 .link {
-    color: var(--btn-color-clicked);
+    font-size: larger;
+    color: var(--btn-color-hovered);
+    text-decoration: none;
 }
 .link:hover {
     color: var(--btn-color-hovered);
 }
 .link.active {
-    color: var(--btn-color);
+    font-weight: bold;
+    color: var(--btn-color-hovered);
 }
 
 .container {

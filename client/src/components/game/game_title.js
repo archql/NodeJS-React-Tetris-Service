@@ -10,6 +10,7 @@ import {
     Random,
     RANDOM_MAX
 } from "../../game/tetris";
+import {Text} from "@react-three/drei";
 
 export class GameTitle extends Component {
 
@@ -69,13 +70,13 @@ export class GameTitle extends Component {
                     f.color = nextRandInt(4, COLOR_TABLE.length - 4);
                     f.y = 0
                 }
-                f.y ++;
+                f.y += Math.sin(f.x )*0.5 + 1.0;
             })
             //
             this.setState({
                 fallingFigures: {...this.state.fallingFigures}
             })
-        }, this.props.delay); // Adjust the speed of falling as needed
+        }, this.props.delay * 0.75); // Adjust the speed of falling as needed
     }
     componentWillUnmount() {
         clearInterval(this.timer);
@@ -84,6 +85,7 @@ export class GameTitle extends Component {
     render() {
         return (
             <Fragment>
+
                 <TitlePrompt
                     text="PLAY"
                     fontSize={3}

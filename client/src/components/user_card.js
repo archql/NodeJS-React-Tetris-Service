@@ -15,7 +15,8 @@ export class UserCard extends React.Component {
                     position: "relative"
                 }}>
                     <div className={user.status.status_name === "offline" ? "user_image offline" : "user_image online"}>
-                        <img src="/images/icon_user.png" alt="user_icon"></img>
+                        {/*<img src="/images/icon_user.png" alt="user_icon"></img>*/}
+                        <FontAwesomeIcon className="img" icon={faIcons.faUser}/>
                     </div>
                     <div className="user_score">
                         {user.user_max_score}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Fragment} from 'react';
 import { withRouter } from '../common/with_router.js';
 import { required } from '../common/helpers.js';
 import { authService } from  "../services/auth_service.js"
@@ -35,6 +35,12 @@ export class LoginForm extends React.Component {
             });
             return;
         }
+
+        // if eok - try to login
+        this.setState({
+            message: "",
+            loading: true
+        });
 
         authService.login(name, password).then((data) => {
             console.log(data);
@@ -75,6 +81,8 @@ export class LoginForm extends React.Component {
 
     render() {
         return (
+            <Fragment>
+            {this.state.loading && (<div className="loader"/>)}
             <div className="reg_container">
                 <div className="box reg_box">
                     <div className="reg_header">Login Form</div>
@@ -116,6 +124,7 @@ export class LoginForm extends React.Component {
                     </div>
                 )}
             </div>
+            </Fragment>
         );
     }
 }

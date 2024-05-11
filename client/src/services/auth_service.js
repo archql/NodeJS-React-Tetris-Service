@@ -35,7 +35,7 @@ class AuthService {
         }).then(r => ({status: r.status, body: {}}));
     }
 
-    register(username, surname, nickname, password) {
+    register(username, surname, nickname, password, region, email) {
         const password_hash = SHA256(password).toString();
         return fetch('/api/auth/register', {
             method: 'POST',
@@ -44,9 +44,17 @@ class AuthService {
                 name: username,
                 surname: surname,
                 nickname: nickname,
-                password_hash: password_hash
+                password_hash: password_hash,
+                email: email,
+                region: region
             })
         }).then(r =>  r.json().then(data => ({status: r.status, body: data})));
+    }
+
+    getAvailableRegions() {
+        return fetch('/api/auth/regions', {
+            method: 'GET',
+        }).then(r =>  r.json().then(data => ({status: r.status, body: JSON.parse(data)})));
     }
 }
 

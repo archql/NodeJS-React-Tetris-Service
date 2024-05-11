@@ -9,7 +9,7 @@ import { extend } from "@react-three/fiber";
 import React, {Fragment, useEffect, useMemo, useRef, useState} from "react";
 import {SandShaderMaterial, WaveShaderMaterial} from "./shaders";
 import {BufferAttribute} from "three";
-import {COLOR_TABLE, FIELD_H, FIELD_W, FigureGhostId, FigureType} from "../../game/tetris";
+import {COLOR_TABLE, FIELD_H, FIELD_W, Figure, FigureGhostId, FigureType} from "../../game/tetris";
 
 extend({WaveShaderMaterial})
 
@@ -35,6 +35,41 @@ export function GameDisplay({game /* : Tetris */}) {
                 zPos={1}
                 opacity={0.4}
             />
+            {/*<TetrisFigure*/}
+            {/*    figure={new Figure(0)}*/}
+            {/*    xPos={FIELD_W/2 - 2}*/}
+            {/*    colorId={7}*/}
+            {/*    yPos={2}*/}
+            {/*    typeId={0}*/}
+            {/*/>*/}
+            {/*<TetrisFigure*/}
+            {/*    figure={new Figure(0)}*/}
+            {/*    xPos={FIELD_W/2 - 2}*/}
+            {/*    colorId={7}*/}
+            {/*    yPos={6}*/}
+            {/*    typeId={1}*/}
+            {/*/>*/}
+            {/*<TetrisFigure*/}
+            {/*    figure={new Figure(0)}*/}
+            {/*    xPos={FIELD_W/2 - 2}*/}
+            {/*    colorId={7}*/}
+            {/*    yPos={10}*/}
+            {/*    typeId={2}*/}
+            {/*/>*/}
+            {/*<TetrisFigure*/}
+            {/*    figure={new Figure(0)}*/}
+            {/*    xPos={FIELD_W/2 - 2}*/}
+            {/*    colorId={7}*/}
+            {/*    yPos={14}*/}
+            {/*    typeId={3}*/}
+            {/*/>*/}
+            {/*<TetrisFigure*/}
+            {/*    figure={new Figure(0)}*/}
+            {/*    xPos={FIELD_W/2 - 2}*/}
+            {/*    colorId={7}*/}
+            {/*    yPos={18}*/}
+            {/*    typeId={4}*/}
+            {/*/>*/}
             <TetrisEffects
                 effects={game.effects}
             />
@@ -65,7 +100,7 @@ export function ProgressBar({pos, width, scoreA, scoreB, scoreMax}) {
         <group position={pos}>
             <mesh position={[0, 0, -0.1]}>
                 <planeGeometry args={[width + 2*p, 1]}/>
-                <meshBasicMaterial color="#5E5E5E"/>
+                <meshBasicMaterial color="#f2f2f2"/>
             </mesh>
             {/*red*/}
             <mesh position={[(-width + progressA) / 2 + p, 0, -0.05]} scale={[1, 0.9, 1]}>
@@ -88,6 +123,9 @@ export function TetrisText(props) {
             anchorX="left" // default
             anchorY="middle" // default
             font="MixBitFont-gww74.ttf"
+            outlineColor={"#3d405c"}
+            color={"#575760"}
+            material-toneMapped={false}
             {...props}
         />
     )
@@ -187,6 +225,7 @@ export function TetrisField({field}) {
         const yPos = i * FIELD_W;
         for (let j = 0; j < FIELD_W; ++j) {
             const block = field[j + yPos]
+            if (!block.color) continue
             components.push(
                 <TetrisBlock
                     key={j + yPos}
@@ -319,18 +358,21 @@ export function TitlePrompt({text, onCLick, fontSize, interactive}) {
 
     return (
         <Text
+            material-toneMapped={false}
             onPointerOver={(event) => setHover(interactive ?? true)}
             onPointerOut={(event) => setHover(false)}
             ref={textRef}
-            position={[0, 0, 0]}
             fontSize={hovered ? fontSize * 1.05 : fontSize}
-            color={hovered ? "yellow" : "white"} // default
+            color={hovered ? "yellow" : "#adabbe"} // default
             anchorX="center" // default
             anchorY="middle" // default
             outlineWidth={0.2}
+            outlineColor={"#3d405c"}
             fontWeight="bold"
             onClick={onCLick}
             font="MixBitFont-gww74.ttf"
+
+
             // position={[0, 0, 0]}
             // scale={[10, 10, 10]}
             // color="white"

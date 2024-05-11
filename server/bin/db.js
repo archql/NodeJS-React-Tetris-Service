@@ -588,7 +588,11 @@ Attachment.belongsTo(Message, {
     }
 });
 Message.hasMany(Attachment,
-    { foreignKey: 'attachment_message_id' });
+    {
+        foreignKey: 'attachment_message_id',
+        onDelete: 'CASCADE', // Cascade delete when the Message is deleted
+        hooks: true
+    });
 
 User.hasMany(Record);
 Record.belongsTo(User,

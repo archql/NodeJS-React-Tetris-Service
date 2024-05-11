@@ -27,7 +27,8 @@ export class InputField extends React.Component {
                     className="input_field"
                     id={this.props.id}
                     min={this.props.min}
-                    max={this.props.max}>
+                    max={this.props.max}
+                    placeholder={this.props.placeholder}>
                 </input>
             </div>
         );

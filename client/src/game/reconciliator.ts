@@ -2,8 +2,6 @@
 import {GameInput, GameState} from "./server_client_globals";
 import {BUFFER_SIZE, TPS} from "./server_client_globals";
 import type {Tetris} from "./tetris";
-import {RenderBuffer, STATUS_TABLE} from "./tetris";
-import * as process from "process";
 
 function arrayEquals(a: any[], b: any[]) {
     return a.length === b.length &&

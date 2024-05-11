@@ -6,7 +6,7 @@ import {User} from "./db.js";
 const secret = 'my-secret'//crypto.randomBytes(64).toString('hex') // TODO WARNING
 
 export function generateAccessToken(user) {
-    return jwt.sign(user, secret, { expiresIn: '1800s' }); // process.env.TOKEN_SECRET
+    return jwt.sign(user, secret, { expiresIn: '180000s' }); // process.env.TOKEN_SECRET
 }
 
 export function authenticateToken(req, res, next) {

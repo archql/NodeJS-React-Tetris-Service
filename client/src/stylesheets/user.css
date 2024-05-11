@@ -59,8 +59,8 @@ body {
     justify-items: stretch;
     border-radius: 10px;
     grid-gap: 1px;
-    outline: 1px solid var(--btn-color);
-    background-color: var(--btn-color);
+    outline: 1px solid var(--text-color-secondary);
+    background-color: var(--text-color-secondary);
 
     min-height: 0;
     flex: 1 1 0;
@@ -110,7 +110,7 @@ body {
 }
 .card .message .attachment {
     width: 50%;
-    outline: black solid 1px;
+    outline: var(--text-color-secondary) solid 1px;
     object-fit: cover;
 }
 .card .message .attachment:first-child {
@@ -145,7 +145,7 @@ body {
     right: 5px;
 }
 .card .message .float.selected {
-    color:var(--btn-color);
+    color:var(--btn-color-hovered);
 }
 .card .message .float.selected:hover {
     color:var(--btn-color-hovered);
@@ -193,7 +193,7 @@ body {
     border-bottom-right-radius: 10px;
 }
 .cell.top {
-    background: var(--btn-color);
+    background: var(--text-color-secondary);
     color: var(--text-color-white);
     font-size: large;
     box-shadow: none;
@@ -222,10 +222,11 @@ main ul (DUPLICATION)
     overflow: hidden;
     transition: 1.0s;
 }
-.user_image img {
+.user_image .img {
     flex-shrink: 0;
     min-width: 100%;
-    min-height: 100%
+    min-height: 100%;
+    color: var(--text-color-secondary);
 }
 .user_image .online {
     border-color: var(--text-color-success);

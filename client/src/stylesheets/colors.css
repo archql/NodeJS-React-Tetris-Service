@@ -1,23 +1,38 @@
 :root {
-    --shadow-color: #0008;
-    --background-color: #121212;
-    --card-color-primary: #1E1E1E;
-    --card-color-secondary: #2A2A2A;
-    --card-color-third: #2d1d10;
-    --text-color-primary: #E2E2E2;
-    --text-color-white: #fff;
-    --text-color-black: #000;
-    --text-color-black-secondary: #111;
-    --text-color-secondary: #A1A1A1;
+    /*--shadow-color: #0008;*/
+    /*--background-color: #121212;*/
+    /*--card-color-primary: #1E1E1E;*/
+    /*--card-color-secondary: #2A2A2A;*/
+    /*--card-color-third: #2d1d10;*/
+    /*--text-color-primary: #E2E2E2;*/
+    /*--text-color-white: #fff;*/
+    /*--text-color-black: #000;*/
+    /*--text-color-black-secondary: #111;*/
+    /*--text-color-secondary: #A1A1A1;*/
+    --shadow-color: rgba(175, 175, 175, 0.53);
+    --background-color: #f2f2f2;
+    --card-color-primary: #f7f7f7;
+    --card-color-secondary: #f2f2f2;
+    --card-color-third: #dad9e4;
+    --text-color-primary: #3d405c;
+    --text-color-white: #ffffff;
+    --text-color-black-secondary: #457b9d;
+    --text-color-secondary: #adabbe;
+
     --text-color-error: #ff3333;
     --text-color-success: #56F000;
     --text-color-standby: #2DCCFF;
     --text-color-caution: #FCE83A;
     --text-color-warning: #FFB302;
     --text-color-inaction: #FF0082;
-    --btn-color: #ff7300;
-    --btn-color-hovered: #ffb273;
-    --btn-color-clicked: #cc7640;
+    /*--btn-color: #ff7300;*/
+    /*--btn-color-hovered: #ffb273;*/
+    /*--btn-color-clicked: #cc7640;*/
+    --btn-color: #adabbe;
+    --btn-color-hovered: #3d405c;
+    --btn-color-clicked: #3d405c;
+
+    --accent-color:  #872e92;
 
     --team-color-blue: #84aaff;
     --team-color-red: #ff8484;
@@ -28,8 +43,13 @@
     --team-color-pink: #ef84ff;
     --team-color-cyan: #84fff1;
 
-    --team-bg-blue: #00277d;
-    --team-bg-red: #7d0000;
-    --team-bg-green: #347d00;
-    --team-bg-yellow: #5e5600;
+    --team-bg-blue: var(--team-color-blue);
+    --team-bg-red: var(--team-color-red);
+    --team-bg-green: var(--team-color-green);
+    --team-bg-yellow: var(--team-color-yellow);
+
+    /*--team-bg-blue: #00277d;*/
+    /*--team-bg-red: #7d0000;*/
+    /*--team-bg-green: #347d00;*/
+    /*--team-bg-yellow: #5e5600;*/
 }

@@ -82,8 +82,10 @@ export class Chat extends React.Component {
                     msg.message_likes = msg.message_likes.filter((l) =>
                         l.like_user_id !== like.like_user_id
                     )
-                } else {
+                } else if (msg.message_likes) {
                     msg.message_likes.push(like);
+                } else {
+                    msg.message_likes = [like];
                 }
             }
             return msg;

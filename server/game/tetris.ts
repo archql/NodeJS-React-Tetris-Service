@@ -42,9 +42,9 @@ const FIG_START_Y = -1;
 const START_TICK_SPEED = 800;
 
 export const COLOR_TABLE = [
-    [0.071, 0.071, 0.071],
-    [0.271, 0.271, 0.271],
-    [0.1, 0.1, 0.1      ],
+    [1-0.071, 1-0.071, 1-0.071],
+    [1-0.271, 1-0.271, 1-0.271],
+    [1-0.1, 1-0.1, 1-0.1      ],
     [1.0, 1.0, 1.0      ],
     [1.0, 0.5098, 0.0   ],
     [0.0, 0.0, 1.0      ],
@@ -191,30 +191,6 @@ export class Figure {
         }
         return sequence;
     }
-}
-export class RenderString {
-    x: number;
-    y: number;
-    text: string;
-    align: string;
-
-    constructor(x: number, y: number, text: string, align: string = "left") {
-        this.text = text;
-        this.x = x;
-        this.y = y;
-        this.align = align;
-    }
-}
-export class RenderBuffer {
-    vertices: number[] = [];
-    colors: number[] = [];
-    count: number = 0;
-    strings: RenderString[] = [];
-
-    // translations
-    scale: number = 1.0;
-    x: number = 0;
-    y: number = 0;
 }
 
 export class Tetris {
@@ -476,9 +452,9 @@ export class Tetris {
         console.log(figure)
 
         for (let i = y; i < 4 + y; i++) { // 4 is fig w and h
-            if (i < 0) {
-                continue;
-            }
+            // if (i < 0) {
+            //     continue;
+            // }
             const yPos = i * FIELD_W;
             for (let j = x; j < 4 + x; j++) {
                 if ((figure & 0x8000) !== 0) {

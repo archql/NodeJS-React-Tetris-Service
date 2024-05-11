@@ -12,6 +12,12 @@ import {NavLink} from "react-router-dom";
 import {RoomLobby} from "../room_lobby";
 import {GameCanvas} from "./game_canvas";
 
+import {
+    Text
+} from "@react-three/drei";
+import * as faIcons from "@fortawesome/fontawesome-free-solid";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+
 export class Game extends React.Component {
 
     constructor(props) {
@@ -163,7 +169,8 @@ export class Game extends React.Component {
                         }}>
                             <div
                                 className={"user_image online"}>
-                                <img src="/images/icon_user.png" alt="user_icon"></img>
+                                <FontAwesomeIcon className="img" icon={faIcons.faUser}/>
+                                {/*<img src="/images/icon_user.png" alt="user_icon"></img>*/}
                             </div>
                             <div className="user_score">
                                 {user.user_max_score}
@@ -210,11 +217,13 @@ export class Game extends React.Component {
                                  }>Help</NavLink>
                     </div>
                     <Canvas orthographic camera={{zoom: blockSize}}>
-                        <ambientLight/>
+                        <ambientLight
+                            intensity={100}
+                        />
                         <spotLight
-                            position={[0, 0, 5]}
-                            intensity={1}
-                            penumbra={1}
+                            position={[5, 5, 5]}
+                            intensity={100}
+
                         />
                         <GameTitle
                             blockSize={blockSize}

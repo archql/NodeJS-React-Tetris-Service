@@ -30,7 +30,8 @@ export class GameCanvas extends React.PureComponent {
             user: this.props.user,
             room: this.props.room,
             ru: this.props.ru,
-            teams: this.getTeams(this.props.room)
+            teams: this.getTeams(this.props.room),
+            scores: Array(this.props.room?.room_teams ?? 2).fill(0),
         }
     }
 
@@ -62,7 +63,7 @@ export class GameCanvas extends React.PureComponent {
         // console.log(this.state?.room)
         if (this.state.room && this.prevState?.room && this.state?.room) {
             this.setState({
-                teams: this.getTeams(this.state.room)
+                teams: this.getTeams(this.state.room),
             })
         }
 
@@ -125,18 +126,21 @@ export class GameCanvas extends React.PureComponent {
         if (this.state.room) {
             console.log("ON SERVER GAME SCORE")
             console.log(room_user)
+            const scores = Array(this.state.room.room_teams).fill(0);
             const teams = this.state.teams.map((t) => {
                 t.forEach(ru => {
                     if (ru.ru_user_id === room_user.ru_user_id) {
                         ru.ru_last_score = room_user.ru_last_score;
                     }
+                    scores[ru.ru_team] += ru.ru_last_score
                 })
                 return t;
             })
-            console.log("teams")
-            console.log(teams)
+            console.log(`teams ${teams}`)
+            console.log(`scores ${scores}`)
             this.setState({
-                teams: teams
+                teams: teams,
+                scores: scores
             })
         }
     }
@@ -149,10 +153,10 @@ export class GameCanvas extends React.PureComponent {
     }
 
     render() {
-        const {user, room, ru, teams } = this.state;
+        const {user, room, ru, teams, scores } = this.state;
         let timeString = "00:00"
         if (room) {
-            timeString = "00:00"
+            timeString = "18:49" // TODO
         } else if (this.game) {
             //
             timeString = this.formatTime(this.game?.timePlayed)
@@ -177,8 +181,8 @@ export class GameCanvas extends React.PureComponent {
                                 <ProgressBar
                                     pos={[(FIELD_W - 1) / 2, 0.5, 4]}
                                     width={FIELD_W * 2}
-                                    scoreA={this.game.score}
-                                    scoreB={0}
+                                    scoreA={scores[0]}
+                                    scoreB={scores[1]}
                                     scoreMax={3000}
                                 />
                             </group>
@@ -196,7 +200,7 @@ export class GameCanvas extends React.PureComponent {
                                             <group key={index}>
                                                 <TetrisText
                                                     position={[0, relPos, 0]}
-                                                    text={`Team No ${index + 1}`}
+                                                    text={`Team No ${index}`}
                                                 />
                                                 {
                                                     t.map((ru, index) => (
@@ -225,7 +229,6 @@ export class GameCanvas extends React.PureComponent {
                                     <TetrisText
                                         position={[8.5, FIELD_H - 2, 0]}
                                         text={this.game.score.toString()}
-                                        color={"yellow"}
                                         anchorX={"right"}
                                     />
                                     <TetrisText
@@ -255,6 +258,7 @@ export class GameCanvas extends React.PureComponent {
                                     position={[(FIELD_W - 1) / 2, FIELD_H, 4]}
                                     anchorX="center" // default
                                     text={timeString}
+                                    color={"#f2f2f2"}
                                     fontSize={1.4}
                                     outlineWidth={0.2}
                                 />

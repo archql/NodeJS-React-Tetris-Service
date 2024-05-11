@@ -1,15 +1,27 @@
 import express from 'express';
-import {User} from "../bin/db.js";
+import {Region, User} from "../bin/db.js";
 import crypto from "crypto";
 import {authenticateToken, generateAccessToken} from "../bin/jwt.js";
 
 const router = express.Router();
 
+router.get('/regions', async function (req, res) {
+    let regions
+    try {
+        regions = await Region.findAll();
+    } catch (err) {
+        return res.status(500).json({error_message: JSON.stringify(err) });
+    }
+    if (!regions)
+        return res.status(500).json({error_message: "internal server error" });
+    return res.json(JSON.stringify({regions: regions}));
+})
+
 // TODO!!!!!!!!!!!!!!!!!!
 // const password_hash = crypto.createHash("sha256").update(password).digest('hex');
 router.post('/register', async function (req, res, next) {
 
-    const { name, surname, nickname, password_hash } = req.body
+    const { name, surname, nickname, password_hash, region, email } = req.body
     if (!name || !password_hash || !surname || !nickname) {
         return res.status(400).json({error_message: "wrong params" });
     }
@@ -25,8 +37,8 @@ router.post('/register', async function (req, res, next) {
     let n_user;
     try {
         n_user = await User.create({
-            user_region: "BLR",
-            user_email: "example@test.by",
+            user_region: region,
+            user_email: email,
             user_name: name,
             user_surname: surname,
             user_nickname: nickname,
