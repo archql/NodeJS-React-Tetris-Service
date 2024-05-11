@@ -217,6 +217,8 @@ export function DelayedSpriteAnimator({delay, spriteDataset, onEnd, position}) {
             autoPlay={true}
             scale={2}
             spriteDataset={spriteDataset}
+            frameName={'explosion'}
+            animationNames={['explosion']}
             alphaTest={0.01}
             asSprite={true}
             onEnd={onEnd}
@@ -227,7 +229,10 @@ export function DelayedSpriteAnimator({delay, spriteDataset, onEnd, position}) {
 export function TetrisEffects({effects, field, position}) {
     const { spriteObj } = useSpriteLoader(
         'sprite.png',
-        'sprite_block.json'
+        'sprite_block.json',
+
+        ['explosion', 'upgrade'],
+        null
     );
     const components = []
     for (let i = 0; i < FIELD_H; ++i) {
@@ -246,6 +251,8 @@ export function TetrisEffects({effects, field, position}) {
                         autoPlay={true}
                         scale={2}
                         spriteDataset={spriteObj}
+                        frameName={'explosion'}
+                        animationNames={['explosion']}
                         alphaTest={0.01}
                         asSprite={false}
                         onEnd={() => {effect.type = null}}
@@ -256,7 +263,8 @@ export function TetrisEffects({effects, field, position}) {
                     />
                     </group>
                 )
-            } else if (effect?.type === 2) {
+            }
+            else if (effect?.type === 2) {
                 components.push(
                     <group position={[j, i, 2]} key={j + yPos}>
                     <SpriteAnimator
@@ -265,6 +273,8 @@ export function TetrisEffects({effects, field, position}) {
                         autoPlay={true}
                         scale={4}
                         spriteDataset={spriteObj}
+                        frameName={'explosion'}
+                        animationNames={['explosion']}
                         alphaTest={0.01}
                         asSprite={false}
                         onEnd={() => {effect.type = null}}
@@ -304,6 +314,25 @@ export function TetrisEffects({effects, field, position}) {
                             fontSize={0.8}
                             outlineWidth={0.1}
                             outlineColor={"#222"}
+                        />
+                    </group>
+                )
+            } else if (effect?.type === 5) {
+                components.push(
+                    <group position={[j, i, 2]} key={j + yPos}>
+                        <SpriteAnimator
+                            fps={30}
+                            autoPlay={true}
+                            scale={1.5}
+                            rotation={[0, 0, Math.PI]}
+                            spriteDataset={spriteObj}
+                            frameName={'upgrade'}
+                            animationNames={['upgrade']}
+                            alphaTest={0.01}
+                            asSprite={false}
+                            onEnd={() => {
+                                effect.type = null
+                            }}
                         />
                     </group>
                 )

@@ -399,13 +399,13 @@ export class Tetris {
         }
         // collided
         if (this.softDrop && key === 7) {
-            // this.score += 1;
-            // this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, 1)
+            this.score += 1;
+            this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, 1)
         }
         if (key === 32 && fig.y !== yPos) {
-            // const benefit = (fig.y - yPos) * 2
-            // this.score += benefit;
-            // this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, benefit)
+            const benefit = (fig.y - yPos) * 2
+            this.score += benefit;
+            this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, benefit)
         }
         if (key !== 0 && (key === 32 || fig.y < yPos)) // collision hard
         {
@@ -470,11 +470,9 @@ export class Tetris {
         for (let j = yPos + 1; j < yPos + FIELD_W - 1; j++)
         {
             if (this.field[j].color !== 0) {
-                console.log("TETRIS checkOnEnd true")
                 return true;
             }
         }
-        console.log("TETRIS checkOnEnd false")
         return false;
     }
 
@@ -494,6 +492,11 @@ export class Tetris {
                         type: type,
                         score: score
                     }, this.field[yPos + j])
+                    if (this.field[yPos + j].score > 1) {
+                        this.effects[yPos + j].type = 5 // merge
+                        this.effects[yPos + j].score = this.field[yPos + j].score // line clear
+                        this.effects[yPos + j].color = this.field[yPos + j].color
+                    }
                 }
                 figure <<= 1;
             }
@@ -511,7 +514,7 @@ export class Tetris {
             }
             const yPos = i * FIELD_W;
             for (let j = x; j < 4 + x; j++) {
-                if ((figure & 0x8000) !== 0 && this.#checkBlockCollide(this.field[yPos + j], fig.type))
+                if ((figure & 0x8000) !== 0 && (this.#checkBlockCollide(this.field[yPos + j], fig.type) || i >= FIELD_H - 1))
                     return true;
                 figure <<= 1;
             }
