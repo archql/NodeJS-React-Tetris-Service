@@ -7,7 +7,7 @@ export class Random {
     prev: number;
 
     constructor(seed: number, prev: number = undefined) {
-        console.log("random construct")
+        console.log("TETRIS random construct")
         this.seed = seed;
         this.prev = prev ? prev : seed;
     }
@@ -46,7 +46,7 @@ export const COLOR_TABLE = [
     [1-0.271, 1-0.271, 1-0.271],
     [1-0.1, 1-0.1, 1-0.1      ],
     [1.0, 1.0, 1.0      ],
-    [1.0, 0.5098, 0.0   ],
+    [1.0, 0.5098, 0.0   ], // 4
     [0.0, 0.0, 1.0      ],
     [0.2549, 0.0, 1.0   ],
     [0.5098, 0.0, 1.0   ],
@@ -106,11 +106,15 @@ export const FigureGhostId = FigureType.from('ghost')
 
 type BlockType = {
     color: number,
-    type: number | undefined
+    type: number | undefined,
+    score: number
 };
 
 type EffectType = {
     type: number,
+    score: number,
+    color: number,
+    delay: number,
 }
 
 export class Figure {
@@ -127,6 +131,8 @@ export class Figure {
     value: number;
     //
     type: number;
+    // defines amount of score per block
+    score: number;
 
     constructor(id: number, prototype: any = undefined) {
         if (prototype instanceof Random) {
@@ -134,6 +140,7 @@ export class Figure {
             this.toDefaultPos();
             this.#generateColor(prototype);
             this.#generateType(prototype);
+            this.#generateScore(prototype);
         } else if (prototype) {
             Object.assign(this, prototype);
         } else {
@@ -155,7 +162,14 @@ export class Figure {
     }
 
     #generateType(random: Random) {
+        // TODO
         this.type = random.nextRandInt(0, FigureTypeLength - 1);
+        // this.type = FigureType.from('ghost')
+    }
+
+    #generateScore(random: Random) {
+        // TODO
+        this.score = 1
     }
 
     #generateColor(random: Random) {
@@ -212,9 +226,18 @@ export class Tetris {
     //
     timePlayed: number;
 
-    field: BlockType[] = new Array(FIELD_W * FIELD_H);
+    field: readonly BlockType[] = Array.from({ length: FIELD_W * FIELD_H }, () => ({
+        type: 0,
+        color: 0,
+        score: 0
+    }));
 
-    effects: EffectType[] = new Array(FIELD_W * FIELD_H);
+    effects: readonly EffectType[] = Array.from({ length: FIELD_W * FIELD_H }, () => ({
+        type: 0,
+        score: 0,
+        color: 0,
+        delay: 0
+    }));
 
     // render callback
     renderCallback: () => void = null;
@@ -251,6 +274,7 @@ export class Tetris {
         // this.callback = renderCallback;
     }
     constructFromPrototype(prototype) {
+        // console.log("AAA constructFromPrototype")
         // preserve callbacks functions
         const callback = this.renderCallback;
         const gameOverCallback = this.gameOverCallback;
@@ -265,7 +289,7 @@ export class Tetris {
             this.nextFigures[i] = this.nextFigures[i] && new Figure(undefined, this.nextFigures[i]);
         }
         // setup random
-        console.log("construct from prototype")
+        // console.log("TETRIS construct from prototype")
         this.random = new Random(this.random.seed, this.random.prev);
         // setup callbacks back
         this.renderCallback = callback;
@@ -296,6 +320,7 @@ export class Tetris {
     //   - Game update               - 7
     //   - Ignore downward collision - 0 (only for actual figure, not preview)
     processEventSilent(key: number) {
+        // console.log(`TETRIS processEventSilent ${key}`)
         if (key === 27) { // ESC
             this.#endGame();
             this.paused = false;
@@ -369,8 +394,19 @@ export class Tetris {
                 fig.y++;
             }
             fig.y--;
+        } else if (this.#collideFigure(fig)) {
+            fig.y--;
         }
         // collided
+        if (this.softDrop && key === 7) {
+            // this.score += 1;
+            // this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, 1)
+        }
+        if (key === 32 && fig.y !== yPos) {
+            // const benefit = (fig.y - yPos) * 2
+            // this.score += benefit;
+            // this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, benefit)
+        }
         if (key !== 0 && (key === 32 || fig.y < yPos)) // collision hard
         {
             this.#placeFigure(fig);
@@ -406,22 +442,25 @@ export class Tetris {
         for (let i = 0; i < FIELD_H - 1; ++i) {
             let posY = i * FIELD_W;
             const lastPosY = posY + FIELD_W - 1;
-            this.field[posY] = {color: 1, type: FigureType.from('border')};
-            this.field[lastPosY]= {color: 1, type: FigureType.from('border')};
+            Object.assign(this.field[posY], {color: 1, type: FigureType.from('border'), score: 0});
+            Object.assign(this.field[lastPosY], {color: 1, type: FigureType.from('border'), score: 0});
             for (let j = posY + 1; j < lastPosY; ++j) {
-                this.field[j] = {color: 0, type: 0};
+                Object.assign(this.field[j], {color: 0, type: 0, score: 0});
             }
         }
         for (let j = (FIELD_H - 1) * FIELD_W; j < FIELD_H * FIELD_W; ++j) {
-            this.field[j] = {color: 1, type: FigureType.from('border')};
+            Object.assign(this.field[j], {color: 1, type: FigureType.from('border'), score: 0});
         }
     }
 
     #initEffects () {
+        console.log("AAAA #initEffects")
         for (let i = 0; i < FIELD_H; ++i) {
             let posY = i * FIELD_W;
-            for (let j = 0; j < FIELD_W; ++j) {
-                this.effects[posY + j] = {type: 0}
+            for (let j = 0; j < FIELD_W / 3; ++j) {
+                // TODO
+                // Object.assign(this.effects[posY + j], {type: 4, score: 0, color: 0, delay: i * 0.02})
+                Object.assign(this.effects[j], {type: 0, score: 0, color: 0, delay: 0})
             }
         }
     }
@@ -431,37 +470,29 @@ export class Tetris {
         for (let j = yPos + 1; j < yPos + FIELD_W - 1; j++)
         {
             if (this.field[j].color !== 0) {
-                console.log("checkOnEnd true")
+                console.log("TETRIS checkOnEnd true")
                 return true;
             }
         }
-        console.log("checkOnEnd false")
+        console.log("TETRIS checkOnEnd false")
         return false;
     }
 
     #placeFigure(fig: Figure) {
-        console.log("#placeFigure")
-        console.log(fig)
-
-        const x = fig.x;
-        const y = fig.y;
         let figure = fig.value;
-        const color = fig.color;
-        const type = fig.type;
-
-        console.log(figure)
+        const {x, y, color, type, score} = fig;
 
         for (let i = y; i < 4 + y; i++) { // 4 is fig w and h
-            // if (i < 0) {
-            //     continue;
-            // }
+            if (i < 0) {
+                continue;
+            }
             const yPos = i * FIELD_W;
             for (let j = x; j < 4 + x; j++) {
                 if ((figure & 0x8000) !== 0) {
                     this.#mergeBlock({
                         color: color,
-                        type: type
-                        // TODO process types
+                        type: type,
+                        score: score
                     }, this.field[yPos + j])
                 }
                 figure <<= 1;
@@ -490,6 +521,7 @@ export class Tetris {
 
     #checkOnLine() {
         let scoreBenefit = 0;
+        let linesChecked = 0;
         for (let i = 0; i < FIELD_H - 1; i++) {
             let lineChecked = true;
             const yPos = i * FIELD_W;
@@ -499,34 +531,39 @@ export class Tetris {
                 j++;
             }
             if (lineChecked) {
-                this.#removeLine(i);
-                scoreBenefit++;
+                scoreBenefit += this.#removeLine(i);
+                linesChecked += 1
             }
         }
         if (scoreBenefit > 0) {
-            scoreBenefit = ((2 << scoreBenefit) - 1) << 2;
+            scoreBenefit = scoreBenefit << linesChecked;
             this.score += scoreBenefit;
-            // TODO Score updated
             this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, scoreBenefit)
         }
     }
 
-    #removeLine(lineNumber) {
+    #removeLine(lineNumber: number): number {
+        let scoreBenefit = 0;
         for (let j = 1; j < FIELD_W - 1; j++) {
-            this.effects[lineNumber * FIELD_W + j].type = 1 // line clear
+            const index = lineNumber * FIELD_W + j;
+            this.effects[index].type = 1 // line clear
+            this.effects[index].score = this.field[index].score // line clear
+            this.effects[index].color = this.field[index].color
+            scoreBenefit += this.field[index].score
         }
         for (let y = lineNumber; y > 0; y--) {
             const yPos2 = (y - 1) * FIELD_W;
             const yPos1 = y * FIELD_W;
             for (let j = 1; j < FIELD_W - 1; j++) {
-                this.field[yPos1 + j] = this.field[yPos2 + j];
+                Object.assign(this.field[yPos1 + j], this.field[yPos2 + j])
             }
         }
+        return scoreBenefit;
     }
 
     #endGame() {
         //
-        console.log("END GAME #####################")
+        console.log("TETRIS END GAME #####################")
         const newRecord = this.highScore < this.score;
         this.gameOverCallback && this.gameOverCallback(this.score, newRecord);
         if (newRecord) {
@@ -564,6 +601,7 @@ export class Tetris {
     }
 
     #processFieldEffects() {
+        console.log("TETRIS #processFieldEffects()")
         let changes = false
         for (let y = FIELD_H - 1; y >= 0; --y) {
             let posY = y * FIELD_W;
@@ -618,20 +656,27 @@ export class Tetris {
                     case 'tnt': {
                         changes = true;
                         // explode
-                        this.#explodeBlock(this.field[posY + x], true)
-                        this.effects[posY + x].type = 2
-                        this.#explodeBlock(this.field[posY + x + 1])
-                        this.#explodeBlock(this.field[posY + x - 1])
-                        this.#explodeBlock(this.field[posY + x - FIELD_W])
-                        this.#explodeBlock(this.field[posY + x + FIELD_W])
+                        let scoreBenefit = 0;
+                        scoreBenefit += this.#explodeBlock(this.field[posY + x], true)
+                        scoreBenefit += this.#explodeBlock(this.field[posY + x + 1])
+                        scoreBenefit += this.#explodeBlock(this.field[posY + x - 1])
+                        scoreBenefit += this.#explodeBlock(this.field[posY + x - FIELD_W])
+                        scoreBenefit += this.#explodeBlock(this.field[posY + x + FIELD_W])
+
+                        this.effects[posY + x].type = 2 // line clear
+                        this.effects[posY + x].score = scoreBenefit // line clear
+                        this.effects[posY + x].color = 12 // red
+
+                        this.score += scoreBenefit;
+                        this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, scoreBenefit)
                     } break;
                     // case '': {
                     //     if (block.color < 3) break;
-                    //     //console.log("#moveBlock ", block.color )
+                    //     //console.log("TETRIS #moveBlock ", block.color )
                     //     if (y >= FIELD_H - 1) {
                     //         this.#killBlock(block)
                     //     } else {
-                    //         //console.log("#moveBlock")
+                    //         //console.log("TETRIS #moveBlock")
                     //         this.#moveBlock(block, this.field[posY + x + FIELD_W])
                     //     }
                     // } break;
@@ -639,6 +684,7 @@ export class Tetris {
             }
         }
         if (!changes) {
+            console.log("TETRIS No changes")
             this.#checkOnLine()
         }
     }
@@ -652,13 +698,15 @@ export class Tetris {
     }
 
     #moveBlock(from: BlockType, to: BlockType) {
-        if (!to.color) {
+        console.log(`TETRIS #moveBlock {${from.color} ${from.type}} {${to.color} ${to.type}}`)
+        if (to.color === 0) {
             Object.assign(to, from)
             this.#nullifyBlock(from)
             return true;
         }
         else if (to.type === FigureGhostId) {
             // TODO merge
+            to.score += from.score
             to.color = mergeColors(to.color, from.color)
             to.type = from.type !== FigureGhostId ? from.type : 0
             this.#nullifyBlock(from)
@@ -666,12 +714,13 @@ export class Tetris {
         }
         else if (from.type === FigureGhostId) {
             // TODO merge
+            to.score += from.score
             to.color = mergeColors(to.color, from.color)
             this.#nullifyBlock(from)
             return true
         }
         else if (to.type === FigureType.from('liquid') && from.type !== FigureType.from('liquid')) {
-            console.log("exchange")
+            console.log("TETRIS exchange")
             // exchange
             const temp = Object.assign({}, to);
             Object.assign(to, from)
@@ -682,13 +731,13 @@ export class Tetris {
     }
 
     #mergeBlock(from: BlockType, to: BlockType) {
+        console.log(`TETRIS #mergeBlock {${from.color} ${from.type}} {${to.color} ${to.type}}`)
         // to.color defines if it keeps ghost prop
         from.color = mergeColors(to.color, from.color)
         if (from.type === FigureGhostId /* && to.color */) {
-            // TODO merge score
             from.type = to.type !== FigureGhostId ? to.type : 0
         }
-        // TODO merge score
+        from.score += to.score;
         Object.assign(to, from)
     }
 
@@ -696,16 +745,20 @@ export class Tetris {
         if (!block) return
         block.color = 0
         block.type = 0
+        block.score = 0
     }
 
-    #explodeBlock (block: BlockType, self: boolean = false) {
-        if (!block || block.type === FigureType.from('border') || (block.type === FigureType.from('tnt') && !self)) return
-        // TODO score
-        this.#nullifyBlock(block)
+    #explodeBlock (block: BlockType, self: boolean = false): number {
+        if (!block || block.type === FigureType.from('border') || (block.type === FigureType.from('tnt') && !self)) return 0
+        const score = block.score; // Save score
+        this.#nullifyBlock(block);
+        return score;
     }
 
-    #killBlock(block: BlockType) {
+    #killBlock(block: BlockType): number {
         // TODO kill score
+        const score = block.score; // Save score
         this.#nullifyBlock(block)
+        return -score
     }
 }

@@ -52,20 +52,18 @@ export class ServerGameSessionControl {
             ORDER BY r.user_max_score DESC
             LIMIT 15;
         `;
-
         return await sequelize.query(topRecordsQuery, { type: QueryTypes.SELECT });
     }
 
-    startCompetition(seed: number,
-                     onCompetitionViolation: (data: PlayerData) => void,
-                     onCompetitionEnd: (data: PlayerData, score: number) => void)
+    // onCompetitionViolation: (data: PlayerData) => void,
+    // onCompetitionEnd: (data: PlayerData, score: number) => void
+    startCompetition(seed: number)
     {
         this.game.initializeFrom(seed);
         this.game.paused = false;
         // !! set callbacks only after game restart
         this.competition = true;
-        this.onCompetitionViolation = onCompetitionViolation;
-        this.onCompetitionEnd = onCompetitionEnd;
+
         // TODO duplicated - init game
         this.time = performance.now();
         this.timeStarted = this.time;
@@ -80,15 +78,8 @@ export class ServerGameSessionControl {
         const bufferIndex = this.currentEvent % BUFFER_SIZE;
         this.stateBuffer[bufferIndex] = new GameState(this.currentTick, this.currentEvent,
             this.time - this.timeStarted, this.game.deepCopy());
-        //
-        console.log("startCompetition b4")
         // force sync
         this.socket.emit('game sync', this.stateBuffer[0]);
-        // if (this.room) {
-        //     this.io.to(this.room.room_id.toString()).emit('game update', this.stateBuffer[0]);
-        // }
-        //
-        console.log("startCompetition af")
     }
 
     onSync(data: PlayerData) {

@@ -10,6 +10,8 @@ import React, {Fragment, useEffect, useMemo, useRef, useState} from "react";
 import {SandShaderMaterial, WaveShaderMaterial} from "./shaders";
 import {BufferAttribute} from "three";
 import {COLOR_TABLE, FIELD_H, FIELD_W, Figure, FigureGhostId, FigureType} from "../../game/tetris";
+import {animated, useSpring, useSpringRef} from "@react-spring/three";
+import { easings } from '@react-spring/web'
 
 extend({WaveShaderMaterial})
 
@@ -22,7 +24,7 @@ export function nextRandInt(from, to) {
 
 export function GameDisplay({game /* : Tetris */}) {
     // TODO
-    console.log(game)
+    //console.log(`TETRIS ${JSON.stringify([...game.field])}`)
     return (
         <Fragment>
             <TetrisFigure
@@ -72,6 +74,7 @@ export function GameDisplay({game /* : Tetris */}) {
             {/*/>*/}
             <TetrisEffects
                 effects={game.effects}
+                field={game.field}
             />
             <TetrisField
                 field={game.field}
@@ -167,25 +170,79 @@ export function TetrisFigure({figure, colorId, zPos, xPos, yPos, typeId, opacity
         </group>
     )
 }
+const AnimatedText = animated(Text)
 
-export function TetrisEffects({effects, position}) {
+export function AnimatedScore({score, color}) {
+    const spring = useSpring({
+        from: { scale: [1, -1, 1] },
+        to: { scale: [0, 0, 0] },
+        config: {
+            easing: easings.easeInBack,
+            duration: 400,
+        },
+    });
+    return (
+        <AnimatedText
+            anchorX="center" // default
+            anchorY="middle" // default
+            font="MixBitFont-gww74.ttf"
+            color={color}
+            material-toneMapped={false}
+            text={score.toString()}
+            position={[0, 0, 0.1]}
+            fontWeight={"bold"}
+            scale={[1, -1, 1]}
+            fontSize={0.8}
+            outlineWidth={0.1}
+            outlineColor={"#222"}
+            {...spring}
+        />
+    )
+}
+export function DelayedSpriteAnimator({delay, spriteDataset, onEnd, position}) {
+    const [ready, setReady] = useState(false);
+    const [elapsedTime, setElapsedTime] = useState(0);
+
+    useFrame((_, deltaTime) => {
+        setElapsedTime(elapsedTime + deltaTime);
+        if (elapsedTime >= delay) {
+            setReady(true)
+        }
+    });
+
+    return (
+        ready &&
+        <SpriteAnimator
+            fps={30}
+            autoPlay={true}
+            scale={2}
+            spriteDataset={spriteDataset}
+            alphaTest={0.01}
+            asSprite={true}
+            onEnd={onEnd}
+            position={position}
+        />
+    )
+}
+export function TetrisEffects({effects, field, position}) {
     const { spriteObj } = useSpriteLoader(
         'sprite.png',
         'sprite_block.json'
     );
-
     const components = []
     for (let i = 0; i < FIELD_H; ++i) {
         const yPos = i * FIELD_W;
         for (let j = 0; j < FIELD_W; ++j) {
+            const block = field[j + yPos];
             const effect = effects[j + yPos];
+            const tmp = COLOR_TABLE[effect.color];
+            const c = toColor(tmp[0], tmp[1], tmp[2])
             if (effect?.type === 1) {
                 components.push(
+                    <group position={[j, i, 2]} key={j + yPos}>
                     <SpriteAnimator
                         fps={30}
                         rotation={[0, 0, Math.PI / 2]}
-                        key={j + yPos}
-                        position={[j, i, 2]}
                         autoPlay={true}
                         scale={2}
                         spriteDataset={spriteObj}
@@ -193,14 +250,18 @@ export function TetrisEffects({effects, position}) {
                         asSprite={false}
                         onEnd={() => {effect.type = null}}
                     />
+                    <AnimatedScore
+                        score={effect.score}
+                        color={c}
+                    />
+                    </group>
                 )
             } else if (effect?.type === 2) {
                 components.push(
+                    <group position={[j, i, 2]} key={j + yPos}>
                     <SpriteAnimator
                         fps={30}
                         rotation={[0, 0, Math.PI / 2]}
-                        key={j + yPos}
-                        position={[j, i, 2]}
                         autoPlay={true}
                         scale={4}
                         spriteDataset={spriteObj}
@@ -208,6 +269,43 @@ export function TetrisEffects({effects, position}) {
                         asSprite={false}
                         onEnd={() => {effect.type = null}}
                     />
+                    <AnimatedScore
+                        score={effect.score}
+                        color={c}
+                    />
+                    </group>
+                )
+            } else if (effect?.type === 4) {
+                components.push(
+                    <group position={[j, i, 2]} key={j + yPos}>
+                    <DelayedSpriteAnimator
+                        spriteDataset={spriteObj}
+                        onEnd={() => {effect.type = null}}
+                        delay={effect.delay ?? 0}
+                    />
+                    </group>
+                )
+            }
+            else if (effect?.type === 3) {
+                const tmp = COLOR_TABLE[block.color];
+                const c = toColor(tmp[0], tmp[1], tmp[2])
+                components.push(
+                    <group position={[j, i, 2]} key={j + yPos}>
+                        <Text
+                            anchorX="center" // default
+                            anchorY="middle" // default
+                            font="MixBitFont-gww74.ttf"
+                            color={c}
+                            material-toneMapped={false}
+                            text={block.score.toString()}
+                            position={[0, 0, 0.1]}
+                            fontWeight={"bold"}
+                            scale={[1, -1, 1]}
+                            fontSize={0.8}
+                            outlineWidth={0.1}
+                            outlineColor={"#222"}
+                        />
+                    </group>
                 )
             }
         }

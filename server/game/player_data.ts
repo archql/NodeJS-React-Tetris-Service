@@ -93,18 +93,20 @@ export class PlayerData {
                 this.ru.ru_max_score = record_data.record_score;
             }
             await this.ru.save();
-        }
-        if (this.user) {
-            // create new record (TODO mk screenshot)
-            const record: any = await Record.create({
-                record_user_id: this.user.user_id,
-                ...record_data
-            });
-            // set record
-            if (!this.record || record.record_score > this.record.record_score) {
-                this.record = record;
+            // TODO
+            if (this.ru.ru_max_score < record_data.record_score) {
+                // create new record (TODO mk screenshot)
+                const record: any = await Record.create({
+                    record_user_id: this.user.user_id,
+                    ...record_data
+                });
+                // set record
+                if (!this.record || record.record_score > this.record.record_score) {
+                    this.record = record;
+                }
             }
         }
+
     }
 
     async joinTeam(team_no: number) {

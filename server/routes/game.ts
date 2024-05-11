@@ -89,14 +89,12 @@ const gameHandler = async (socket) => {
     function startCompetition(room: string) {
         // get seed
         const seed = Math.floor(Math.random() * RANDOM_MAX);
-        // TODO
-        // userGameSessions[socket.id].game?.sync()
         // start competition
         io.of("/game").adapter.rooms.get(room).forEach((sid) => {
             // TODO
-            // userGameSessions[sid].game.startCompetition(
-            //     seed,
-            // );
+            userGameSessions[sid].game.startCompetition(
+                seed
+            );
         })
     }
 }
