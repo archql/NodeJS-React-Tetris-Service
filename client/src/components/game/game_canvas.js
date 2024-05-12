@@ -159,18 +159,17 @@ export class GameCanvas extends React.PureComponent {
         try {
             switch (effect) {
                 case 'tnt': {
+                    this.tntAudio.volume = 0.7
                     this.tntAudio.currentTime = 0;
                     this.tntAudio.play();
-                }
-                    break;
+                } break;
                 case 'line clear 3':
                 case 'line clear 4':
                 case 'line clear 2':
                 case 'line clear 1': {
                     this.lineAudio.currentTime = 0;
                     this.lineAudio.play();
-                }
-                    break;
+                } break;
                 case 'land': {
                     this.landAudio.currentTime = 0;
                     this.landAudio.play();

@@ -9,7 +9,7 @@ import { extend } from "@react-three/fiber";
 import React, {Fragment, useEffect, useMemo, useRef, useState} from "react";
 import {SandShaderMaterial, WaveShaderMaterial} from "./shaders";
 import {BufferAttribute} from "three";
-import {COLOR_TABLE, FIELD_H, FIELD_W, Figure, FigureGhostId, FigureType} from "../../game/tetris";
+import {COLOR_TABLE, COLOR_TABLE_NEW, FIELD_H, FIELD_W, Figure, FigureGhostId, FigureType} from "../../game/tetris";
 import {animated, useSpring, useSpringRef} from "@react-spring/three";
 import { easings } from '@react-spring/web'
 
@@ -134,7 +134,7 @@ export function TetrisText(props) {
     )
 }
 
-export function TetrisFigure({figure, colorId, zPos, xPos, yPos, typeId, opacity}) {
+export function TetrisFigure({figure, colorId, zPos, xPos, yPos, typeId, opacity, score}) {
     if (!figure) return null
 
     const components = []
@@ -144,6 +144,7 @@ export function TetrisFigure({figure, colorId, zPos, xPos, yPos, typeId, opacity
     const pos = [x, y, z]
     const color = (colorId !== undefined) ? colorId : figure.color;
     const type = (typeId !== undefined) ? typeId : figure.type;
+    const sc = (score !== undefined) ? score : (figure.score ?? 0);
 
     let fig = figure.value;
 
@@ -157,6 +158,7 @@ export function TetrisFigure({figure, colorId, zPos, xPos, yPos, typeId, opacity
                         position={[j, i, 0]}
                         type={type}
                         clr={color}
+                        score={sc}
                         opacity={opacity}
                     />
                 );
@@ -240,8 +242,7 @@ export function TetrisEffects({effects, field, position}) {
         for (let j = 0; j < FIELD_W; ++j) {
             const block = field[j + yPos];
             const effect = effects[j + yPos];
-            const tmp = COLOR_TABLE[effect.color];
-            const c = toColor(tmp[0], tmp[1], tmp[2])
+            const c = COLOR_TABLE_NEW[effect.color];
             if (effect?.type === 1) {
                 components.push(
                     <group position={[j, i, 2]} key={j + yPos}>
@@ -297,8 +298,7 @@ export function TetrisEffects({effects, field, position}) {
                 )
             }
             else if (effect?.type === 3) {
-                const tmp = COLOR_TABLE[block.color];
-                const c = toColor(tmp[0], tmp[1], tmp[2])
+                const c = COLOR_TABLE_NEW[block.color];
                 components.push(
                     <group position={[j, i, 2]} key={j + yPos}>
                         <Text
@@ -359,6 +359,7 @@ export function TetrisField({field}) {
                     position={[j, i, 0]}
                     type={block.type}
                     clr={block.color}
+                    score={block.score}
                 />
             );
         }
@@ -370,8 +371,12 @@ export function TetrisField({field}) {
     )
 }
 
-export function TetrisBlock ({ position, type, clr, opacity }) {
+export function TetrisBlock ({ position, type, clr, opacity, score }) {
     const particleCount = 100;
+    const textureMetal = useTexture('/block_metal.png');
+    const textureReinforced = useTexture('/block_reinforced.png');
+    const textureBorder = useTexture('/block_border.png');
+    const textureTNT = useTexture('/block_tnt.png');
     const texture = useTexture('/block_simple.png'); // Replace with the path to your texture image
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -391,24 +396,30 @@ export function TetrisBlock ({ position, type, clr, opacity }) {
         return positions;
     }, [particleCount])
 
-    const tmp = COLOR_TABLE[clr];
-    const c = toColor(tmp[0], tmp[1], tmp[2])
+    const c = COLOR_TABLE_NEW[clr];
     const t = FigureType.at(type);
     const o = opacity ?? 1.0
+
+    let txt;
+    switch (score) {
+        case 2: txt = textureReinforced; break;
+        case 3: txt = textureMetal; break;
+        default: txt = texture;
+    }
 
     const col = Math.floor((Math.sin(6*time) * 0.5 + 0.7) * 255);
     switch (t) {
         case 'liquid': return (
             <mesh position={position}>
                 <boxGeometry args={[1, 1, 1, 8, 8, 2]}/>
-                <waveShaderMaterial uColor={c} uTexture={texture} uTime={time} transparent={true} uOpacity={o}/>
+                <waveShaderMaterial uColor={c} uTexture={txt} uTime={time} transparent={true} uOpacity={o}/>
             </mesh>
         )
         case 'ghost': return (
             <mesh position={position}>
                 <boxGeometry/>
                 <meshBasicMaterial
-                    map={texture}
+                    map={txt}
                     transparent={true}
                     opacity={(Math.sin(6*time) * 0.1 + 0.5) * o}
                     color={c}
@@ -419,7 +430,7 @@ export function TetrisBlock ({ position, type, clr, opacity }) {
             <mesh position={position}>
                 <boxGeometry/>
                 <meshBasicMaterial
-                    map={texture}
+                    map={textureTNT}
                     transparent={true}
                     color={`rgba(255, ${col}, ${col}, 1)`}
                     opacity={o}
@@ -448,7 +459,7 @@ export function TetrisBlock ({ position, type, clr, opacity }) {
                 <mesh position={position}>
                     <boxGeometry/>
                     <meshBasicMaterial
-                        map={texture}
+                        map={txt}
                         transparent={true}
                         color={c}
                         opacity={o}
@@ -456,12 +467,24 @@ export function TetrisBlock ({ position, type, clr, opacity }) {
                 </mesh>
             </Fragment>
         )
+        case 'border':
+            return (
+                <mesh position={position}>
+                    <boxGeometry/>
+                    <meshBasicMaterial
+                        map={textureBorder}
+                        transparent={true}
+                        color={c}
+                        opacity={o}
+                    />
+                </mesh>
+            )
         default:
             return (
                 <mesh position={position}>
                     <boxGeometry/>
                     <meshBasicMaterial
-                        map={texture}
+                        map={txt}
                         transparent={true}
                         color={c}
                         opacity={o}

@@ -59,6 +59,7 @@ export class ServerGameSessionControl {
     // onCompetitionEnd: (data: PlayerData, score: number) => void
     startCompetition(seed: number)
     {
+        console.log(this)
         this.game.initializeFrom(seed);
         this.game.paused = false;
         // !! set callbacks only after game restart

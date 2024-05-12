@@ -7,7 +7,7 @@ export class Random {
     prev: number;
 
     constructor(seed: number, prev: number = undefined) {
-        console.log("TETRIS random construct")
+        //console.log("TETRIS random construct")
         this.seed = seed;
         this.prev = prev ? prev : seed;
     }
@@ -69,6 +69,56 @@ export const COLOR_TABLE = [
     [0.0, 0.5098, 1.0   ],
     [0.0, 0.2549, 1.0   ]
 ];
+
+export const COLOR_TABLE_NEW = [
+    "#EEE",
+    "#AAA",
+    "#BBB",
+    "#fff",
+    "#0000ff",
+    "#4100ff",
+    "#7d00ff",
+    "#be00ff",
+    "#ff00ff",
+    "#ff00be",
+    "#ff007d",
+    "#ff0041",
+    "#ff0000",
+    "#ff4100",
+    "#ff7d00",
+    "#ffbe00",
+    "#ffff00",
+    "#beff00",
+    "#7dff00",
+    "#41ff00",
+    "#00ff00",
+    "#00ff41",
+    "#00ff7d",
+    "#00ffbe",
+    "#00ffff",
+    "#00beff",
+    "#007dff",
+    "#0041ff",
+]
+export const LEVELS_TABLE = [
+    1,  // 1
+    7,  // 2
+    14, // 3
+    14, // 4
+    28, // 5
+    28, // 6
+    35, // 7
+    35, // 8
+    35, // 9
+    42, // 10
+    42, // 11
+    56, // 12
+    56, // 13
+    56, // 14
+    70, // 15
+    70, // 16
+    1000000000
+]
 
 export function mergeColors(col1: number, col2: number) {
     if (col1 === 0) return col2;
@@ -140,7 +190,8 @@ class Distribution {
 type GeneratorType = {
     level: number, // affects avg block cost
     scores: Distribution, // it is prob what fig to gen
-    types: Distribution // it is prob what fig to gen
+    types: Distribution, // it is prob what fig to gen
+    colors: Distribution
 }
 
 const defaultGenerator: GeneratorType =
@@ -151,7 +202,63 @@ const defaultGenerator: GeneratorType =
             {value: 1, type: 0}, {value: 1, type: 1}, {value: 1, type: 2},
             {value: 1, type: 3}, {value: 1, type: 4}
         ]),
+        colors: new Distribution(5, [
+            {value: 1, type: 4}, {value: 1, type: 14}
+        ]),
     }
+function colorIndexFromOffset(value: number, offset: number) {
+    const len = (COLOR_TABLE_NEW.length - 4);
+    if (offset % 1 !== 0) offset *= len
+    return Math.floor(len * value + offset) % len + 4;
+}
+function generateGenerators(): GeneratorType[] {
+    const delta = 0;
+    const res: GeneratorType[] = []
+    for (let i = 0; i < 128; i++) {
+        let colors: Distribution;
+        let types: Distribution;
+        let scores: Distribution;
+        if (i < 3) {
+            colors = new Distribution(1, [{value: 1, type: colorIndexFromOffset(i / 3, 8 + delta )}]);
+            types = new Distribution(1, [{value: 1, type: 0}]);
+            scores = new Distribution(1, [{value: 1, type: 1}]);
+        } else if (i < 9) {
+            const b = i - 2; // base
+            colors = new Distribution(2, [
+                {value: 1, type: colorIndexFromOffset(i / 6, 4 + delta )},
+                {value: 1, type: colorIndexFromOffset(i / 6, 6 + delta )}]);
+            types = new Distribution(100 + b*2, [{value: 100, type: 0}, {value: b*2, type: 1}]);
+            scores = new Distribution(12 + b*2, [{value: 12, type: 1}, {value: b*2, type: 2}]);
+        } else if (i < 21) {
+            const b = i - 5; // base
+            colors = new Distribution(6, [
+                {value: 3, type: colorIndexFromOffset(i / 12, 4 + delta )},
+                {value: 2, type: colorIndexFromOffset(i / 12, 6 + delta )},
+                {value: 1, type: colorIndexFromOffset(i / 12, 0.5  + delta / (COLOR_TABLE_NEW.length - 4) )}]);
+            types = new Distribution(112 + b*2, [
+                {value: 100, type: 0},
+                {value: 12, type: 1},
+                {value: b, type: 3},
+                {value: b, type: 4}
+            ]);
+            scores = new Distribution(48 + b, [{value: 24, type: 1}, {value: 24, type: 2}, {value: b, type: 3}]);
+        } else {
+            colors = defaultGenerator.colors
+            scores = defaultGenerator.scores
+            types = defaultGenerator.types
+        }
+
+        res.push({
+            level: i,
+            scores: scores,
+            types: types,
+            colors: colors,
+        });
+    }
+    return res
+}
+
+let generators = generateGenerators();
 
 export class Figure {
     // defines fig number
@@ -209,7 +316,8 @@ export class Figure {
 
     #generateColor(random: Random, generator: GeneratorType = undefined) {
         if (!generator) generator = defaultGenerator;
-        this.color = random.nextRandInt(4, COLOR_TABLE.length - 4);
+        this.color = generator.colors.get(random);
+        //this.color = random.nextRandInt(4, COLOR_TABLE_NEW.length - 4);
     }
 
     rotate(diff: number) {
@@ -228,11 +336,11 @@ export class Figure {
     ]
     static figCount = Figure.figArr.length;
 
-    static genSequence(random: Random) {
+    static genSequence(random: Random, generator: GeneratorType = undefined) {
         const figCount = Figure.figCount;
         const sequence = [];
         for (let i = 0; i < figCount; i++) {
-            sequence.push(new Figure(i, random));
+            sequence.push(new Figure(i, random, generator));
         }
         // shuffle array
         for (let i = figCount - 1; i > 0; i--) {
@@ -263,6 +371,7 @@ export class Tetris {
     timePlayed: number;
     //
     level: number = 0;
+    baseLevel: number = 0;
     generator: GeneratorType = defaultGenerator;
 
     field: readonly BlockType[] = Array.from({ length: FIELD_W * FIELD_H }, () => ({
@@ -441,12 +550,12 @@ export class Tetris {
             fig.y--;
         }
         // collided
-        if (this.softDrop && key === 7) {
+        if (this.softDrop && key === 7 && this.random.nextRandInt(0, 1)) {
             this.score += 1;
             this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, 1)
         }
         if (key === 32 && fig.y !== yPos) {
-            const benefit = (fig.y - yPos) * 2
+            const benefit = (fig.y - yPos)
             this.score += benefit;
             this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, benefit)
         }
@@ -463,7 +572,12 @@ export class Tetris {
                 this.#checkOnLine();
                 this.#nextFigure();
 
-                if ((this.placed & INC_EVERY_FIGS) === 0) {
+                // if ((this.placed & INC_EVERY_FIGS) === 0) {
+                //     this.tickSpeed *= SPEED_MUL;
+                // }
+                if (this.placed > LEVELS_TABLE[this.level - this.baseLevel]) {
+                    this.placed = 0; // TODO
+                    this.level++;
                     this.tickSpeed *= SPEED_MUL;
                 }
             }
@@ -478,7 +592,7 @@ export class Tetris {
         this.nextFigureNumber++;
         if (this.nextFigureNumber >= Figure.figCount) {
             this.nextFigureNumber = 0;
-            this.nextFigures = Figure.genSequence(this.random);
+            this.nextFigures = Figure.genSequence(this.random, generators[this.level]);
         }
         this.processEventSilent(0);
     }
@@ -499,7 +613,7 @@ export class Tetris {
     }
 
     #initEffects () {
-        console.log("AAAA #initEffects")
+        ///console.log("AAAA #initEffects")
         for (let i = 0; i < FIELD_H; ++i) {
             let posY = i * FIELD_W;
             for (let j = 0; j < FIELD_W / 3; ++j) {
@@ -532,17 +646,17 @@ export class Tetris {
             const yPos = i * FIELD_W;
             for (let j = x; j < 4 + x; j++) {
                 if ((figure & 0x8000) !== 0) {
-                    this.#mergeBlock({
-                        color: color,
-                        type: type,
-                        score: score
-                    }, this.field[yPos + j])
-                    if (this.field[yPos + j].score > 1) {
+                    if (this.field[yPos + j].score >= 1 && score >= 1) {
                         this.soundEffectCallback && this.soundEffectCallback('merge')
                         this.effects[yPos + j].type = 5 // merge
                         this.effects[yPos + j].score = this.field[yPos + j].score // line clear
                         this.effects[yPos + j].color = this.field[yPos + j].color
                     }
+                    this.#mergeBlock({
+                        color: color,
+                        type: type,
+                        score: score
+                    }, this.field[yPos + j])
                 }
                 figure <<= 1;
             }
@@ -613,7 +727,7 @@ export class Tetris {
 
     #endGame() {
         //
-        console.log("TETRIS END GAME #####################")
+        ///console.log("TETRIS END GAME #####################")
         const newRecord = this.highScore < this.score;
         this.gameOverCallback && this.gameOverCallback(this.score, newRecord);
         if (newRecord) {
@@ -633,13 +747,14 @@ export class Tetris {
         this.paused = true;
         this.softDrop = false;
         this.placed = 0;
+        this.level = 0;
         //
         this.timePlayed = 0;
         // generate new random seed
         this.random = new Random(seed || Math.floor(Math.random() * RANDOM_MAX));
 
         // set fig data
-        this.nextFigures = Figure.genSequence(this.random);
+        this.nextFigures = Figure.genSequence(this.random, generators[this.level]);
         this.nextFigureNumber = 0;
         this.figPreviewY = FIG_START_Y;
         this.#nextFigure();
@@ -651,7 +766,7 @@ export class Tetris {
     }
 
     #processFieldEffects() {
-        console.log("TETRIS #processFieldEffects()")
+        //console.log("TETRIS #processFieldEffects()")
         let changes = false
         for (let y = FIELD_H - 1; y >= 0; --y) {
             let posY = y * FIELD_W;
@@ -755,7 +870,7 @@ export class Tetris {
     }
 
     #moveBlock(from: BlockType, to: BlockType) {
-        console.log(`TETRIS #moveBlock {${from.color} ${from.type}} {${to.color} ${to.type}}`)
+        //console.log(`TETRIS #moveBlock {${from.color} ${from.type}} {${to.color} ${to.type}}`)
         if (to.color === 0) {
             Object.assign(to, from)
             this.#nullifyBlock(from)
@@ -777,7 +892,7 @@ export class Tetris {
             return true
         }
         else if (to.type === FigureType.from('liquid') && from.type !== FigureType.from('liquid')) {
-            console.log("TETRIS exchange")
+            //console.log("TETRIS exchange")
             // exchange
             const temp = Object.assign({}, to);
             Object.assign(to, from)
@@ -788,7 +903,7 @@ export class Tetris {
     }
 
     #mergeBlock(from: BlockType, to: BlockType) {
-        console.log(`TETRIS #mergeBlock {${from.color} ${from.type}} {${to.color} ${to.type}}`)
+        //console.log(`TETRIS #mergeBlock {${from.color} ${from.type}} {${to.color} ${to.type}}`)
         // to.color defines if it keeps ghost prop
         from.color = mergeColors(to.color, from.color)
         if (from.type === FigureGhostId /* && to.color */) {
