@@ -116,6 +116,42 @@ type EffectType = {
     color: number,
     delay: number,
 }
+class Distribution {
+    sum: number
+    distribution: {value: number, type: number}[]
+
+    constructor(sum: number, distribution: {value: number, type: number}[]) {
+        this.sum = sum;
+        this.distribution = distribution;
+    }
+
+    get(rng: Random): number {
+        const temp = rng.nextRandInt(0, this.sum - 1);
+        let i = 0;
+        let value = 0;
+        for (; i < this.distribution.length - 1; i++) {
+            value += this.distribution[i].value
+            if (temp < value) break;
+        }
+        return this.distribution[i].type;
+    }
+}
+
+type GeneratorType = {
+    level: number, // affects avg block cost
+    scores: Distribution, // it is prob what fig to gen
+    types: Distribution // it is prob what fig to gen
+}
+
+const defaultGenerator: GeneratorType =
+    {
+        level: 1,
+        scores: new Distribution(1, [{value: 1, type: 1}]),
+        types: new Distribution(5, [
+            {value: 1, type: 0}, {value: 1, type: 1}, {value: 1, type: 2},
+            {value: 1, type: 3}, {value: 1, type: 4}
+        ]),
+    }
 
 export class Figure {
     // defines fig number
@@ -134,13 +170,13 @@ export class Figure {
     // defines amount of score per block
     score: number;
 
-    constructor(id: number, prototype: any = undefined) {
+    constructor(id: number, prototype: any = undefined, generator: GeneratorType = undefined) {
         if (prototype instanceof Random) {
             this.id = id;
             this.toDefaultPos();
-            this.#generateColor(prototype);
-            this.#generateType(prototype);
-            this.#generateScore(prototype);
+            this.#generateColor(prototype, generator);
+            this.#generateType(prototype, generator);
+            this.#generateScore(prototype, generator);
         } else if (prototype) {
             Object.assign(this, prototype);
         } else {
@@ -161,22 +197,22 @@ export class Figure {
         this.value = Figure.figArr[id || this.id][rotation || this.rotation];
     }
 
-    #generateType(random: Random) {
-        // TODO
-        this.type = random.nextRandInt(0, FigureTypeLength - 1);
-        // this.type = FigureType.from('ghost')
+    #generateType(random: Random, generator: GeneratorType = undefined) {
+        if (!generator) generator = defaultGenerator;
+        this.type = generator.types.get(random);
     }
 
-    #generateScore(random: Random) {
-        // TODO
-        this.score = 1
+    #generateScore(random: Random, generator: GeneratorType = undefined) {
+        if (!generator) generator = defaultGenerator;
+        this.score = generator.scores.get(random);
     }
 
-    #generateColor(random: Random) {
+    #generateColor(random: Random, generator: GeneratorType = undefined) {
+        if (!generator) generator = defaultGenerator;
         this.color = random.nextRandInt(4, COLOR_TABLE.length - 4);
     }
 
-    rotate(diff) {
+    rotate(diff: number) {
         this.rotation = (this.rotation + diff + 4) & 3;
         this.from();
     }
@@ -225,6 +261,9 @@ export class Tetris {
     tickSpeed: number = START_TICK_SPEED;
     //
     timePlayed: number;
+    //
+    level: number = 0;
+    generator: GeneratorType = defaultGenerator;
 
     field: readonly BlockType[] = Array.from({ length: FIELD_W * FIELD_H }, () => ({
         type: 0,
@@ -243,6 +282,7 @@ export class Tetris {
     renderCallback: () => void = null;
     gameOverCallback: (score: number, newRecord: boolean) => void = null;
     scoreUpdateCallback: (score: number, delta: number) => void = null;
+    soundEffectCallback: (effect: string) => void = null;
 
     status = "offline"
 
@@ -256,6 +296,7 @@ export class Tetris {
         clone.renderCallback = null;
         clone.gameOverCallback = null;
         clone.scoreUpdateCallback = null;
+        clone.soundEffectCallback = null;
         clone.effects = null;
         return clone;
     }
@@ -279,6 +320,7 @@ export class Tetris {
         const callback = this.renderCallback;
         const gameOverCallback = this.gameOverCallback;
         const scoreUpdateCallback = this.scoreUpdateCallback;
+        const soundEffectCallback = this.soundEffectCallback;
         const effects = this.effects;
         //
         Object.assign(this, prototype);
@@ -295,6 +337,7 @@ export class Tetris {
         this.renderCallback = callback;
         this.gameOverCallback = gameOverCallback;
         this.scoreUpdateCallback = scoreUpdateCallback;
+        this.soundEffectCallback = soundEffectCallback;
         this.effects = effects;
         // safesty check for effects
         if (this.effects[0] === undefined) {
@@ -410,7 +453,9 @@ export class Tetris {
         if (key !== 0 && (key === 32 || fig.y < yPos)) // collision hard
         {
             this.#placeFigure(fig);
+            this.soundEffectCallback && this.soundEffectCallback(`land`);
             if (this.#checkOnEnd()){
+                this.soundEffectCallback && this.soundEffectCallback(`game over`);
                 this.#endGame();
             } else {
                 this.held = false;
@@ -493,6 +538,7 @@ export class Tetris {
                         score: score
                     }, this.field[yPos + j])
                     if (this.field[yPos + j].score > 1) {
+                        this.soundEffectCallback && this.soundEffectCallback('merge')
                         this.effects[yPos + j].type = 5 // merge
                         this.effects[yPos + j].score = this.field[yPos + j].score // line clear
                         this.effects[yPos + j].color = this.field[yPos + j].color
@@ -541,6 +587,7 @@ export class Tetris {
         if (scoreBenefit > 0) {
             scoreBenefit = scoreBenefit << linesChecked;
             this.score += scoreBenefit;
+            this.soundEffectCallback && this.soundEffectCallback(`line clear ${linesChecked}`);
             this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, scoreBenefit)
         }
     }
@@ -647,6 +694,9 @@ export class Tetris {
                                 changes = true
                             }
                         }
+                        if (changes) {
+                            this.soundEffectCallback && this.soundEffectCallback(`water`);
+                        }
 
                     } break;
                     case 'sand': {
@@ -654,6 +704,9 @@ export class Tetris {
                             this.#killBlock(block)
                         } else {
                             changes = this.#moveBlock(block, this.field[posY + x + FIELD_W])
+                            if (changes) {
+                                this.soundEffectCallback && this.soundEffectCallback(`sand`);
+                            }
                         }
                     } break;
                     case 'tnt': {
@@ -669,6 +722,7 @@ export class Tetris {
                         this.effects[posY + x].type = 2 // line clear
                         this.effects[posY + x].score = scoreBenefit // line clear
                         this.effects[posY + x].color = 12 // red
+                        this.soundEffectCallback && this.soundEffectCallback('tnt')
 
                         this.score += scoreBenefit;
                         this.scoreUpdateCallback && this.scoreUpdateCallback(this.score, scoreBenefit)

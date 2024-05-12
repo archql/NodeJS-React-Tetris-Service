@@ -23,6 +23,14 @@ export class GameCanvas extends React.PureComponent {
         return teams
     }
 
+    lineAudio = new Audio('lineclear.mp3');
+    tntAudio = new Audio('explosion.wav');
+    landAudio = new Audio('test.wav');
+    mergeAudio = new Audio('click.wav');
+    overAudio = new Audio('gameover.mp3');
+    waterAudio = new Audio('water.mp3');
+    sandAudio = new Audio('sand.mp3');
+
     constructor(props) {
         super(props)
 
@@ -51,7 +59,10 @@ export class GameCanvas extends React.PureComponent {
             this.forceUpdate()
         };
         this.game.gameOverCallback = (score, newRecord) => {
-            this.onLocalGameOver();
+            this.onLocalGameOver(score !== 0);
+        }
+        this.game.soundEffectCallback = (effect) => {
+            this.onSoundEffect(effect);
         }
         this.session = new ClientGameSessionControl(this.game, this.props.socket);
         // render
@@ -110,7 +121,7 @@ export class GameCanvas extends React.PureComponent {
         console.log("ON SERVER UPDATE")
         this.session.onServerUpdate(serverState);
     }
-    onLocalGameOver = () => {
+    onLocalGameOver = (hasScore) => {
         // set loading true
         if (this.props.socket && this.props.socket.connected) {
             this.props.triggerLoader(true)
@@ -142,6 +153,48 @@ export class GameCanvas extends React.PureComponent {
                 teams: teams,
                 scores: scores
             })
+        }
+    }
+    onSoundEffect = (effect) => {
+        try {
+            switch (effect) {
+                case 'tnt': {
+                    this.tntAudio.currentTime = 0;
+                    this.tntAudio.play();
+                }
+                    break;
+                case 'line clear 3':
+                case 'line clear 4':
+                case 'line clear 2':
+                case 'line clear 1': {
+                    this.lineAudio.currentTime = 0;
+                    this.lineAudio.play();
+                }
+                    break;
+                case 'land': {
+                    this.landAudio.currentTime = 0;
+                    this.landAudio.play();
+                } break;
+                case 'merge': {
+                    this.mergeAudio.currentTime = 0;
+                    this.mergeAudio.play();
+                } break;
+                case 'game over': {
+                    this.overAudio.currentTime = 0;
+                    this.overAudio.play()
+                } break;
+                case 'water': {
+                    this.waterAudio.volume = 0.3
+                    this.waterAudio.currentTime = 0;
+                    this.waterAudio.play()
+                } break;
+                case 'sand': {
+                    this.sandAudio.currentTime = 0;
+                    this.sandAudio.play()
+                } break;
+            }
+        } catch (e) {
+
         }
     }
 
@@ -232,10 +285,19 @@ export class GameCanvas extends React.PureComponent {
                                         anchorX={"right"}
                                     />
                                     <TetrisText
-                                        position={[0, FIELD_H - 4, 0]}
+                                        position={[0, FIELD_H - 3, 0]}
+                                        text={"LEVEL:"}
+                                    />
+                                    <TetrisText
+                                        position={[8.5, FIELD_H - 3, 0]}
+                                        text={this.game.level.toString()}
+                                        anchorX={"right"}
+                                    />
+                                    <TetrisText
+                                        position={[0, FIELD_H - 5, 0]}
                                         text={"NEXT FIGURE"}
                                     />
-                                    <group scale={[1, -1, 1]} position={[2, FIELD_H - 6, 0]}>
+                                    <group scale={[1, -1, 1]} position={[2, FIELD_H - 7, 0]}>
                                         <TetrisFigure
                                             figure={this.game.nextFigures[this.game.nextFigureNumber]}
                                             xPos={0}
@@ -243,10 +305,10 @@ export class GameCanvas extends React.PureComponent {
                                         />
                                     </group>
                                     <TetrisText
-                                        position={[0, FIELD_H - 9, 0]}
+                                        position={[0, FIELD_H - 10, 0]}
                                         text={"HELD FIGURE"}
                                     />
-                                    <group scale={[1, -1, 1]} position={[2, FIELD_H - 11, 0]}>
+                                    <group scale={[1, -1, 1]} position={[2, FIELD_H - 12, 0]}>
                                         <TetrisFigure
                                             figure={this.game.heldFigure}
                                             xPos={0}
