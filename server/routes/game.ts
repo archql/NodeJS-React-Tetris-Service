@@ -80,6 +80,7 @@ const gameHandler = async (socket) => {
     })
 
     socket.on('game sync', async () => {
+        console.log(`REQUEST game sync from ${socket.id}`)
         const data = userGameSessions[socket.id].data;
         await data.reload()
         userGameSessions[socket.id].game?.onSync(data)
@@ -90,11 +91,12 @@ const gameHandler = async (socket) => {
         // get seed
         const seed = Math.floor(Math.random() * RANDOM_MAX);
         // start competition
-        io.of("/game").adapter.rooms.get(room).forEach((sid) => {
+        io.of("/game").adapter.rooms.get(room).forEach(async (sid) => {
             // TODO
-            userGameSessions[sid].game.startCompetition(
-                seed
-            );
+            console.log(`IN ROOM ${room} ${sid} ${seed}`)
+            const data = userGameSessions[sid].data;
+            await data.reload()
+            userGameSessions[sid].game?.onSync(data, seed)
         })
     }
 }

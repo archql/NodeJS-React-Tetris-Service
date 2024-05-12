@@ -83,8 +83,9 @@ export class ServerGameSessionControl {
         this.socket.emit('game sync', this.stateBuffer[0]);
     }
 
-    onSync(data: PlayerData) {
-        console.log("on SYNC");
+    onSync(data: PlayerData, seed: number = undefined) {
+        console.log(`on SYNC ${seed}`);
+        if (this.competition) return // todo
         //
         // this.record = null; // TODO implement records
         this.data = data
@@ -102,6 +103,13 @@ export class ServerGameSessionControl {
         this.game = new Tetris(null);
         this.game.gameOverCallback = (score: number, newRecord: boolean) => this.onGameOver(score, newRecord);
         this.game.scoreUpdateCallback = (score: number, delta: number) => this.onScoreUpdate(score, delta);
+        //
+        if (seed) {
+            this.game.initializeFrom(seed)
+            this.game.paused = false;
+            this.competition = true;
+            console.log("GAME COMPETITION")
+        }
         // get user nickname
         this.game.status = data?.getStatus()
         // clear input
@@ -111,7 +119,7 @@ export class ServerGameSessionControl {
         this.stateBuffer[bufferIndex] = new GameState(this.currentTick, this.currentEvent,
             this.time - this.timeStarted, this.game.deepCopy());
         // send game state
-        // TODO this is awful
+        console.log(`GAME COMPETITION ${this.game.paused}`)
         this.socket.emit('game sync', this.stateBuffer[bufferIndex]);
         // if (this.room) {
         //     this.io.to(this.room.room_id.toString()).emit('game update', this.stateBuffer[bufferIndex]);

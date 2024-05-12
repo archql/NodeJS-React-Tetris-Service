@@ -96,12 +96,9 @@ export class GameCanvas extends React.PureComponent {
     }
 
     onKeyEvent = (e) => {
-        // TODO process chat
-        if (e.keyCode === 27) {
-            // tell server that we're leaving the room
-            this.props.socket.emit('room leave');
-            // reload page TODO show game results
-            window.location.reload(false);
+        console.log(`onKeyEvent ${e.keyCode}`)
+        if (e.keyCode === 27 && !this.session?.game?.playing) {
+            // TODO 
         } else {
             this.session.processEvent(e.keyCode);
         }
