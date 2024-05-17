@@ -1,10 +1,11 @@
 # syntax=docker/dockerfile:1
-FROM node:18.16.0-alpine AS base
+FROM node:20.13-alpine AS base
 
 WORKDIR /usr/src/server
 
 COPY package*.json ./
 
+RUN npm config get proxy
 RUN npm install
 
 COPY . .
@@ -12,7 +13,7 @@ COPY . .
 RUN npm run server:build
 
 
-FROM node:18.16.0-alpine as production
+FROM node:20.13-alpine as production
 ENV NODE_ENV=production \
     NODE_PATH=./build
 

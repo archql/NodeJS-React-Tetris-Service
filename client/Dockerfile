@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:18.16.0-alpine AS base
+FROM node:20.13-alpine AS base
 
 ARG REACT_APP_PROXY_IP=localhost
 ENV REACT_APP_PROXY_IP=$REACT_APP_PROXY_IP
@@ -15,7 +15,7 @@ COPY . .
 RUN npm run client:build
 
 
-FROM nginx:stable-alpine as production
+FROM nginx:1.25.5-alpine as production
 ENV NODE_ENV=production \
     NODE_PATH=./build
 ARG REACT_APP_PROXY_IP=localhost

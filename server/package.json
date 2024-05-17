@@ -1,12 +1,13 @@
 {
   "name": "tetris_js_server",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "type": "module",
   "scripts": {
     "server:start:idea": "tsx app.ts",
     "server:start:debug": "npx nodemon",
-    "server:start:production": "tsx app.ts"
+    "server:build": "tsc -p .",
+    "server:start:production": "node build/app.js"
   },
   "dependencies": {
     "cookie": "^0.5.0",

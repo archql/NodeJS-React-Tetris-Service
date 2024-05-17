@@ -1,11 +1,11 @@
 import crypto from "crypto";
 import {Attachment, Like, Message, Record, Role, Room, RoomUser, sequelize, Status, User} from "../bin/db.js";
 import {Op} from "sequelize";
-import {io} from "../app.ts"
+import {io} from "../app.js"
 import { promises as fs } from 'fs';
 import path from "path";
-import {__dirname} from "../app.ts";
-import {ServerGameSessionControl} from "../game/reconciliator.ts";
+import {__dirname} from "../app.js";
+import {ServerGameSessionControl} from "../game/reconciliator.js";
 
 const userSockets = [];
 
@@ -63,7 +63,7 @@ const chatHandler = async (socket) => {
     // });
     // -------------
     // Retrieve user object from the socket object
-    const user = socket.request.user;
+    const user: any = socket.request.user;
     // hold info about socket ids
     userSockets[user.user_id] = socket.id;
     // Set online
@@ -81,7 +81,7 @@ const chatHandler = async (socket) => {
         ]
     });
     let userPlain = userDB.get({plain: true});
-    const rcd = user && await Record.findOne({
+    const rcd: any = user && await Record.findOne({
         where: {
             record_user_id: user.user_id
         },
@@ -101,7 +101,7 @@ const chatHandler = async (socket) => {
         });
         // find users max score
         let userPlain = userDB.get({plain: true});
-        const rcd = user && await Record.findOne({
+        const rcd: any = user && await Record.findOne({
             where: {
                 record_user_id: user.user_id
             },
@@ -158,7 +158,7 @@ const chatHandler = async (socket) => {
     socket.on('create message', async (user_to_id, content, attachments) => {
         // create message
         try {
-            const newMessage = await Message.create({
+            const newMessage: any = await Message.create({
                 message_content: content,
                 message_from_id: user.user_id,
                 message_to_id: user_to_id
@@ -205,7 +205,7 @@ const chatHandler = async (socket) => {
 
     socket.on('delete message', async (message_id) => {
         try {
-            let msg = await Message.findOne({
+            let msg: any = await Message.findOne({
                 where: {
                     message_id: message_id,
                     message_from_id: user.user_id
@@ -214,16 +214,12 @@ const chatHandler = async (socket) => {
             if (!msg) {
                 return socket.emit("error", { status: 403, who: "delete message", message: "Failed to delete message" });
             }
-            const delRes = await msg.destroy();
-            if (delRes) {
-                // send message to target user
-                socket.emit("delete message", message_id);
-                const targetSocket = io.of('/chat').sockets.get(userSockets[msg.message_to_id]);
-                if (targetSocket) {
-                    targetSocket.emit('delete message', message_id);
-                }
-            } else {
-                return socket.emit("error", { status: 403, who: "delete message", message: "Failed to delete message" });
+            await msg.destroy();
+            // send message to target user
+            socket.emit("delete message", message_id);
+            const targetSocket = io.of('/chat').sockets.get(userSockets[msg.message_to_id]);
+            if (targetSocket) {
+                targetSocket.emit('delete message', message_id);
             }
         } catch (e) {
             console.log(e);
@@ -233,7 +229,7 @@ const chatHandler = async (socket) => {
 
     socket.on('like message', async (message_id) => {
         try {
-            const msg = await Message.findOne({
+            const msg: any = await Message.findOne({
                 where: {
                     message_id: message_id,
                     message_to_id: user.user_id
@@ -242,7 +238,7 @@ const chatHandler = async (socket) => {
             if (!msg) {
                 return socket.emit("error", { status: 409, who: "like message", message: "Failed to like message" });
             }
-            let like = await Like.findOne({
+            let like: any = await Like.findOne({
                 where: {
                     like_user_id: user.user_id,
                     like_message_id: message_id
@@ -276,7 +272,7 @@ const chatHandler = async (socket) => {
 
     socket.on('edit message', async (message_id, content) => {
         try {
-            let msg = await Message.findOne({
+            let msg: any = await Message.findOne({
                 where: {
                     message_id: message_id,
                     message_from_id: user.user_id
@@ -365,28 +361,30 @@ const chatHandler = async (socket) => {
                 model: RoomUser,
                 as: "room_users",
                 include: {
+                    // TODO
+                    // @ts-ignore
                     model: User,
                     attributes: ['user_nickname'],
                     as: "ru_user",
                 }
             }, { model: User, as: "room_owner", attributes: ['user_nickname', 'user_id'] }],
         });
-        rooms.forEach((item) => {
+        rooms.forEach((item: any) => {
             item.room_password_hash = item.room_password_hash ? 'Y' : null
         })
         socket.emit('rooms', rooms);
     })
 
     socket.on('room create', async (room) => {
-        const usr = await User.findByPk(user.user_id);
-        const temp = await Room.findOne({
+        const usr: any = await User.findByPk(user.user_id);
+        const temp: any = await Room.findOne({
                 where: {room_owner_id: user.user_id}
             });
         if (!usr) return socket.emit("error", {status: 409, who: "room create", message: "You're not exist"});
         // allow for status 10+
         if ((usr.user_role_id < 10) && temp) return socket.emit("error", {status: 409, who: "room create", message: "Already has a room"});
         //
-        const r = await Room.create({
+        const r: any = await Room.create({
             room_owner_id: usr.user_id,
             room_name: room.name,
             room_description: `Room of ${user.user_nickname}`, // TODO undefined
@@ -399,7 +397,7 @@ const chatHandler = async (socket) => {
             return socket.emit("error", {status: 409, who: "room create", message: "Unexpected error"});
         }
         // join
-        let ru = await RoomUser.create({
+        let ru: any = await RoomUser.create({
             ru_user_id: user.user_id,
             ru_room_id: r.room_id,
         });
@@ -427,15 +425,18 @@ const chatHandler = async (socket) => {
     socket.on('room delete', async (room_id) => {
         const temp = await Room.findByPk(room_id);
         if (!temp) return socket.emit("error", {status: 409, who: "room delete", message: "Nothing to delete"});
-        const delRes = await temp.destroy();
-        if (!delRes) return socket.emit("error", {status: 409, who: "room delete", message: "Failed to delete"});
+        try {
+            await temp.destroy();
+        } catch(e) {
+            return socket.emit("error", {status: 409, who: "room delete", message: "Failed to delete"});
+        }
         // TODO notify all users room is destroyed
         socket.emit('room delete', room_id);
     })
 
     socket.on('room join', async (room_id) => {
         // 0th check if somewhere
-        let ru0 = await RoomUser.findOne({
+        let ru0: any = await RoomUser.findOne({
             where: {
                 ru_user_id: user.user_id,
             }
@@ -444,11 +445,11 @@ const chatHandler = async (socket) => {
             return socket.emit("error", {status: 409, who: "room join", message: `Already joined room ${ru0.room_name}`});
         }
         // 1st find the room
-        const room = await Room.findByPk(room_id);
+        const room: any = await Room.findByPk(room_id);
         if (!room) return socket.emit("error", {status: 409, who: "room join", message: "Failed to join room"});
         // TODO check the limit in the DB
         // 2nd check if already joined
-        let ru = await RoomUser.findOne({
+        let ru: any = await RoomUser.findOne({
             where: {
                 ru_room_id: room.room_id,
                 ru_user_id: user.user_id,
@@ -484,7 +485,7 @@ const chatHandler = async (socket) => {
     })
 
     socket.on('room leave', async (room_id) => {
-        const room = await Room.findByPk(room_id);
+        const room: any = await Room.findByPk(room_id);
         if (!room) return socket.emit("error", {status: 409, who: "room leave", message: "Failed to leave room"});
         // find record and delete it
         const ru = await RoomUser.findOne({
@@ -494,15 +495,16 @@ const chatHandler = async (socket) => {
             }
         });
         if (!ru) return socket.emit("error", {status: 409, who: "room leave", message: "Failed to leave room"});
-        const delRes = await ru.destroy();
-        if (!delRes) {
-             return socket.emit("error", {status: 409, who: "room leave", message: "Failed to leave room"});
-        } else {
-             //return socket.emit("room leave");
-             //socket.emit("room left");
-             //socket.broadcast.emit("room leave", room.room_id);
-             io.of('/chat').emit('room leave', ru);
+        try {
+            await ru.destroy();
+        } catch(e) {
+            return socket.emit("error", {status: 409, who: "room leave", message: "Failed to leave room"});
         }
+
+        //return socket.emit("room leave");
+        //socket.emit("room left");
+        //socket.broadcast.emit("room leave", room.room_id);
+        io.of('/chat').emit('room leave', ru);
     })
 }
 
