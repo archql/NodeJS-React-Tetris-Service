@@ -17,6 +17,7 @@ import {
 } from "@react-three/drei";
 import * as faIcons from "@fortawesome/fontawesome-free-solid";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {GameEnd} from "./game_end";
 
 export class Game extends React.Component {
 
@@ -35,7 +36,8 @@ export class Game extends React.Component {
         this.state = {
             loading: true,
             user: null,
-            game: false // TODO
+            game: false, // TODO
+            gameEnd: null
         }
     }
     componentDidMount() {
@@ -46,6 +48,7 @@ export class Game extends React.Component {
         this.socket.on('connect_error', this.onConnectError);
         this.socket.on('sync', this.onSync);
         this.socket.on('room ready', this.onRoomReady);
+        this.socket.on('game competition end', this.onGameCompetitionEnd);
         //
         if (this.socket.connected) {
             //
@@ -61,6 +64,7 @@ export class Game extends React.Component {
         this.socket.off('connect_error', this.onConnectError);
         this.socket.off('sync', this.onSync);
         this.socket.off('room ready', this.onRoomReady);
+        this.socket.off('game competition end', this.onGameCompetitionEnd);
     }
     onConnect = () => {
         console.log("LOG onConnect");
@@ -89,6 +93,7 @@ export class Game extends React.Component {
         this.session?.onServerDisconnect();
     }
     onSync = (user, room, ru) => {
+        console.log("on SYNC user room ru")
         //
         this.setState({
             loading: false,
@@ -102,6 +107,14 @@ export class Game extends React.Component {
             game: true
         })
         this.socket.emit('game sync')
+    }
+    onGameCompetitionEnd = (winnerTeamNo, scoreDistribution) => {
+        console.log("onGameCompetitionEnd")
+        console.log("onGameCompetitionEnd winnerTeamNo ", winnerTeamNo)
+        console.log("onGameCompetitionEnd scoreDistribution ", scoreDistribution)
+        this.setState({
+            gameEnd: {winnerTeamNo: winnerTeamNo, scoreDistribution: scoreDistribution}
+        })
     }
 
     play(e, param) {
@@ -122,7 +135,7 @@ export class Game extends React.Component {
     }
 
     render() {
-        let {user, game, room, ru} = this.state
+        let {user, game, room, ru, gameEnd} = this.state
         if (!user) {
             user = {
                 user_nickname: "........",
@@ -131,7 +144,19 @@ export class Game extends React.Component {
             }
         }
         const blockSize = window.innerHeight / FIELD_H;
-        if (game) {
+        if (gameEnd) {
+            return (
+                <Fragment>
+                    <GameEnd
+                        user={user}
+                        room={room}
+                        ru={ru}
+                        game={game}
+                        gameEnd={gameEnd}
+                    />
+                </Fragment>
+            );
+        }else if (game) {
             return (
                 <Fragment>
                     {this.state.loading && (<div className="loader"/>)}

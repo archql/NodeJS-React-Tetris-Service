@@ -16,6 +16,7 @@ export class ServerGameSessionControl {
     competition: boolean = false;
     onCompetitionViolation: (data: PlayerData) => void;
     onCompetitionEnd: (data: PlayerData, score: number) => void;
+    onCompetitionScoreChange: (room: string) => void;
 
     inputQueue: GameInput[] = [];
     stateBuffer: GameState[] = new Array(BUFFER_SIZE);
@@ -83,6 +84,11 @@ export class ServerGameSessionControl {
         this.socket.emit('game sync', this.stateBuffer[0]);
     }
 
+    endCompetition(winner_team_no: number, score_distribution: number[]) {
+        console.log(`endCompetition`)
+        this.game.processEventSilent(27); // stops the game
+    }
+
     onSync(data: PlayerData, seed: number = undefined) {
         console.log(`on SYNC ${seed}`);
         if (this.competition) return // todo
@@ -120,6 +126,7 @@ export class ServerGameSessionControl {
             this.time - this.timeStarted, this.game.deepCopy());
         // send game state
         console.log(`GAME COMPETITION ${this.game.paused}`)
+        this.socket.emit('sync', this.data.user, this.data.room, this.data.ru);
         this.socket.emit('game sync', this.stateBuffer[bufferIndex]);
         // if (this.room) {
         //     this.io.to(this.room.room_id.toString()).emit('game update', this.stateBuffer[bufferIndex]);
@@ -155,6 +162,9 @@ export class ServerGameSessionControl {
     onScoreUpdate(score: number, delta: number) {
         if (this.data?.ru) {
             this.data.ru.ru_last_score = score;
+            // check if room is full for score
+            this.onCompetitionScoreChange && this.onCompetitionScoreChange(this.data.room.room_id.toString());
+            //
             console.log("onScoreUpdate")
             this.io.to(this.data?.getRoomId()).emit('game score', {
                 ru_last_score: score,

@@ -82,7 +82,15 @@ textarea {
     max-width: 60rem;
     width: 100%;
 }
-
+.on-top {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 15;
+    margin: auto;
+}
 .loader {
     border: 32px solid var(--card-color-secondary);
     border-top: 32px solid  var(--btn-color);

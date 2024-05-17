@@ -1,4 +1,4 @@
-import {Tetris} from "./tetris.js";
+import {Tetris} from "./tetris";
 
 export const BUFFER_SIZE = 1024;
 export const TPS = 30;

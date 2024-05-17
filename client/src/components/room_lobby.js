@@ -19,7 +19,7 @@ export class RoomLobby extends Component {
             messages: [],
         };
     }
-
+    // TODO duplicate in game_end.js
     calcTeamDistribution() {
         // determine teams distribution
         let teams = []
@@ -166,6 +166,7 @@ export class RoomLobby extends Component {
                         <p><b>Owner</b>: {room.room_owner.user_nickname}</p>
                         <p><b>You</b>: {this.props.user.user_nickname}</p>
                         <p><b>Teams</b>: {room.room_teams} teams of {room.room_max_members} players</p>
+                        <p><b>Target Score</b>: {"20'000"}</p> {/*TODO*/}
                         <p><b>Players in the room ({room.room_users.length}):</b></p>
                         {
                             room.room_users && room.room_users.map((ru) => {
@@ -178,6 +179,7 @@ export class RoomLobby extends Component {
                                 )
                             })
                         }
+                        <p><b>Status:</b><i>{"Waiting for team selection..."}</i></p>
                     </div>
                     <div className="cell card">
                     <div className="messaging flex_scroll">

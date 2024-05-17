@@ -1,11 +1,5 @@
-// @ts-ignore
-import {createRoom, Room, RoomUser, sequelize, User} from "../bin/db";
-import {Op} from "sequelize";
-import crypto from "crypto";
-import {RANDOM_MAX} from "./tetris";
-
-import {io} from "../app"
-import {PlayerData} from "./player_data";
+import {io} from "../app.js"
+import {PlayerData} from "./player_data.js";
 
 export class RoomSessionControl {
     static user_id_replacement: number = 0

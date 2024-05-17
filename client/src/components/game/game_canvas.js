@@ -24,9 +24,9 @@ export class GameCanvas extends React.PureComponent {
     }
 
     lineAudio = new Audio('lineclear.mp3');
-    tntAudio = new Audio('explosion.wav');
-    landAudio = new Audio('test.wav');
-    mergeAudio = new Audio('click.wav');
+    tntAudio = new Audio('explosion.mp3');
+    landAudio = new Audio('test.mp3');
+    mergeAudio = new Audio('click.mp3');
     overAudio = new Audio('gameover.mp3');
     waterAudio = new Audio('water.mp3');
     sandAudio = new Audio('sand.mp3');
@@ -98,7 +98,8 @@ export class GameCanvas extends React.PureComponent {
     onKeyEvent = (e) => {
         console.log(`onKeyEvent ${e.keyCode}`)
         if (e.keyCode === 27 && !this.session?.game?.playing) {
-            // TODO 
+            // TODO
+            window.location.reload();
         } else {
             this.session.processEvent(e.keyCode);
         }
@@ -154,41 +155,45 @@ export class GameCanvas extends React.PureComponent {
     }
     onSoundEffect = (effect) => {
         try {
+            let promise;
             switch (effect) {
                 case 'tnt': {
                     this.tntAudio.volume = 0.7
                     this.tntAudio.currentTime = 0;
-                    this.tntAudio.play();
+                    promise = this.tntAudio.play();
                 } break;
                 case 'line clear 3':
                 case 'line clear 4':
                 case 'line clear 2':
                 case 'line clear 1': {
                     this.lineAudio.currentTime = 0;
-                    this.lineAudio.play();
+                    promise = this.lineAudio.play();
                 } break;
                 case 'land': {
                     this.landAudio.currentTime = 0;
-                    this.landAudio.play();
+                    promise = this.landAudio.play();
                 } break;
                 case 'merge': {
                     this.mergeAudio.currentTime = 0;
-                    this.mergeAudio.play();
+                    promise = this.mergeAudio.play();
                 } break;
                 case 'game over': {
                     this.overAudio.currentTime = 0;
-                    this.overAudio.play()
+                    promise = this.overAudio.play()
                 } break;
                 case 'water': {
                     this.waterAudio.volume = 0.3
                     this.waterAudio.currentTime = 0;
-                    this.waterAudio.play()
+                    promise = this.waterAudio.play()
                 } break;
                 case 'sand': {
                     this.sandAudio.currentTime = 0;
-                    this.sandAudio.play()
+                    promise = this.sandAudio.play()
                 } break;
             }
+            if (promise) promise.catch(function(error) {
+                console.error('Error playing audio:', error);
+            });
         } catch (e) {
 
         }
@@ -232,7 +237,7 @@ export class GameCanvas extends React.PureComponent {
                                     width={FIELD_W * 2}
                                     scoreA={scores[0]}
                                     scoreB={scores[1]}
-                                    scoreMax={3000}
+                                    scoreMax={100000}
                                 />
                             </group>
                             <group position={[-(FIELD_W - 1) / 2, -(FIELD_H - 1) / 2 - 1, 0]}>

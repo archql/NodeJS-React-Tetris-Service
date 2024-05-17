@@ -5,9 +5,9 @@ import {createRoom, Record, Room, RoomUser, sequelize, User} from "../bin/db.js"
 import {io} from "../app.js";
 import {RANDOM_MAX} from "../game/tetris.js";
 import crypto from "crypto";
-import {RoomSessionControl} from "../game/room_control";
+import {RoomSessionControl} from "../game/room_control.js";
 import {Op} from "sequelize";
-import {PlayerData} from "../game/player_data";
+import {PlayerData} from "../game/player_data.js";
 
 type UserGameSessionsType = {
     [key: string]: {
@@ -37,6 +37,7 @@ const gameHandler = async (socket) => {
         room: new RoomSessionControl(socket, io.of('/game'))
     }
     userGameSessions[socket.id].room.callback = startCompetition;
+    userGameSessions[socket.id].game.onCompetitionScoreChange = checkRoomScore;
     //
     async function sync_data() {
         //
@@ -86,6 +87,33 @@ const gameHandler = async (socket) => {
         userGameSessions[socket.id].game?.onSync(data)
     })
 
+    function checkRoomScore(room: string) {
+        console.log("checkRoomScore")
+        const teamScoreDistribution = []
+        // check all members of room for score
+        io.of("/game").adapter.rooms.get(room).forEach((sid) => {
+            const data = userGameSessions[sid].data;
+            if (!data.ru) return // TODO this is critical error condition
+            console.log(`member ${data.ru.ru_team} ${data.ru.ru_last_score}`)
+            if (!teamScoreDistribution[data.ru.ru_team]) teamScoreDistribution[data.ru.ru_team] = 0
+            teamScoreDistribution[data.ru.ru_team] += data.ru.ru_last_score
+        })
+        console.log(`teamScoreDistribution ${teamScoreDistribution}`)
+        // loop for each team and check if any has advantage
+        teamScoreDistribution.forEach((score, team_no) => {
+            if (score >= 1000) { // TODO this value must be defined by room settings
+                // team has won
+                console.log(`team has won ${team_no}`)
+                // terminate all games
+                io.of("/game").adapter.rooms.get(room).forEach((sid) => {
+                    const game = userGameSessions[sid].game;
+                    game.endCompetition(team_no, teamScoreDistribution);
+                });
+                console.log(`emit('game competition end' ${room} ${team_no} ${teamScoreDistribution}`)
+                io.of("/game").to(room).emit('game competition end', team_no, teamScoreDistribution)
+            }
+        })
+    }
     // room ready
     function startCompetition(room: string) {
         // get seed

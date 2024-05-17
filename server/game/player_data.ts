@@ -1,4 +1,4 @@
-import {createRoom, Record, Room, RoomUser, sequelize, User} from "../bin/db";
+import {createRoom, Record, Room, RoomUser, sequelize, User} from "../bin/db.js";
 import {Op} from "sequelize";
 import crypto from "crypto";
 
@@ -53,6 +53,8 @@ export class PlayerData {
         //
         return this.room.room_users.length >= this.room.room_teams * this.room.room_max_members && !(this.teams[0]);
     }
+
+
 
     determineTeamsDistribution() {
         console.log(`async determineTeamsDistribution() ${this.user?.user_id}`)
