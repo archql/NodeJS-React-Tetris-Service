@@ -1,70 +1,44 @@
-# Getting Started with Create React App
+# NodeJS + React "Tetris" Service
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is my university project dedicated to design of a tetris game as a next step to my [TetrisWin](https://github.com/archql/TetrisWin) project, developed entirely in FASM assembly language.
 
-## Available Scripts
+It provides a web-service with simple messenger and extended original Tetris gameplay functionality.
 
-In the project directory, you can run:
+It uses [Socket.IO](https://socket.io/docs/v4/) protocol to perform real time communication between server and client.
+It implemented entirely using React and Node.js+Express. It uses React Three Fiber wrapper for Three.js for graphics display.
 
-### `npm start`
+It implements [client-server reconciliation algorithm](https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+More functions are descibed in [functions](#functions) section. 
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+This project is non-commercial.
 
-### `npm test`
+## Running the project
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Get project's latest stable version using `git clone https://github.com/archql/NodeJS-React-Tetris-Service.git`
+2. Install npm at least `10.8.0`.
 
-### `npm run build`
+### Docker deploy
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Get Docker
+2. Run `docker compose build`
+3. Run `docker compose up`
+4. Now service is available at port :80 - open [localhost](http://localhost:80) in any web browser
+5. Use!
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Development
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. Use any IDE you prefer
+2. To use client:
+   - in `/client` run `npm i` once
+   - run `npm run client:start` for dev
+   - it will autodetect changes & restart 
+4. To use server:
+   - in `/server` run `npm i` once
+   - run `npm run server:start:debug` for dev
+   - it will autodetect changes & restart using nodemon
+   - use `npm run server:start:idea` if this behavior is undesired
 
-### `npm run eject`
+## Functions
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **TODO translate**
