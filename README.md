@@ -1,6 +1,6 @@
 # NodeJS + React "Tetris" Service
 
-This is my university project dedicated to design of a tetris game as a next step to my [TetrisWin](https://github.com/archql/TetrisWin) project, developed entirely in FASM assembly language.
+This is my university project dedicated to design of a tetris game as a next step to my [TetrisWin](https://github.com/archql/TetrisWin) project, developed entirely in FASM assembly language. This is also my bachelor's thesis project.
 
 It provides a web-service with simple messenger and extended original Tetris gameplay functionality.
 
@@ -8,6 +8,8 @@ It uses [Socket.IO](https://socket.io/docs/v4/) protocol to perform real time co
 It implemented entirely using React and Node.js+Express. It uses React Three Fiber wrapper for Three.js for graphics display.
 
 It implements [client-server reconciliation algorithm](https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html).
+
+Documentation can be found in [a.pdf](https://github.com/archql/NodeJS-React-Tetris-Service/blob/master/a.pdf) file (*Entirely in russian!*)
 
 More functions are descibed in [functions](#functions) section. 
 
