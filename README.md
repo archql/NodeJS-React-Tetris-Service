@@ -19,6 +19,7 @@ This project is non-commercial.
 
 1. Get project's latest stable version using `git clone https://github.com/archql/NodeJS-React-Tetris-Service.git`
 2. Install npm at least `10.8.0`.
+3. Note that: default database population is performed in [db.js](https://github.com/archql/NodeJS-React-Tetris-Service/blob/master/server/bin/db.js) file
 
 ### Docker deploy
 
